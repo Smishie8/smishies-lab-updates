@@ -1,10 +1,10 @@
 {
-  "version": "10.75",
+  "version": "10.76",
   "channel": "stable",
   "files": [
     {
       "path": "server.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=10.75"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=10.76"
     },
     {
       "path": "awake_nodes.json",
@@ -23,8 +23,8 @@
     },
     {
       "path": "updater.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/updater.py?v=10.75"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/updater.py?v=10.76"
     }
   ],
-  "notes": "v10.75 : correction de l'endpoint 'Utiliser les stats de ma box' qui utilisait la variable data avant lecture du JSON POST."
+  "notes": "v10.76 : le mapping ConfigId -> héros utilise désormais directement la table authoritative extraite de StaticData 0.60.1302. Nyctra 16953866920409161 est forcée vers Nyctra lors du décodage/import de box."
 }
