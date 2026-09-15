@@ -21,7 +21,11 @@
       "path": "base_awake_stats.json",
       "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/base_awake_stats.json",
       "sha256": "d9554219c6188b41a9ef0a63f49389a9dccf49b6fb68c22e0704a3e3ceabfb81"
+    },
+    {
+      "path": "updater.py",
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/updater.py"
     }
   ],
-  "notes": "v10.69 : ajout du scan du cache StaticData telecharge par Unity (persistentDataPath/static_data) afin de retrouver les versions recentes contenant les CharacterConfig manquantes, dont Nyctra."
+  "notes": "v10.69 : ajout du scan du cache StaticData Unity et mise à jour de l'updater pour corriger les anciennes URLs de manifest et ne plus retenter la migration v10.63 inutile."
 }
