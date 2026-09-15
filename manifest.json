@@ -1,10 +1,10 @@
 {
-  "version": "10.77",
+  "version": "10.78",
   "channel": "stable",
   "files": [
     {
       "path": "server.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=10.77"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=10.78"
     },
     {
       "path": "awake_nodes.json",
@@ -23,8 +23,8 @@
     },
     {
       "path": "updater.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/updater.py?v=10.77"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/updater.py?v=10.78"
     }
   ],
-  "notes": "v10.77 : correction du mapping des bonus d'éveil Crit Rate / Crit DMG, qui étaient inversés dans l'interprétation AwakeNode. Nyctra éveil 3 sans reliques doit rester à 5% crit et passer à 52% dégâts crit."
+  "notes": "v10.78 : correction des stats secondaires reconstruites depuis la box. Base commune des 222 héros : PRÉ 0 / RÉS 10. BaseAwake PRÉ/RÉS corrigée. Génération mana corrigée d'un facteur 10."
 }
