@@ -1,4 +1,4 @@
-import argparse, hashlib, json, os, shutil, tempfile, urllib.request, zipfile
+import argparse, base64, gzip, hashlib, json, os, shutil, tempfile, urllib.request, zipfile
 from pathlib import Path
 
 APP_DIR=Path(__file__).resolve().parent
@@ -57,6 +57,23 @@ def backup_file(rel):
 
 def apply_local_migrations():
     """Small one-time fixes that can be delivered with the updater itself."""
+    marker=STATE_DIR/'migration_v10_63_real_auto_timings.done'
+    if not marker.exists():
+        try:
+            server_parts=sorted(APP_DIR.glob('_v1063_server_b64.part*'))
+            auto_parts=sorted(APP_DIR.glob('_v1063_auto_b64.part*'))
+            if server_parts and auto_parts:
+                server_b64=''.join(x.read_text(encoding='ascii').strip() for x in server_parts)
+                auto_b64=''.join(x.read_text(encoding='ascii').strip() for x in auto_parts)
+                server_bytes=gzip.decompress(base64.b64decode(server_b64))
+                auto_bytes=gzip.decompress(base64.b64decode(auto_b64))
+                backup_file('server.py')
+                (APP_DIR/'server.py').write_bytes(server_bytes)
+                (APP_DIR/'auto_timings.json').write_bytes(auto_bytes)
+                marker.write_text('10.63',encoding='utf-8')
+                log('Migration v10.63 appliquée : timings réels Auto1→Auto5 intégrés à la timeline de combat.')
+        except Exception as e:
+            log(f'Migration v10.63 non appliquée ({e}).')
     p=APP_DIR/'server.py'
     try:
         s=p.read_text(encoding='utf-8')
