@@ -1,10 +1,10 @@
 {
-  "version": "10.78",
+  "version": "10.79",
   "channel": "stable",
   "files": [
     {
       "path": "server.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=10.78"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=10.79"
     },
     {
       "path": "awake_nodes.json",
@@ -23,8 +23,8 @@
     },
     {
       "path": "updater.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/updater.py?v=10.78"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/updater.py?v=10.79"
     }
   ],
-  "notes": "v10.78 : correction des stats secondaires reconstruites depuis la box. Base commune des 222 héros : PRÉ 0 / RÉS 10. BaseAwake PRÉ/RÉS corrigée. Génération mana corrigée d'un facteur 10."
+  "notes": "v10.79 : Mana Gen calculée depuis les points avec la formule du jeu (0,5×points jusqu'à 50, puis 25×ln(10×points)-130,37). Les faux bonus Mana des nœuds d'éveil actuellement mal mappés sont ignorés. Nyctra signe 2 : 5 points => 2,5%."
 }
