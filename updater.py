@@ -2,6 +2,7 @@ import argparse, base64, gzip, hashlib, json, os, shutil, tempfile, urllib.reque
 from pathlib import Path
 
 APP_DIR=Path(__file__).resolve().parent
+OFFICIAL_MANIFEST_URL='https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/manifest.json'
 VERSION_FILE=APP_DIR/'version.json'; PACKAGED_CONFIG=APP_DIR/'update_config.json'
 LOCALAPPDATA=Path(os.environ.get('LOCALAPPDATA') or os.environ.get('APPDATA') or Path.home())
 STATE_DIR=LOCALAPPDATA/'SmishiesLab'; STATE_DIR.mkdir(parents=True,exist_ok=True)
@@ -24,11 +25,21 @@ def get_config():
     if USER_CONFIG.exists():
         user=load_json(USER_CONFIG,{})
         for k,v in user.items():
-            if k=='manifest_url' and not str(v or '').strip():continue
+            if k=='manifest_url' and not str(v or '').strip(): continue
             base[k]=v
     else:
-        try:save_json(USER_CONFIG,base)
-        except Exception:pass
+        try: save_json(USER_CONFIG,base)
+        except Exception: pass
+    # Self-heal older Smishie's Lab configs that pinned this repository to an
+    # obsolete manifest URL. Custom third-party manifests remain possible.
+    mu=str(base.get('manifest_url') or '').strip()
+    if (not mu) or ('Smishie8/smishies-lab-updates' in mu and mu!=OFFICIAL_MANIFEST_URL):
+        base['manifest_url']=OFFICIAL_MANIFEST_URL
+        try:
+            user=load_json(USER_CONFIG,{})
+            user['manifest_url']=OFFICIAL_MANIFEST_URL
+            save_json(USER_CONFIG,user)
+        except Exception: pass
     return base
 
 def version_tuple(v):
@@ -58,6 +69,11 @@ def backup_file(rel):
 def apply_local_migrations():
     """Small one-time fixes that can be delivered with the updater itself."""
     marker=STATE_DIR/'migration_v10_63_real_auto_timings.done'
+    # The migration payload was only needed before v10.63. Newer installs may
+    # still carry truncated legacy parts, so never retry/decompress them.
+    if version_tuple(current_version())>=version_tuple('10.63') and not marker.exists():
+        try: marker.write_text('already-newer-than-10.63',encoding='utf-8')
+        except Exception: pass
     if not marker.exists():
         try:
             server_parts=sorted(APP_DIR.glob('_v1063_server_b64.part*'))
