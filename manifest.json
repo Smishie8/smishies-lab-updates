@@ -1,12 +1,42 @@
 {
-  "version": "10.62",
+  "version": "10.63",
   "channel": "stable",
   "files": [
     {
       "path": "updater.py",
       "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/updater.py",
       "sha256": ""
+    },
+    {
+      "path": "_v1063_server_b64.part01",
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/_v1063_server_b64.part01",
+      "sha256": ""
+    },
+    {
+      "path": "_v1063_server_b64.part02",
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/_v1063_server_b64.part02",
+      "sha256": ""
+    },
+    {
+      "path": "_v1063_server_b64.part03",
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/_v1063_server_b64.part03",
+      "sha256": ""
+    },
+    {
+      "path": "_v1063_server_b64.part04",
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/_v1063_server_b64.part04",
+      "sha256": ""
+    },
+    {
+      "path": "_v1063_server_b64.part05",
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/_v1063_server_b64.part05",
+      "sha256": ""
+    },
+    {
+      "path": "_v1063_auto_b64.part01",
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/_v1063_auto_b64.part01",
+      "sha256": ""
     }
   ],
-  "notes": "Correction Cezal : set_id 101 = Attack et set_id 113 = Predator."
+  "notes": "v10.63 : timings reels Auto1->Auto5 integres a la timeline de combat et au DPS."
 }
