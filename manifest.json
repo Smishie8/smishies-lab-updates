@@ -1,11 +1,11 @@
 {
-  "version": "10.68",
+  "version": "10.69",
   "channel": "stable",
   "files": [
     {
       "path": "server.py",
       "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py",
-      "sha256": "823712f16334520768ed56e64bb346dee39ec29a351b605c6ec2cd1aebdd1d90"
+      "sha256": "fd430515fcf0873dec340d28a8c88669cd2838a1ae0f1538be55e087a36238f7"
     },
     {
       "path": "awake_nodes.json",
@@ -23,5 +23,5 @@
       "sha256": "d9554219c6188b41a9ef0a63f49389a9dccf49b6fb68c22e0704a3e3ceabfb81"
     }
   ],
-  "notes": "v10.68 : les statistiques exactes reconstruites depuis la box deviennent le build par defaut des simulations. La source des stats est affichee clairement ; les heros dont la CharacterConfig manque encore ne sont plus presentes silencieusement comme un import exact."
+  "notes": "v10.69 : ajout du scan du cache StaticData telecharge par Unity (persistentDataPath/static_data) afin de retrouver les versions recentes contenant les CharacterConfig manquantes, dont Nyctra."
 }
