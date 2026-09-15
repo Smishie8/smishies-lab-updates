@@ -1,11 +1,10 @@
 {
-  "version": "10.70",
+  "version": "10.71",
   "channel": "stable",
   "files": [
     {
       "path": "server.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py",
-      "sha256": "8bfd9ecea14e657148079976f772d1b83f85b8eff2206787878787a1f2448864"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=10.71"
     },
     {
       "path": "awake_nodes.json",
@@ -24,8 +23,8 @@
     },
     {
       "path": "updater.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/updater.py"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/updater.py?v=10.71"
     }
   ],
-  "notes": "v10.70 : correction de l'erreur JavaScript du scanner StaticData qui bloquait toute l'interface (liste des héros vide et boutons inactifs)."
+  "notes": "v10.71 : correction definitive du cache des mises a jour. L'updater ajoute maintenant un cache-buster a chaque requete ; le correctif JavaScript StaticData de v10.70 est inclus."
 }
