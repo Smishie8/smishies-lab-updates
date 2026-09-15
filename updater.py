@@ -1,4 +1,4 @@
-import argparse, base64, gzip, hashlib, json, os, shutil, tempfile, urllib.request, zipfile
+import argparse, base64, gzip, hashlib, json, os, shutil, tempfile, urllib.request, zipfile, time
 from pathlib import Path
 
 APP_DIR=Path(__file__).resolve().parent
@@ -50,7 +50,10 @@ def version_tuple(v):
     return tuple(out)
 
 def current_version():return str(load_json(VERSION_FILE,{}).get('version','0'))
-def request(url):return urllib.request.Request(url,headers={'User-Agent':'SmishiesLab-Updater/2.1','Cache-Control':'no-cache'})
+def request(url):
+    sep='&' if '?' in url else '?'
+    url=f"{url}{sep}_cb={int(time.time())}"
+    return urllib.request.Request(url,headers={'User-Agent':'SmishiesLab-Updater/2.2','Cache-Control':'no-cache, no-store','Pragma':'no-cache'})
 def fetch_json(url,timeout=12):
     with urllib.request.urlopen(request(url),timeout=timeout) as r:return json.loads(r.read().decode('utf-8'))
 def download(url,dest,timeout=60):
