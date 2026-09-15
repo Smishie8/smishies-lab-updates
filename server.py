@@ -20,6 +20,229 @@ ASCENSION_MULTIPLIERS = {
  6:[1.25,1.31,1.37,1.43,1.50,1.58,1.65,1.73,1.82,1.91,2.00,2.10,2.20,2.30,2.41,2.53,2.64,2.76,2.89,3.02,3.15,3.29,3.43,3.57,3.72,3.88,4.03,4.19,4.36,4.53,4.70,4.88,5.06,5.24,5.43,5.63,5.82,6.02,6.23,6.44,6.65,6.87,7.09,7.31,7.54,7.78,8.01,8.25,8.50,8.75,9.00,9.26,9.52,9.78,10.05,10.33,10.60,10.88,11.17,11.46],
 }
 
+STATIC_1302_HERO_ROWS = r"""17188064907114558|Kollodon|106002|BST002|2|77|75|58|117
+17691099499722911|Hammon|106007|BST007|2|54|51|40|107
+17229696566539953|Lusis|106008|BST008|2|62|60|53|112
+17182089057513027|Hara|106010|BST010|7|55|50|40|101
+17188056469100243|Astri|106011|BST011|1|47|53|45|104
+17222707138153665|Humi|106012|BST012|7|42|58|45|106
+17188076505872506|Sitri|106013|BST013|8|46|55|44|105
+17706511224050818|Fenrich|106014|BST014|1|47|55|43|103
+17182766406211833|Rekki|106015|BST015|1|40|44|36|120
+17169822519789194|Kanraku|111001|CAM001|2|57|88|65|107
+17183739013250379|Sodama|111002|CAM002|2|44|77|54|92
+17573450950804915|Azuma|111003|CAM003|2|74|70|66|117
+17531863965190603|Akrila|111004|CAM004|7|83|62|65|97
+17532689023664976|Yusasa|111005|CAM005|7|64|60|51|105
+17165613532698483|Jutsubo|111006|CAM006|7|79|71|60|105
+17262262674532202|Gohshu|111007|CAM007|1|85|25|65|119
+17152514262252294|Kisanka|111008|CAM008|7|49|73|53|114
+17689255793034372|Gondo|111009|CAM009|4|78|28|69|90
+17436098119751597|Dosoji|111010|CAM010|8|55|47|43|103
+17169831406616161|Arami|111011|CAM011|1|52|48|45|101
+17169874959437741|Kimoku|111012|CAM012|2|51|51|43|118
+17152594968252143|Misuke|111013|CAM013|2|48|54|43|91
+17170022487525311|Shibami|111014|CAM014|2|41|64|40|90
+17165620042313793|Jyuka|111015|CAM015|2|35|32|33|112
+17183747336338505|Ganbuku|111016|CAM016|4|56|30|59|106
+17532972828651882|Kamiwa|111017|CAM017|7|51|49|45|103
+17424802388012451|Kyoze|111018|CAM018|2|89|31|90|109
+17301410355842920|Hasuna|111020|CAM020|1|60|62|53|107
+17244324130279970|Kotsuga|111021|CAM021|1|49|51|45|108
+17419507852889685|Bowrai|111022|CAM022|2|34|32|34|96
+17392890250560846|Jatoe|111023|CAM023|1|38|33|29|109
+17344333249436717|Ranme|111024|CAM024|7|46|39|35|96
+17665912050628165|Benkoro|111025|CAM025|2|60|67|48|109
+17774819984706033|Gawara|111026|CAM026|1|75|75|60|106
+17810014356618590|Senhachi|111027|CAM027|1|61|91|58|102
+17781642678508760|Sakamoji|111028|CAM028|8|70|78|62|110
+17261560591794868|Kaelis|101002|ELD002|2|49|77|49|120
+17598493709197166|Plaxi|101003|ELD003|6|75|68|67|96
+17264868062668447|Selisa|101004|ELD004|1|53|45|47|105
+17193373869346061|Caladras|101005|ELD005|4|78|20|77|98
+17244317123498122|Caileth|101006|ELD006|2|62|57|56|108
+17436971384616841|Falrae|101007|ELD007|2|47|80|48|101
+17237366382133406|Braith|101008|ELD008|2|53|51|41|112
+17193364210139201|Vinris|101009|ELD009|7|38|63|44|91
+17193359343502660|Solnor|101010|ELD010|7|53|50|42|109
+17193353246547450|Ranath|101011|ELD011|8|49|54|42|102
+17194042560519856|Corvith|101012|ELD012|7|42|63|40|93
+17244273957319550|Paralia|101013|ELD013|7|50|50|45|120
+17194049899114300|Elinis|101014|ELD014|2|54|50|41|113
+17236480111712501|Vaelith|101015|ELD015|8|42|59|44|95
+17237185544927052|Lothac|101016|ELD016|1|52|51|42|97
+17612199784368579|Thylsa|101024|ELD024|7|68|59|48|105
+17622768165995232|Confar|101025|ELD025|4|84|26|65|107
+17594221927396254|Rikharel|101026|ELD026|4|75|26|74|104
+17653732280459211|Sethisal|101027|ELD027|8|58|60|57|108
+17676975259126928|Orchira|101028|ELD028|2|39|66|40|87
+17677011134335696|Morriga|101029|ELD029|6|42|42|36|100
+17697877489104954|Almea|101030|ELD030|1|57|65|53|105
+17762680199758505|Plumia|101031|ELD031|6|66|60|49|95
+17712491141813278|Gyllad|101034|ELD034|2|57|67|51|108
+17740174872955566|Taranis|101036|ELD036|2|71|73|66|112
+17754860961039301|Ardell|101037|ELD037|2|72|78|60|105
+17774860746992714|Luxare|101038|ELD038|7|83|62|65|98
+17809144788643884|Erdix|101039|ELD039|1|72|79|59|110
+17237257196436787|Vakia|105001|FRB001|2|69|80|61|92
+20|Bosko|105002|FRB002|2|26|45|29|98
+17060999580332703|Gladstone|105003|FRB003|1|78|58|74|108
+35|Leander|105004|FRB004|1|48|51|46|106
+17399881404660994|Saducine|105005|FRB005|7|84|65|61|97
+17327282815941693|Sebastin|105006|FRB006|6|75|73|62|99
+16977998880842054|Avria|105007|FRB007|7|52|71|52|112
+16977993193029206|Zalasi|105008|FRB008|1|61|64|50|106
+16984036885636250|Ivory|105009|FRB009|2|51|75|49|110
+16978014193657827|Stonn|105010|FRB010|2|56|48|41|106
+17598379000528116|Kolan|105011|FRB011|4|80|24|71|120
+16984044112588177|Kera|105012|FRB012|7|73|51|51|114
+16983193213351260|Annis|105013|FRB013|4|61|21|63|109
+17079098545215895|Veyna|105014|FRB014|2|50|77|48|117
+17030792526435800|Tassia|105015|FRB015|2|86|65|59|102
+17029234768900765|Mellia|105016|FRB016|2|33|34|33|111
+17328966698958251|Nioko|105017|FRB017|2|50|49|46|103
+17543952734154104|Tonhaka|105018|FRB018|7|58|44|43|116
+17677045014486625|Bruk|105019|FRB019|1|49|53|43|96
+17652800192212805|Mazzen|105020|FRB020|7|41|41|38|91
+17712458477289291|Sabado|105021|FRB021|8|40|63|42|95
+17694391965408552|Cezal|105022|FRB022|1|71|81|58|99
+17689281361701134|Incizza|105023|FRB023|2|61|59|55|95
+17787650216416455|Nautila|105028|FRB028|1|72|79|59|102
+17018597354583097|Furnos|109001|IRN001|4|94|33|83|102
+17079364180539072|Vorak|109002|IRN002|1|57|62|56|101
+17073103647253378|Sinndra|109003|IRN003|8|53|48|44|95
+17030746525090683|Durlag|109004|IRN004|2|62|74|74|106
+17264873880619835|Malgar|109005|IRN005|1|55|45|45|109
+17519756920443513|Kryxa|109006|IRN006|4|72|47|91|100
+17018690404705065|MOLDAK|109007|IRN007|7|56|63|56|120
+17018701155029031|Volkam|109008|IRN008|3|57|67|51|102
+17029884077016039|Kandra|109009|IRN009|5|72|26|77|106
+17018712746816782|Ortak|109010|IRN010|1|54|48|43|116
+17029839100593401|Torann|109011|IRN011|4|50|18|52|108
+17071405168866102|Akara|109012|IRN012|1|55|46|44|111
+17029240665243214|Ignar|109013|IRN013|2|37|62|46|109
+17018727472171601|Klissa|109014|IRN014|2|52|50|43|109
+17073308988288679|Mafis|109015|IRN015|2|55|48|42|95
+17392871684329044|Stila|109016|IRN016|2|33|52|35|85
+17392848841187469|Vixara|109019|IRN019|7|36|33|31|101
+17419546719345625|Klare|109020|IRN020|2|35|35|30|108
+17079193901565930|Kottra|109021|IRN021|1|36|32|32|105
+17079968846468143|Zenneris|109022|IRN022|3|66|56|53|113
+17409974507039068|Shalla|109023|IRN023|6|45|40|35|84
+17406809872944470|Grakka|109024|IRN024|1|37|36|27|95
+17549993843486218|Kravul|109025|IRN025|7|68|54|53|98
+17525758347548838|Droviss|109026|IRN026|6|54|48|43|86
+17531182623807747|Battarok|109027|IRN027|4|63|21|61|108
+17635522442406602|Pyla|109028|IRN028|7|66|61|48|100
+17762722250568939|Slugg|109032|IRN032|2|58|67|50|93
+17775446321828637|Tuskax|109035|IRN035|1|71|74|65|103
+16956617160059936|Virtus|112001|LTS001|5|90|31|89|106
+17322083141778868|Iristeia|112002|LTS002|2|73|74|63|111
+16953866920409161|Nyctra|112003|LTS003|2|59|62|54|113
+16976390477906380|Shadek|112004|LTS004|2|72|75|63|106
+16933963150009834|Brandis|112005|LTS005|7|76|75|59|106
+17327322747797644|Tamana|112006|LTS006|1|59|66|50|111
+16922969168081150|Sanctus|112007|LTS007|4|61|66|48|109
+16916003481400753|Kalistia|112008|LTS008|4|73|28|74|106
+16933316710616720|Cordus|112009|LTS009|2|56|64|55|106
+17080937438130876|Rynn|112010|LTS010|8|50|55|40|94
+16921907244356081|Lumisa|112012|LTS012|7|48|43|54|106
+16975703852262237|Syrenna|112013|LTS013|1|50|53|42|110
+16976399534695308|Arissa|112014|LTS014|6|55|44|46|106
+16916007146317344|Chaddeus|112015|LTS015|6|41|40|39|106
+1|Darus|112017|LTS017|2|32|36|32|106
+17322925800728882|Clarus|112018|LTS018|1|51|49|45|95
+17264848280082738|Kalix|112019|LTS019|2|55|44|46|100
+17264855367125681|Dannos|112020|LTS020|2|53|47|45|116
+17301388385121189|Brunna|112021|LTS021|1|47|55|43|120
+17333969648745278|Hallea|112022|LTS022|7|57|45|43|95
+17321886819484845|Dimistia|112023|LTS023|2|35|47|38|91
+17399842533636917|Asprill|112025|LTS025|6|76|66|68|116
+17344344724605173|Lukos|112026|LTS026|1|38|32|30|113
+17461003144609278|Rano|112027|LTS027|2|40|41|39|104
+17344328021672481|Renesse|112028|LTS028|1|32|37|31|107
+17334003406453845|Thiselle|112029|LTS029|7|46|40|34|98
+17525777065562343|Lithat|112030|LTS030|1|68|75|67|112
+17479159737740210|Zirthia|112031|LTS031|6|66|59|50|112
+17543191757211831|Ruthos|112032|LTS032|4|74|25|76|107
+17543967912178828|Ballus|112033|LTS033|4|66|23|56|104
+17724738707687367|Skrimp|112034|LTS034|2|48|50|47|102
+17740230630847646|Quinnto|112035|LTS035|6|78|65|67|101
+17594049183767753|Devi|102001|MAG001|8|72|79|59|114
+17551682598645979|Lektrine|102003|MAG003|1|66|78|66|109
+17543313698318186|Charvaine|102004|MAG004|3|85|66|59|103
+17477619895804733|Zhine|102005|MAG005|7|65|62|48|104
+17594010223310289|Sarienne|102006|MAG006|8|50|75|50|98
+17464600079757846|Benierre|102007|MAG007|1|56|49|40|99
+17455863848465406|Dylaine|102008|MAG008|7|63|55|57|110
+17482837500724424|Desmara|102009|MAG009|7|39|63|43|98
+17569823061084065|Bastrel|102010|MAG010|4|69|20|56|111
+17460970774764473|Orielle|102011|MAG011|6|57|46|42|103
+25|Vos|102012|MAG012|4|46|54|45|109
+17473511654332648|Anarose|102013|MAG013|7|54|51|40|105
+17478469518228430|Lazenne|102014|MAG014|4|78|24|73|97
+17455073661935355|Evelise|102015|MAG015|7|43|41|36|89
+17482824487413551|Remile|102016|MAG016|2|43|44|33|117
+17465280667793475|Alasinthe|102017|MAG017|2|48|74|53|105
+17709873589998578|Ricklow|102018|MAG018|2|47|71|57|88
+17787782230783844|Aldous|102021|MAG021|2|63|88|59|95
+17134582311506522|Valentu|107002|NOC002|4|99|33|78|111
+17244184818812086|Dusca|107003|NOC003|7|54|97|59|92
+17125740418182302|Bea|107004|NOC004|2|41|59|45|99
+17126634764806412|Moros|107005|NOC005|1|61|91|58|91
+17134576514134397|Atanna|107006|NOC006|4|74|26|75|96
+39|Sabi|107008|NOC008|1|58|67|50|106
+17134439087046937|Liruna|107009|NOC009|2|51|54|40|105
+17169015414286275|Zirdel|107011|NOC011|2|55|49|41|104
+17134589070546108|Sildrea|107012|NOC012|2|75|75|60|109
+17116343522212786|Raziel|107013|NOC013|1|73|73|64|110
+17125764256435227|Atriu|107015|NOC015|2|42|62|41|108
+17236507732740497|Matescu|107016|NOC016|7|72|78|60|92
+17322703531852258|Ruesca|107019|NOC019|1|32|38|30|108
+17264861641262248|Silanth|107020|NOC020|2|47|54|44|115
+17333979794832944|Aleksu|107021|NOC021|2|45|76|54|106
+17386668140960594|Tenso|107022|NOC022|1|62|56|57|106
+17544946275745257|Ravizia|107023|NOC023|7|75|71|64|110
+17320994403161294|Madalea|107024|NOC024|2|47|73|55|93
+17387643750298214|Tatsulow|107025|NOC025|8|93|32|85|103
+17343492644898622|Marilla|107026|NOC026|8|61|83|66|106
+17436124836975422|Volgang|107027|NOC027|8|38|45|37|111
+17436840045053894|Ulsos|107028|NOC028|4|74|26|75|105
+17339294494081160|Noltis|107029|NOC029|7|26|46|28|90
+17429892462558931|Dinea|107030|NOC030|8|34|33|33|105
+17519113762854351|Nirvelle|107031|NOC031|7|64|62|49|117
+17525179365760394|Sivuun|107032|NOC032|7|55|49|41|96
+17525187319743051|Granus|107033|NOC033|4|67|22|56|104
+17677069901596532|Prisella|107034|NOC034|1|35|51|34|85
+17700507748083097|Skoloss|107035|NOC035|4|90|29|91|110
+17738445753751467|Nistoru|107037|NOC037|8|62|63|50|94
+17733245225041796|Vagur|107040|NOC040|2|59|67|49|99
+17761853168508987|Vanato|107041|NOC041|2|61|85|64|95
+17761791527993971|Roxxi & Gumm|107042|NOC042|1|74|77|59|100
+21|Rudgar|103001|STN001|8|31|55|34|101
+17664153498458938|Thalbrennar|103002|STN002|8|78|75|57|103
+17634027015950049|Rilven|103003|STN003|1|39|63|43|94
+17627752364507490|Gralmund|103004|STN004|7|81|72|57|101
+17606190413095201|Stolkist|103005|STN005|2|40|44|36|93
+17622627072551675|Belmor|103006|STN006|4|63|20|62|108
+17627944816708479|Hundrik|103007|STN007|2|60|67|48|109
+17664127696372020|Granvil|103008|STN008|2|58|66|51|108
+17652882566240506|Grunid|103009|STN009|2|40|58|47|87
+17628632086580671|Stullda|103010|STN010|1|49|55|41|97
+17622637066086238|Fulrik|103011|STN011|6|69|51|55|100
+17634649603865950|Rufin|103012|STN012|6|52|47|46|108
+17616539459481723|Vunden|103013|STN013|8|38|63|44|97
+17622596092582212|Meldrun|103014|STN014|7|52|49|44|100
+17634669286531408|Roddin|103015|STN015|1|44|41|35|105
+17639914406042976|Brotten|103016|STN016|4|64|20|61|91
+17646065206928680|Orvadal|103017|STN017|1|55|50|40|113
+17634750971325462|Garnatt|103018|STN018|8|54|46|45|96
+17612365152969463|Gemm|103019|STN019|1|47|55|43|116
+17616656950014430|Mulla|103020|STN020|8|38|35|27|102
+17658835754836584|Redd Riot|103021|STN021|2|45|76|54|106
+17653640102471356|Bryneth|103022|STN022|4|66|21|58|105
+17788567362122997|Kosmi|103024|STN024|2|74|77|59|118"""
+
 # CharacterConfig et arbre d'eveil valides. Ce registre est extensible aux autres heros.
 HERO_PROGRESSION = {
  '17264861641262248': {
@@ -45,6 +268,16 @@ def _load_extracted_progression():
         chars=json.load(open(os.path.join(BASE,'character_base_stats.json'),encoding='utf-8')).get('characters') or {}
         nodes_raw=json.load(open(os.path.join(BASE,'awake_nodes.json'),encoding='utf-8')).get('nodes') or {}
         awake=json.load(open(os.path.join(BASE,'base_awake_stats.json'),encoding='utf-8')).get('soul_signs') or {}
+        # Complete 0.60.1302 CharacterConfig extraction (222 playable Invokers).
+        # This supplements/replaces the older 90-entry static.data extraction.
+        for line in STATIC_1302_HERO_ROWS.splitlines():
+            if not line.strip(): continue
+            config_id,name,gdid,code,soul,hp,atk,defense,run_speed=line.split('|')
+            chars[str(config_id)]={'name':name,'gdid':int(gdid),'code':code,'soul_sign':int(soul),
+                'health':int(hp),'attack':int(atk),'defense':int(defense),'run_speed':int(run_speed),
+                'critical_rate':0.05000000074505806,'critical_damage':0.5,'ignore_defense':0,
+                'resistance':0,'accuracy':10,'instinct':0,'combo_speed':0,'skill_speed':0,
+                'skill_recovery':0,'mana_generation':0}
     except Exception:
         return
     node_key={'attack_pct':'atk_pct','defense_pct':'def_pct','health_pct':'health_pct','critical_damage':'crit_dmg',
@@ -2721,7 +2954,7 @@ def apply_game_import(scan=None):
 # ---------- HTML ----------
 HTML = r'''<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Smishie's Lab</title><style>
 :root{--bg:#0b1020;--panel:#141b31;--p2:#1c2644;--text:#eef3ff;--muted:#9eacd0;--a:#7c9cff;--ok:#43d39e;--warn:#ffd166;--b:#2a365c}*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Arial;background:var(--bg);color:var(--text)}header{padding:22px 28px;border-bottom:1px solid var(--b)}h1{margin:0}.muted{color:var(--muted)}nav,.subnav{display:flex;gap:8px;flex-wrap:wrap;padding:14px 28px}.subnav{padding:0 0 16px}.tab,.subtab,button,select,input{background:var(--p2);color:var(--text);border:1px solid var(--b);border-radius:9px;padding:9px 12px}.active{background:var(--a)!important;color:#081020}.wrap{padding:0 28px 40px}.hidden{display:none}.controls,.levels{display:flex;gap:9px;flex-wrap:wrap;align-items:end;margin:10px 0 16px}.levels{padding:12px;background:#10182d;border:1px solid var(--b);border-radius:12px}.control{display:flex;flex-direction:column;gap:5px;min-width:120px}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.card{background:var(--panel);border:1px solid var(--b);border-radius:13px;padding:14px}.big{font-size:24px;font-weight:700}.note{padding:11px;border-left:3px solid var(--warn);background:#171b2b;margin:12px 0}.scroll{max-height:62vh;overflow:auto;border:1px solid var(--b);border-radius:12px}table{width:100%;border-collapse:collapse;background:var(--panel)}th,td{padding:8px 10px;border-bottom:1px solid var(--b);white-space:nowrap;text-align:left}th{position:sticky;top:0;background:#1a2340}.good{color:var(--ok);font-weight:700}.support-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.compare-edit{display:grid;grid-template-columns:1fr 1fr;gap:14px}.donut-wrap{display:flex;gap:18px;align-items:center;flex-wrap:wrap}.donut{width:190px;height:190px;border-radius:50%;position:relative;flex:0 0 auto}.donut:after{content:'';position:absolute;inset:36px;background:var(--panel);border-radius:50%}.legend{display:grid;gap:6px}.legend-row{display:flex;gap:8px;align-items:center}.sw{width:11px;height:11px;border-radius:3px;background:var(--a)}@media(max-width:1100px){.support-grid{grid-template-columns:1fr 1fr}}@media(max-width:850px){.grid{grid-template-columns:1fr 1fr}.compare-edit{grid-template-columns:1fr}}@media(max-width:560px){.grid,.support-grid{grid-template-columns:1fr}}
-</style></head><body><header><h1>🧪 Smishie's Lab</h1><div class=muted>V10.71 — Mise à jour anti-cache</div></header>
+</style></head><body><header><h1>🧪 Smishie's Lab</h1><div class=muted>V10.72 — 222 CharacterConfig 0.60.1302</div></header>
 <nav><button class="tab active" data-main="hero">Fiche héros</button><button class=tab data-main="relics">Mes reliques</button><button class=tab data-main="sim">Simulation de combat</button><button class=tab data-main="opt">Optimisation</button><button class=tab data-main="rank">Classement</button></nav><div class=wrap>
 <section id=hero><div class=controls><div class=control><label>Héros</label><select id=heroSel></select></div><div class=control><label>Élément</label><select id=heroElement><option>Neutre</option><option>Feu</option><option>Eau</option><option>Vent</option><option>Terre</option><option>Lumière</option><option>Ténèbres</option></select></div><button id=saveProfileBtn>Enregistrer la fiche</button></div><div class=note>Cette fiche est la source du build. Combat et Analyse effets la lisent automatiquement. Le Comparateur charge les deux fiches enregistrées et permet de les modifier puis de les sauvegarder.</div><div class=card><h3>Import depuis le jeu PC</h3><div class=note>🔒 LECTURE SEULE STRICTE : Smishie's Lab peut lire les dossiers Invokers connus, mais le module refuse toute ouverture en écriture. Aucun fichier du jeu n'est modifié, renommé, supprimé ou créé. Rien n'est envoyé sur Internet.</div><div class=good>🔒 Protection active : fichiers Invokers en lecture seule</div><div class=controls><button id=scanGameBtn>Scanner le jeu</button><button id=snapshotGameBtn>1. Instantané AVANT</button><button id=diffGameBtn>2. Comparer APRÈS</button><button id=analyzeDiffBtn>3. Analyser le contenu</button><button id=aggregateScanBtn>4. Scanner PlayerAggregate</button><button id=staticCacheBtn>5. Scanner cache StaticData</button><button id=decodeBoxBtn>6. Décoder ma box</button><button id=applyGameBtn disabled>Importer les stats détectées</button></div><div class=note><b>Diagnostic conseillé :</b> ferme/masque la collection dans Invokers, clique <b>Instantané AVANT</b>, ouvre ensuite ta box/collection dans le jeu et attends 2–3 secondes, puis clique <b>Comparer APRÈS</b>. Le tableau affichera uniquement les fichiers créés ou modifiés.</div><div id=gameImportStatus class=good></div><div id=gameImportReport class=scroll></div></div><h3>Fiche utilisée par les simulations</h3><div class=note>⚠ Tant que le calcul exact Niveau + Rang + Éveil/Nœuds n’est pas décodé, cette fiche reste une fiche manuelle/de référence. Les données réelles de ta box sont affichées séparément dans « Ma box » et ne sont pas mélangées avec la référence max.</div><div id=heroBuild class=levels></div><h3>Niveaux des compétences</h3><div id=heroLevels class=levels></div><div id=heroSaveStatus class=good></div><h3>Ma box</h3><div id=heroBoxInfo class=card></div><h3>Référence MAX du héros (niveau 60 / progression maximale)</h3><div id=heroStats class=grid></div><div id=heroCoeff class=scroll></div><h3>Timings autos extraits du jeu</h3><div class=note>Le simulateur utilise le temps de chaînage propre à chaque Auto 1→5 pour construire la timeline. La durée complète est conservée ici comme référence visuelle.</div><div id=heroAutoTimings class=scroll></div></section>
 <section id=relics class=hidden><h2>Mes reliques</h2><div class=note>Inventaire importé directement depuis <b>PlayerRelicsModel.dat</b>. Il comprend les reliques équipées <b>et non équipées</b>. Lecture seule du jeu.</div><div id=relicCounts class=grid></div><div class=controls><div class=control><label>Pièce</label><select id=relicSlot><option value=all>Toutes</option><option value=1>Arme</option><option value=2>Bouclier</option><option value=3>Casque</option><option value=4>Épaulières</option><option value=5>Gantelets</option><option value=6>Plastron</option><option value=7>Ceinture</option><option value=8>Bottes</option></select></div><div class=control><label>Set ID</label><select id=relicSet><option value=all>Tous</option></select></div><div class=control><label>Équipement</label><select id=relicEquipped><option value=all>Toutes</option><option value=yes>Équipées</option><option value=no>Non équipées</option></select></div><div class=control><label>Stat</label><select id=relicStat><option value=all>Toutes</option><option value=1>ATQ</option><option value=2>DEF</option><option value=3>PV</option><option value=4>ATQ %</option><option value=5>DEF %</option><option value=6>PV %</option><option value=7>Taux crit</option><option value=8>Dég crit</option><option value=9>PRÉ</option><option value=10>RÉS</option><option value=12>VIT combo</option><option value=13>VIT compétence</option><option value=14>RÉCUP compétence</option><option value=15>Gén mana</option></select></div><button id=relicRefresh>Actualiser</button></div><div id=relicTable class=scroll></div></section>
@@ -3085,7 +3318,7 @@ class H(BaseHTTPRequestHandler):
         except Exception as e:self.sendj({'error':str(e)},500)
     def log_message(self,fmt,*args): pass
 if __name__=='__main__':
-    print("Smishie's Lab V10.71 — Mise à jour anti-cache — http://127.0.0.1:8501")
+    print("Smishie's Lab V10.72 — 222 CharacterConfig 0.60.1302 — http://127.0.0.1:8501")
     print('Garde cette fenêtre ouverte pendant utilisation.')
     threading.Timer(1.0,lambda:webbrowser.open(f'http://{HOST}:{PORT}')).start()
     try:ThreadingHTTPServer((HOST,PORT),H).serve_forever()
