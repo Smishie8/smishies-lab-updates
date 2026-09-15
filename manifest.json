@@ -1,10 +1,10 @@
 {
-  "version": "10.74",
+  "version": "10.75",
   "channel": "stable",
   "files": [
     {
       "path": "server.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=10.74"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=10.75"
     },
     {
       "path": "awake_nodes.json",
@@ -23,8 +23,8 @@
     },
     {
       "path": "updater.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/updater.py?v=10.74"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/updater.py?v=10.75"
     }
   ],
-  "notes": "v10.74 : correction du bouton 'Utiliser les stats de ma box'. Le clic est désormais attaché directement au bouton avec retour d'état visible."
+  "notes": "v10.75 : correction de l'endpoint 'Utiliser les stats de ma box' qui utilisait la variable data avant lecture du JSON POST."
 }
