@@ -9,5 +9,5 @@ La version publiée est indiquée dans `manifest.json`.
 
 ## Version stable actuelle
 
-`10.66` — correctif du chargement de l’interface, avec reconstruction exacte des statistiques de la box à partir du niveau,
+`10.67` — correctif complet de la fiche héros, avec reconstruction exacte des statistiques de la box à partir du niveau,
 du rang, du SoulSign et des nœuds d'éveil réellement débloqués.

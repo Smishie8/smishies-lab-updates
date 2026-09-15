@@ -1,11 +1,11 @@
 {
-  "version": "10.66",
+  "version": "10.67",
   "channel": "stable",
   "files": [
     {
       "path": "server.py",
       "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py",
-      "sha256": "10fa70060b14fdf0dbd001208830e8c0a941aaeb72f87666ef16df629ca34b0e"
+      "sha256": "4f7c64aa901cdb295d4f1e8025fc515307b4263595e4ca0645503b6cbb3c066b"
     },
     {
       "path": "awake_nodes.json",
@@ -23,5 +23,5 @@
       "sha256": "d9554219c6188b41a9ef0a63f49389a9dccf49b6fb68c22e0704a3e3ceabfb81"
     }
   ],
-  "notes": "v10.66 : correctif du chargement complet de l'interface (liste des heros et boutons d'import), avec reconstruction exacte des stats de box conservee."
+  "notes": "v10.67 : correctif de la route des timings automatiques qui provoquait l'erreur H object has no attribute js en bas de la fiche heros."
 }
