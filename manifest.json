@@ -1,12 +1,12 @@
 {
-  "version": "10.61",
+  "version": "10.62",
   "channel": "stable",
   "files": [
     {
       "path": "updater.py",
       "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/updater.py",
-      "sha256": "fcb4db2902a6cb4db6d5f604e8eb0fc54a4c1206f6a3fe8cc57e2876ecca2e2c"
+      "sha256": ""
     }
   ],
-  "notes": "Correction du mapping des sets : 113 = Predator, 114 = Paragon."
+  "notes": "Correction Cezal : set_id 101 = Attack et set_id 113 = Predator."
 }
