@@ -243,6 +243,13 @@ STATIC_1302_HERO_ROWS = r"""17188064907114558|Kollodon|106002|BST002|2|77|75|58|
 17653640102471356|Bryneth|103022|STN022|4|66|21|58|105
 17788567362122997|Kosmi|103024|STN024|2|74|77|59|118"""
 
+STATIC_1302_CONFIG_MAP = {}
+for _line in STATIC_1302_HERO_ROWS.splitlines():
+    if not _line.strip():
+        continue
+    _cfg,_name,_gdid,_code,_soul,_hp,_atk,_def,_spd=_line.split('|')
+    STATIC_1302_CONFIG_MAP[str(_cfg)]={'hero_name':_name,'gdid':int(_gdid),'code':_code,'source':'static-0.60.1302','confidence':1.0}
+
 # CharacterConfig et arbre d'eveil valides. Ce registre est extensible aux autres heros.
 HERO_PROGRESSION = {
  '17264861641262248': {
@@ -522,6 +529,16 @@ def ensure_box_tables():
         con.execute('CREATE INDEX IF NOT EXISTS idx_box_relics_hero ON box_relics(equipped_hero_id)')
         con.execute('CREATE INDEX IF NOT EXISTS idx_box_relics_slot ON box_relics(slot)')
         con.execute('CREATE INDEX IF NOT EXISTS idx_box_relics_set ON box_relics(set_id)')
+        # V10.76: authoritative ConfigId -> hero map from StaticData 0.60.1302.
+        # It overrides stale/manual mappings from older heuristic imports.
+        valid={r[0].lower():r[0] for r in con.execute('SELECT name FROM heroes WHERE name IS NOT NULL')}
+        for cfg,meta in STATIC_1302_CONFIG_MAP.items():
+            canon=valid.get(str(meta.get('hero_name') or '').lower())
+            if not canon: continue
+            con.execute("""INSERT INTO game_config_map(config_id,hero_name,confidence,source,updated_at)
+                           VALUES(?,?,1,'static-0.60.1302',CURRENT_TIMESTAMP)
+                           ON CONFLICT(config_id) DO UPDATE SET hero_name=excluded.hero_name,confidence=1,source='static-0.60.1302',updated_at=CURRENT_TIMESTAMP""",
+                        (str(cfg),canon))
         if os.path.isfile(CONFIG_MAP_CSV):
             valid={r[0].lower():r[0] for r in con.execute('SELECT name FROM heroes WHERE name IS NOT NULL')}
             try:
@@ -2899,10 +2916,10 @@ def decode_local_box():
     # Mapping par config une seule fois, puis application à CHAQUE exemplaire.
     cfgmeta={}; mapped=0
     for cfg,item in bycfg.items():
-        ninfo=names.get(str(cfg),{}); nc=ninfo.get('candidates',[]); mm=manual_maps.get(str(cfg))
-        name=(mm or {}).get('hero_name') or (nc[0]['name'] if nc else None)
-        confidence=(mm or {}).get('confidence',1) if mm else (nc[0]['score'] if nc else 0)
-        source=(mm or {}).get('source') if mm else ('static-data' if nc else None)
+        ninfo=names.get(str(cfg),{}); nc=ninfo.get('candidates',[]); mm=manual_maps.get(str(cfg)); exact=STATIC_1302_CONFIG_MAP.get(str(cfg))
+        name=(exact or {}).get('hero_name') or (mm or {}).get('hero_name') or (nc[0]['name'] if nc else None)
+        confidence=(exact or {}).get('confidence',1) if exact else ((mm or {}).get('confidence',1) if mm else (nc[0]['score'] if nc else 0))
+        source=(exact or {}).get('source') if exact else ((mm or {}).get('source') if mm else ('static-data' if nc else None))
         cfgmeta[cfg]=(name,confidence,source,nc,ninfo)
         if name:mapped+=1
     relic_by_id={r.get('inventory_id'):r for r in relics if r.get('inventory_id') is not None}
@@ -2985,7 +3002,7 @@ def apply_game_import(scan=None):
 # ---------- HTML ----------
 HTML = r'''<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Smishie's Lab</title><style>
 :root{--bg:#0b1020;--panel:#141b31;--p2:#1c2644;--text:#eef3ff;--muted:#9eacd0;--a:#7c9cff;--ok:#43d39e;--warn:#ffd166;--b:#2a365c}*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Arial;background:var(--bg);color:var(--text)}header{padding:22px 28px;border-bottom:1px solid var(--b)}h1{margin:0}.muted{color:var(--muted)}nav,.subnav{display:flex;gap:8px;flex-wrap:wrap;padding:14px 28px}.subnav{padding:0 0 16px}.tab,.subtab,button,select,input{background:var(--p2);color:var(--text);border:1px solid var(--b);border-radius:9px;padding:9px 12px}.active{background:var(--a)!important;color:#081020}.wrap{padding:0 28px 40px}.hidden{display:none}.controls,.levels{display:flex;gap:9px;flex-wrap:wrap;align-items:end;margin:10px 0 16px}.levels{padding:12px;background:#10182d;border:1px solid var(--b);border-radius:12px}.control{display:flex;flex-direction:column;gap:5px;min-width:120px}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.card{background:var(--panel);border:1px solid var(--b);border-radius:13px;padding:14px}.big{font-size:24px;font-weight:700}.note{padding:11px;border-left:3px solid var(--warn);background:#171b2b;margin:12px 0}.scroll{max-height:62vh;overflow:auto;border:1px solid var(--b);border-radius:12px}table{width:100%;border-collapse:collapse;background:var(--panel)}th,td{padding:8px 10px;border-bottom:1px solid var(--b);white-space:nowrap;text-align:left}th{position:sticky;top:0;background:#1a2340}.good{color:var(--ok);font-weight:700}.support-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.compare-edit{display:grid;grid-template-columns:1fr 1fr;gap:14px}.donut-wrap{display:flex;gap:18px;align-items:center;flex-wrap:wrap}.donut{width:190px;height:190px;border-radius:50%;position:relative;flex:0 0 auto}.donut:after{content:'';position:absolute;inset:36px;background:var(--panel);border-radius:50%}.legend{display:grid;gap:6px}.legend-row{display:flex;gap:8px;align-items:center}.sw{width:11px;height:11px;border-radius:3px;background:var(--a)}@media(max-width:1100px){.support-grid{grid-template-columns:1fr 1fr}}@media(max-width:850px){.grid{grid-template-columns:1fr 1fr}.compare-edit{grid-template-columns:1fr}}@media(max-width:560px){.grid,.support-grid{grid-template-columns:1fr}}
-</style></head><body><header><h1>🧪 Smishie's Lab</h1><div class=muted>V10.75 — Endpoint stats box corrigé</div></header>
+</style></head><body><header><h1>🧪 Smishie's Lab</h1><div class=muted>V10.76 — Mapping box 0.60.1302</div></header>
 <nav><button class="tab active" data-main="hero">Fiche héros</button><button class=tab data-main="relics">Mes reliques</button><button class=tab data-main="sim">Simulation de combat</button><button class=tab data-main="opt">Optimisation</button><button class=tab data-main="rank">Classement</button></nav><div class=wrap>
 <section id=hero><div class=controls><div class=control><label>Héros</label><select id=heroSel></select></div><div class=control><label>Élément</label><select id=heroElement><option>Neutre</option><option>Feu</option><option>Eau</option><option>Vent</option><option>Terre</option><option>Lumière</option><option>Ténèbres</option></select></div><button id=saveProfileBtn>Enregistrer la fiche</button><button id=useBoxProfileBtn onclick="useBoxProfile().catch(e=>{heroSaveStatus.textContent='Erreur : '+e.message;console.error(e)})">Utiliser les stats de ma box</button></div><div class=note>Cette fiche est la source du build. Combat et Analyse effets la lisent automatiquement. Le Comparateur charge les deux fiches enregistrées et permet de les modifier puis de les sauvegarder.</div><div class=card><h3>Import depuis le jeu PC</h3><div class=note>🔒 LECTURE SEULE STRICTE : Smishie's Lab peut lire les dossiers Invokers connus, mais le module refuse toute ouverture en écriture. Aucun fichier du jeu n'est modifié, renommé, supprimé ou créé. Rien n'est envoyé sur Internet.</div><div class=good>🔒 Protection active : fichiers Invokers en lecture seule</div><div class=controls><button id=scanGameBtn>Scanner le jeu</button><button id=snapshotGameBtn>1. Instantané AVANT</button><button id=diffGameBtn>2. Comparer APRÈS</button><button id=analyzeDiffBtn>3. Analyser le contenu</button><button id=aggregateScanBtn>4. Scanner PlayerAggregate</button><button id=staticCacheBtn>5. Scanner cache StaticData</button><button id=decodeBoxBtn>6. Décoder ma box</button><button id=applyGameBtn disabled>Importer les stats détectées</button></div><div class=note><b>Diagnostic conseillé :</b> ferme/masque la collection dans Invokers, clique <b>Instantané AVANT</b>, ouvre ensuite ta box/collection dans le jeu et attends 2–3 secondes, puis clique <b>Comparer APRÈS</b>. Le tableau affichera uniquement les fichiers créés ou modifiés.</div><div id=gameImportStatus class=good></div><div id=gameImportReport class=scroll></div></div><h3>Fiche utilisée par les simulations</h3><div class=note>⚠ Tant que le calcul exact Niveau + Rang + Éveil/Nœuds n’est pas décodé, cette fiche reste une fiche manuelle/de référence. Les données réelles de ta box sont affichées séparément dans « Ma box » et ne sont pas mélangées avec la référence max.</div><div id=heroBuild class=levels></div><h3>Niveaux des compétences</h3><div id=heroLevels class=levels></div><div id=heroSaveStatus class=good></div><h3>Ma box</h3><div id=heroBoxInfo class=card></div><h3>Référence MAX du héros (niveau 60 / progression maximale)</h3><div id=heroStats class=grid></div><div id=heroCoeff class=scroll></div><h3>Timings autos extraits du jeu</h3><div class=note>Le simulateur utilise le temps de chaînage propre à chaque Auto 1→5 pour construire la timeline. La durée complète est conservée ici comme référence visuelle.</div><div id=heroAutoTimings class=scroll></div></section>
 <section id=relics class=hidden><h2>Mes reliques</h2><div class=note>Inventaire importé directement depuis <b>PlayerRelicsModel.dat</b>. Il comprend les reliques équipées <b>et non équipées</b>. Lecture seule du jeu.</div><div id=relicCounts class=grid></div><div class=controls><div class=control><label>Pièce</label><select id=relicSlot><option value=all>Toutes</option><option value=1>Arme</option><option value=2>Bouclier</option><option value=3>Casque</option><option value=4>Épaulières</option><option value=5>Gantelets</option><option value=6>Plastron</option><option value=7>Ceinture</option><option value=8>Bottes</option></select></div><div class=control><label>Set ID</label><select id=relicSet><option value=all>Tous</option></select></div><div class=control><label>Équipement</label><select id=relicEquipped><option value=all>Toutes</option><option value=yes>Équipées</option><option value=no>Non équipées</option></select></div><div class=control><label>Stat</label><select id=relicStat><option value=all>Toutes</option><option value=1>ATQ</option><option value=2>DEF</option><option value=3>PV</option><option value=4>ATQ %</option><option value=5>DEF %</option><option value=6>PV %</option><option value=7>Taux crit</option><option value=8>Dég crit</option><option value=9>PRÉ</option><option value=10>RÉS</option><option value=12>VIT combo</option><option value=13>VIT compétence</option><option value=14>RÉCUP compétence</option><option value=15>Gén mana</option></select></div><button id=relicRefresh>Actualiser</button></div><div id=relicTable class=scroll></div></section>
@@ -3364,7 +3381,7 @@ class H(BaseHTTPRequestHandler):
         except Exception as e:self.sendj({'error':str(e)},500)
     def log_message(self,fmt,*args): pass
 if __name__=='__main__':
-    print("Smishie's Lab V10.75 — Endpoint stats box corrigé — http://127.0.0.1:8501")
+    print("Smishie's Lab V10.76 — Mapping box 0.60.1302 — http://127.0.0.1:8501")
     print('Garde cette fenêtre ouverte pendant utilisation.')
     threading.Timer(1.0,lambda:webbrowser.open(f'http://{HOST}:{PORT}')).start()
     try:ThreadingHTTPServer((HOST,PORT),H).serve_forever()
