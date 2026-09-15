@@ -1,6 +1,6 @@
 {
-  "version": "10.59",
+  "version": "10.60",
   "channel": "stable",
-  "url": "",
-  "sha256": ""
+  "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/smishies_lab_v10_60_bootstrap_auto_update.zip",
+  "sha256": "47155915b6bdf1a0e425730a5b611070b179a10bc268e0d6c0840979d1010a42"
 }
