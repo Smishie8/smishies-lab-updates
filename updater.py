@@ -60,14 +60,21 @@ def apply_local_migrations():
     p=APP_DIR/'server.py'
     try:
         s=p.read_text(encoding='utf-8')
-        old="113: {'name':'Paragon','three':{},'five':{},'total':'Heal/Shield +15% + Ally Move SPD','note':'3p: heal/shield +15%; 5p: ally move speed +3m/s'},\n    114: {'name':'Predator','three':{'atk_pct':0.10},'five':{'crit_dmg':0.40},'total':'ATQ +10% + Crit DMG +40%'},"
-        new="113: {'name':'Predator','three':{'atk_pct':0.10},'five':{'crit_dmg':0.40},'total':'ATQ +10% + Crit DMG +40%'},\n    114: {'name':'Paragon','three':{},'five':{},'total':'Heal/Shield +15% + Ally Move SPD','note':'3p: heal/shield +15%; 5p: ally move speed +3m/s'},"
+        replacements = {
+            "101: {'name':'Health','three':{'hp_pct':0.15},'five':{'hp_pct':0.30},'total':'HP +45%'},":
+                "101: {'name':'Attack','three':{'atk_pct':0.10},'five':{'atk_pct':0.20},'total':'ATQ +30%'},",
+            "113: {'name':'Paragon','three':{},'five':{},'total':'Heal/Shield +15% + Ally Move SPD','note':'3p: heal/shield +15%; 5p: ally move speed +3m/s'},":
+                "113: {'name':'Predator','three':{'atk_pct':0.10},'five':{'crit_dmg':0.40},'total':'ATQ +10% + Crit DMG +40%'},"
+        }
         changed=False
-        if old in s:s=s.replace(old,new); changed=True
+        for old,new in replacements.items():
+            if old in s:
+                s=s.replace(old,new)
+                changed=True
         for old_title in ['V10.60 — Optimisation & mises à jour automatiques','V10.57 — Qualité reliques par héros']:
-            if old_title in s:s=s.replace(old_title,'V10.61 — Correction Predator / Paragon'); changed=True
+            if old_title in s:s=s.replace(old_title,'V10.62 — Correction sets Cezal'); changed=True
         if changed:
-            backup_file('server.py'); p.write_text(s,encoding='utf-8'); log('Correctif local appliqué : set 113 = Predator, set 114 = Paragon.')
+            backup_file('server.py'); p.write_text(s,encoding='utf-8'); log('Correctif local appliqué : set 101 = Attack et set 113 = Predator.')
     except Exception as e:log(f'Correctif local non appliqué ({e}).')
 
 def safe_extract(zip_path,dest):
