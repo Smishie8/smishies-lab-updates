@@ -1,10 +1,10 @@
 {
-  "version": "10.72",
+  "version": "10.73",
   "channel": "stable",
   "files": [
     {
       "path": "server.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=10.72"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=10.73"
     },
     {
       "path": "awake_nodes.json",
@@ -23,8 +23,8 @@
     },
     {
       "path": "updater.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/updater.py?v=10.72"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/updater.py?v=10.73"
     }
   ],
-  "notes": "v10.72 : intégration des 222 CharacterConfig extraits de StaticData 0.60.1302. Nyctra LTS003 est désormais résolue exactement (Config ID 16953866920409161, base HP 59 / ATQ 62 / DEF 54 / vitesse 113), ainsi que les autres héros auparavant absents de la base de progression."
+  "notes": "v10.73 : correction des anciens profils sauvegardés qui masquaient les nouvelles stats exactes de box. Ajout du bouton 'Utiliser les stats de ma box' pour remplacer uniquement la fiche du héros sélectionné."
 }
