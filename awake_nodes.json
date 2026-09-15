@@ -1,0 +1,3270 @@
+{
+  "static_format": 4,
+  "count": 528,
+  "nodes": {
+    "1101": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.25,
+        "defense_pct": 0.05,
+        "health_pct": 0.05
+      }
+    },
+    "1102": {
+      "parent_id": 1101,
+      "bonuses": {
+        "attack_pct": 0.08
+      }
+    },
+    "1103": {
+      "parent_id": 1102,
+      "bonuses": {
+        "mana_generation": 6
+      }
+    },
+    "1104": {
+      "parent_id": 1103,
+      "bonuses": {
+        "health_pct": 0.08
+      }
+    },
+    "1105": {
+      "parent_id": 1102,
+      "bonuses": {
+        "instinct": 4
+      }
+    },
+    "1106": {
+      "parent_id": 1105,
+      "bonuses": {
+        "health_pct": 0.08
+      }
+    },
+    "1107": {
+      "parent_id": 1101,
+      "bonuses": {
+        "attack_pct": 0.08
+      }
+    },
+    "1108": {
+      "parent_id": 1107,
+      "bonuses": {
+        "instinct": 4
+      }
+    },
+    "1109": {
+      "parent_id": 1108,
+      "bonuses": {
+        "defense_pct": 0.08
+      }
+    },
+    "1110": {
+      "parent_id": 1107,
+      "bonuses": {
+        "instinct": 4
+      }
+    },
+    "1111": {
+      "parent_id": 1110,
+      "bonuses": {
+        "instinct": 4
+      }
+    },
+    "1201": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.25,
+        "defense_pct": 0.05,
+        "health_pct": 0.05
+      }
+    },
+    "1202": {
+      "parent_id": 1201,
+      "bonuses": {
+        "attack_pct": 0.08
+      }
+    },
+    "1203": {
+      "parent_id": 1202,
+      "bonuses": {
+        "mana_generation": 6
+      }
+    },
+    "1204": {
+      "parent_id": 1203,
+      "bonuses": {
+        "special": 1
+      }
+    },
+    "1205": {
+      "parent_id": 1204,
+      "bonuses": {
+        "critical_damage": 0.005
+      }
+    },
+    "1206": {
+      "parent_id": 1205,
+      "bonuses": {
+        "defense_pct": 0.08
+      }
+    },
+    "1207": {
+      "parent_id": 1201,
+      "bonuses": {
+        "attack_pct": 0.08
+      }
+    },
+    "1208": {
+      "parent_id": 1207,
+      "bonuses": {
+        "critical_damage": 0.005
+      }
+    },
+    "1209": {
+      "parent_id": 1208,
+      "bonuses": {
+        "critical_damage": 0.005
+      }
+    },
+    "1210": {
+      "parent_id": 1209,
+      "bonuses": {
+        "critical_damage": 0.005
+      }
+    },
+    "1211": {
+      "parent_id": 1210,
+      "bonuses": {
+        "health_pct": 0.08
+      }
+    },
+    "1301": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.3,
+        "defense_pct": 0.1,
+        "health_pct": 0.1
+      }
+    },
+    "1302": {
+      "parent_id": 1301,
+      "bonuses": {
+        "attack_pct": 0.1
+      }
+    },
+    "1303": {
+      "parent_id": 1302,
+      "bonuses": {
+        "health_pct": 0.1
+      }
+    },
+    "1304": {
+      "parent_id": 1301,
+      "bonuses": {
+        "attack_pct": 0.1
+      }
+    },
+    "1305": {
+      "parent_id": 1304,
+      "bonuses": {
+        "health_pct": 0.1
+      }
+    },
+    "1306": {
+      "parent_id": 1301,
+      "bonuses": {
+        "accuracy": 25
+      }
+    },
+    "1307": {
+      "parent_id": 1306,
+      "bonuses": {
+        "critical_damage": 0.005
+      }
+    },
+    "1308": {
+      "parent_id": 1307,
+      "bonuses": {
+        "defense_pct": 0.1
+      }
+    },
+    "1309": {
+      "parent_id": 1306,
+      "bonuses": {
+        "critical_damage": 0.005
+      }
+    },
+    "1310": {
+      "parent_id": 1306,
+      "bonuses": {
+        "critical_damage": 0.005
+      }
+    },
+    "1311": {
+      "parent_id": 1310,
+      "bonuses": {
+        "critical_damage": 0.005
+      }
+    },
+    "1401": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.3,
+        "defense_pct": 0.1,
+        "health_pct": 0.1
+      }
+    },
+    "1402": {
+      "parent_id": 1401,
+      "bonuses": {
+        "attack_pct": 0.1
+      }
+    },
+    "1403": {
+      "parent_id": 1402,
+      "bonuses": {
+        "special": 1
+      }
+    },
+    "1404": {
+      "parent_id": 1402,
+      "bonuses": {
+        "defense_pct": 0.1
+      }
+    },
+    "1405": {
+      "parent_id": 1402,
+      "bonuses": {
+        "instinct": 4
+      }
+    },
+    "1406": {
+      "parent_id": 1405,
+      "bonuses": {
+        "instinct": 4
+      }
+    },
+    "1407": {
+      "parent_id": 1401,
+      "bonuses": {
+        "attack_pct": 0.1
+      }
+    },
+    "1408": {
+      "parent_id": 1407,
+      "bonuses": {
+        "health_pct": 0.1
+      }
+    },
+    "1409": {
+      "parent_id": 1407,
+      "bonuses": {
+        "mana_generation": 12
+      }
+    },
+    "1410": {
+      "parent_id": 1407,
+      "bonuses": {
+        "instinct": 4
+      }
+    },
+    "1411": {
+      "parent_id": 1410,
+      "bonuses": {
+        "instinct": 4
+      }
+    },
+    "1501": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.35,
+        "defense_pct": 0.15,
+        "health_pct": 0.15
+      }
+    },
+    "1502": {
+      "parent_id": 1501,
+      "bonuses": {
+        "attack_pct": 0.12
+      }
+    },
+    "1503": {
+      "parent_id": 1502,
+      "bonuses": {
+        "accuracy": 35
+      }
+    },
+    "1504": {
+      "parent_id": 1503,
+      "bonuses": {
+        "instinct": 5
+      }
+    },
+    "1505": {
+      "parent_id": 1501,
+      "bonuses": {
+        "attack_pct": 0.12
+      }
+    },
+    "1506": {
+      "parent_id": 1505,
+      "bonuses": {
+        "instinct": 5
+      }
+    },
+    "1507": {
+      "parent_id": 1506,
+      "bonuses": {
+        "instinct": 5
+      }
+    },
+    "1508": {
+      "parent_id": 1501,
+      "bonuses": {
+        "health_pct": 0.12
+      }
+    },
+    "1509": {
+      "parent_id": 1508,
+      "bonuses": {
+        "defense_pct": 0.12
+      }
+    },
+    "1510": {
+      "parent_id": 1501,
+      "bonuses": {
+        "health_pct": 0.12
+      }
+    },
+    "1511": {
+      "parent_id": 1510,
+      "bonuses": {
+        "instinct": 5
+      }
+    },
+    "1601": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.35,
+        "defense_pct": 0.15,
+        "health_pct": 0.15
+      }
+    },
+    "1602": {
+      "parent_id": 1601,
+      "bonuses": {
+        "health_pct": 0.12
+      }
+    },
+    "1603": {
+      "parent_id": 1602,
+      "bonuses": {
+        "attack_pct": 0.12
+      }
+    },
+    "1604": {
+      "parent_id": 1603,
+      "bonuses": {
+        "mana_generation": 12
+      }
+    },
+    "1605": {
+      "parent_id": 1603,
+      "bonuses": {
+        "special": 1
+      }
+    },
+    "1606": {
+      "parent_id": 1602,
+      "bonuses": {
+        "attack_pct": 0.12
+      }
+    },
+    "1607": {
+      "parent_id": 1606,
+      "bonuses": {
+        "critical_damage": 0.015
+      }
+    },
+    "1608": {
+      "parent_id": 1606,
+      "bonuses": {
+        "critical_damage": 0.015
+      }
+    },
+    "1609": {
+      "parent_id": 1602,
+      "bonuses": {
+        "defense_pct": 0.12
+      }
+    },
+    "1610": {
+      "parent_id": 1609,
+      "bonuses": {
+        "critical_damage": 0.015
+      }
+    },
+    "1611": {
+      "parent_id": 1609,
+      "bonuses": {
+        "critical_damage": 0.015
+      }
+    },
+    "2101": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.25,
+        "defense_pct": 0.05,
+        "health_pct": 0.05
+      }
+    },
+    "2102": {
+      "parent_id": 2101,
+      "bonuses": {
+        "attack_pct": 0.08
+      }
+    },
+    "2103": {
+      "parent_id": 2102,
+      "bonuses": {
+        "mana_generation": 6
+      }
+    },
+    "2104": {
+      "parent_id": 2103,
+      "bonuses": {
+        "health_pct": 0.08
+      }
+    },
+    "2105": {
+      "parent_id": 2102,
+      "bonuses": {
+        "critical_rate": 0.005
+      }
+    },
+    "2106": {
+      "parent_id": 2105,
+      "bonuses": {
+        "health_pct": 0.08
+      }
+    },
+    "2107": {
+      "parent_id": 2101,
+      "bonuses": {
+        "attack_pct": 0.08
+      }
+    },
+    "2108": {
+      "parent_id": 2107,
+      "bonuses": {
+        "critical_rate": 0.005
+      }
+    },
+    "2109": {
+      "parent_id": 2108,
+      "bonuses": {
+        "defense_pct": 0.08
+      }
+    },
+    "2110": {
+      "parent_id": 2107,
+      "bonuses": {
+        "critical_rate": 0.005
+      }
+    },
+    "2111": {
+      "parent_id": 2110,
+      "bonuses": {
+        "critical_rate": 0.005
+      }
+    },
+    "2201": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.25,
+        "defense_pct": 0.05,
+        "health_pct": 0.05
+      }
+    },
+    "2202": {
+      "parent_id": 2201,
+      "bonuses": {
+        "attack_pct": 0.08
+      }
+    },
+    "2203": {
+      "parent_id": 2202,
+      "bonuses": {
+        "mana_generation": 12
+      }
+    },
+    "2204": {
+      "parent_id": 2203,
+      "bonuses": {
+        "special": 1
+      }
+    },
+    "2205": {
+      "parent_id": 2204,
+      "bonuses": {
+        "accuracy": 5
+      }
+    },
+    "2206": {
+      "parent_id": 2205,
+      "bonuses": {
+        "defense_pct": 0.08
+      }
+    },
+    "2207": {
+      "parent_id": 2201,
+      "bonuses": {
+        "attack_pct": 0.08
+      }
+    },
+    "2208": {
+      "parent_id": 2207,
+      "bonuses": {
+        "accuracy": 5
+      }
+    },
+    "2209": {
+      "parent_id": 2208,
+      "bonuses": {
+        "accuracy": 5
+      }
+    },
+    "2210": {
+      "parent_id": 2209,
+      "bonuses": {
+        "accuracy": 5
+      }
+    },
+    "2211": {
+      "parent_id": 2210,
+      "bonuses": {
+        "health_pct": 0.08
+      }
+    },
+    "2301": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.3,
+        "defense_pct": 0.1,
+        "health_pct": 0.1
+      }
+    },
+    "2302": {
+      "parent_id": 2301,
+      "bonuses": {
+        "attack_pct": 0.1
+      }
+    },
+    "2303": {
+      "parent_id": 2302,
+      "bonuses": {
+        "defense_pct": 0.1
+      }
+    },
+    "2304": {
+      "parent_id": 2301,
+      "bonuses": {
+        "attack_pct": 0.1
+      }
+    },
+    "2305": {
+      "parent_id": 2304,
+      "bonuses": {
+        "health_pct": 0.1
+      }
+    },
+    "2306": {
+      "parent_id": 2301,
+      "bonuses": {
+        "run_speed": 10
+      }
+    },
+    "2307": {
+      "parent_id": 2306,
+      "bonuses": {
+        "critical_damage": 0.005
+      }
+    },
+    "2308": {
+      "parent_id": 2307,
+      "bonuses": {
+        "attack_pct": 0.1
+      }
+    },
+    "2309": {
+      "parent_id": 2306,
+      "bonuses": {
+        "critical_damage": 0.005
+      }
+    },
+    "2310": {
+      "parent_id": 2306,
+      "bonuses": {
+        "critical_rate": 0.01
+      }
+    },
+    "2311": {
+      "parent_id": 2310,
+      "bonuses": {
+        "critical_rate": 0.01
+      }
+    },
+    "2401": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.3,
+        "defense_pct": 0.1,
+        "health_pct": 0.1
+      }
+    },
+    "2402": {
+      "parent_id": 2401,
+      "bonuses": {
+        "attack_pct": 0.1
+      }
+    },
+    "2403": {
+      "parent_id": 2402,
+      "bonuses": {
+        "special": 1
+      }
+    },
+    "2404": {
+      "parent_id": 2402,
+      "bonuses": {
+        "attack_pct": 0.1
+      }
+    },
+    "2405": {
+      "parent_id": 2402,
+      "bonuses": {
+        "critical_rate": 0.015
+      }
+    },
+    "2406": {
+      "parent_id": 2405,
+      "bonuses": {
+        "critical_rate": 0.015
+      }
+    },
+    "2407": {
+      "parent_id": 2401,
+      "bonuses": {
+        "attack_pct": 0.1
+      }
+    },
+    "2408": {
+      "parent_id": 2407,
+      "bonuses": {
+        "health_pct": 0.1
+      }
+    },
+    "2409": {
+      "parent_id": 2407,
+      "bonuses": {
+        "mana_generation": 6
+      }
+    },
+    "2410": {
+      "parent_id": 2407,
+      "bonuses": {
+        "critical_rate": 0.015
+      }
+    },
+    "2411": {
+      "parent_id": 2410,
+      "bonuses": {
+        "critical_rate": 0.015
+      }
+    },
+    "2501": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.35,
+        "defense_pct": 0.15,
+        "health_pct": 0.15
+      }
+    },
+    "2502": {
+      "parent_id": 2501,
+      "bonuses": {
+        "attack_pct": 0.12
+      }
+    },
+    "2503": {
+      "parent_id": 2502,
+      "bonuses": {
+        "run_speed": 20
+      }
+    },
+    "2504": {
+      "parent_id": 2503,
+      "bonuses": {
+        "critical_damage": 0.01
+      }
+    },
+    "2505": {
+      "parent_id": 2501,
+      "bonuses": {
+        "attack_pct": 0.12
+      }
+    },
+    "2506": {
+      "parent_id": 2505,
+      "bonuses": {
+        "critical_damage": 0.01
+      }
+    },
+    "2507": {
+      "parent_id": 2506,
+      "bonuses": {
+        "critical_damage": 0.01
+      }
+    },
+    "2508": {
+      "parent_id": 2501,
+      "bonuses": {
+        "health_pct": 0.12
+      }
+    },
+    "2509": {
+      "parent_id": 2508,
+      "bonuses": {
+        "defense_pct": 0.12
+      }
+    },
+    "2510": {
+      "parent_id": 2501,
+      "bonuses": {
+        "health_pct": 0.12
+      }
+    },
+    "2511": {
+      "parent_id": 2510,
+      "bonuses": {
+        "critical_damage": 0.01
+      }
+    },
+    "2601": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.35,
+        "defense_pct": 0.15,
+        "health_pct": 0.15
+      }
+    },
+    "2602": {
+      "parent_id": 2601,
+      "bonuses": {
+        "health_pct": 0.12
+      }
+    },
+    "2603": {
+      "parent_id": 2602,
+      "bonuses": {
+        "attack_pct": 0.12
+      }
+    },
+    "2604": {
+      "parent_id": 2603,
+      "bonuses": {
+        "mana_generation": 12
+      }
+    },
+    "2605": {
+      "parent_id": 2603,
+      "bonuses": {
+        "special": 1
+      }
+    },
+    "2606": {
+      "parent_id": 2602,
+      "bonuses": {
+        "attack_pct": 0.12
+      }
+    },
+    "2607": {
+      "parent_id": 2606,
+      "bonuses": {
+        "skill_recovery": 8
+      }
+    },
+    "2608": {
+      "parent_id": 2606,
+      "bonuses": {
+        "skill_recovery": 8
+      }
+    },
+    "2609": {
+      "parent_id": 2602,
+      "bonuses": {
+        "defense_pct": 0.12
+      }
+    },
+    "2610": {
+      "parent_id": 2609,
+      "bonuses": {
+        "skill_recovery": 8
+      }
+    },
+    "2611": {
+      "parent_id": 2609,
+      "bonuses": {
+        "skill_recovery": 8
+      }
+    },
+    "3101": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.1,
+        "defense_pct": 0.1,
+        "health_pct": 0.15
+      }
+    },
+    "3102": {
+      "parent_id": 3101,
+      "bonuses": {
+        "attack_pct": 0.08
+      }
+    },
+    "3103": {
+      "parent_id": 3102,
+      "bonuses": {
+        "mana_generation": 6
+      }
+    },
+    "3104": {
+      "parent_id": 3103,
+      "bonuses": {
+        "health_pct": 0.08
+      }
+    },
+    "3105": {
+      "parent_id": 3102,
+      "bonuses": {
+        "resistance": 5
+      }
+    },
+    "3106": {
+      "parent_id": 3105,
+      "bonuses": {
+        "health_pct": 0.08
+      }
+    },
+    "3107": {
+      "parent_id": 3101,
+      "bonuses": {
+        "attack_pct": 0.08
+      }
+    },
+    "3108": {
+      "parent_id": 3107,
+      "bonuses": {
+        "resistance": 5
+      }
+    },
+    "3109": {
+      "parent_id": 3108,
+      "bonuses": {
+        "defense_pct": 0.08
+      }
+    },
+    "3110": {
+      "parent_id": 3107,
+      "bonuses": {
+        "resistance": 5
+      }
+    },
+    "3111": {
+      "parent_id": 3110,
+      "bonuses": {
+        "resistance": 5
+      }
+    },
+    "3201": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.1,
+        "defense_pct": 0.15,
+        "health_pct": 0.1
+      }
+    },
+    "3202": {
+      "parent_id": 3201,
+      "bonuses": {
+        "attack_pct": 0.08
+      }
+    },
+    "3203": {
+      "parent_id": 3202,
+      "bonuses": {
+        "mana_generation": 12
+      }
+    },
+    "3204": {
+      "parent_id": 3203,
+      "bonuses": {
+        "special": 1
+      }
+    },
+    "3205": {
+      "parent_id": 3204,
+      "bonuses": {
+        "critical_rate": 0.01
+      }
+    },
+    "3206": {
+      "parent_id": 3205,
+      "bonuses": {
+        "health_pct": 0.08
+      }
+    },
+    "3207": {
+      "parent_id": 3201,
+      "bonuses": {
+        "defense_pct": 0.08
+      }
+    },
+    "3208": {
+      "parent_id": 3207,
+      "bonuses": {
+        "critical_rate": 0.01
+      }
+    },
+    "3209": {
+      "parent_id": 3208,
+      "bonuses": {
+        "critical_rate": 0.01
+      }
+    },
+    "3210": {
+      "parent_id": 3209,
+      "bonuses": {
+        "critical_rate": 0.01
+      }
+    },
+    "3211": {
+      "parent_id": 3210,
+      "bonuses": {
+        "health_pct": 0.08
+      }
+    },
+    "3301": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.15,
+        "defense_pct": 0.15,
+        "health_pct": 0.2
+      }
+    },
+    "3302": {
+      "parent_id": 3301,
+      "bonuses": {
+        "attack_pct": 0.1
+      }
+    },
+    "3303": {
+      "parent_id": 3302,
+      "bonuses": {
+        "defense_pct": 0.1
+      }
+    },
+    "3304": {
+      "parent_id": 3301,
+      "bonuses": {
+        "attack_pct": 0.1
+      }
+    },
+    "3305": {
+      "parent_id": 3304,
+      "bonuses": {
+        "health_pct": 0.1
+      }
+    },
+    "3306": {
+      "parent_id": 3301,
+      "bonuses": {
+        "run_speed": 20
+      }
+    },
+    "3307": {
+      "parent_id": 3306,
+      "bonuses": {
+        "skill_speed": 4
+      }
+    },
+    "3308": {
+      "parent_id": 3307,
+      "bonuses": {
+        "defense_pct": 0.1
+      }
+    },
+    "3309": {
+      "parent_id": 3306,
+      "bonuses": {
+        "skill_speed": 4
+      }
+    },
+    "3310": {
+      "parent_id": 3306,
+      "bonuses": {
+        "skill_speed": 4
+      }
+    },
+    "3311": {
+      "parent_id": 3310,
+      "bonuses": {
+        "skill_speed": 4
+      }
+    },
+    "3401": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.1,
+        "defense_pct": 0.2,
+        "health_pct": 0.2
+      }
+    },
+    "3402": {
+      "parent_id": 3401,
+      "bonuses": {
+        "attack_pct": 0.1
+      }
+    },
+    "3403": {
+      "parent_id": 3402,
+      "bonuses": {
+        "special": 1
+      }
+    },
+    "3404": {
+      "parent_id": 3402,
+      "bonuses": {
+        "defense_pct": 0.1
+      }
+    },
+    "3405": {
+      "parent_id": 3402,
+      "bonuses": {
+        "critical_rate": 0.01
+      }
+    },
+    "3406": {
+      "parent_id": 3405,
+      "bonuses": {
+        "critical_rate": 0.01
+      }
+    },
+    "3407": {
+      "parent_id": 3401,
+      "bonuses": {
+        "attack_pct": 0.1
+      }
+    },
+    "3408": {
+      "parent_id": 3407,
+      "bonuses": {
+        "health_pct": 0.1
+      }
+    },
+    "3409": {
+      "parent_id": 3407,
+      "bonuses": {
+        "mana_generation": 12
+      }
+    },
+    "3410": {
+      "parent_id": 3407,
+      "bonuses": {
+        "critical_rate": 0.01
+      }
+    },
+    "3411": {
+      "parent_id": 3410,
+      "bonuses": {
+        "critical_rate": 0.01
+      }
+    },
+    "3501": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.25,
+        "defense_pct": 0.2,
+        "health_pct": 0.2
+      }
+    },
+    "3502": {
+      "parent_id": 3501,
+      "bonuses": {
+        "attack_pct": 0.12
+      }
+    },
+    "3503": {
+      "parent_id": 3502,
+      "bonuses": {
+        "run_speed": 30
+      }
+    },
+    "3504": {
+      "parent_id": 3503,
+      "bonuses": {
+        "skill_speed": 4
+      }
+    },
+    "3505": {
+      "parent_id": 3501,
+      "bonuses": {
+        "attack_pct": 0.12
+      }
+    },
+    "3506": {
+      "parent_id": 3505,
+      "bonuses": {
+        "skill_speed": 4
+      }
+    },
+    "3507": {
+      "parent_id": 3506,
+      "bonuses": {
+        "skill_speed": 4
+      }
+    },
+    "3508": {
+      "parent_id": 3501,
+      "bonuses": {
+        "health_pct": 0.12
+      }
+    },
+    "3509": {
+      "parent_id": 3508,
+      "bonuses": {
+        "defense_pct": 0.12
+      }
+    },
+    "3510": {
+      "parent_id": 3501,
+      "bonuses": {
+        "health_pct": 0.12
+      }
+    },
+    "3511": {
+      "parent_id": 3510,
+      "bonuses": {
+        "skill_speed": 4
+      }
+    },
+    "3601": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.2,
+        "defense_pct": 0.2,
+        "health_pct": 0.25
+      }
+    },
+    "3602": {
+      "parent_id": 3601,
+      "bonuses": {
+        "health_pct": 0.12
+      }
+    },
+    "3603": {
+      "parent_id": 3602,
+      "bonuses": {
+        "attack_pct": 0.12
+      }
+    },
+    "3604": {
+      "parent_id": 3603,
+      "bonuses": {
+        "mana_generation": 12
+      }
+    },
+    "3605": {
+      "parent_id": 3603,
+      "bonuses": {
+        "special": 1
+      }
+    },
+    "3606": {
+      "parent_id": 3602,
+      "bonuses": {
+        "defense_pct": 0.12
+      }
+    },
+    "3607": {
+      "parent_id": 3606,
+      "bonuses": {
+        "critical_rate": 0.02
+      }
+    },
+    "3608": {
+      "parent_id": 3606,
+      "bonuses": {
+        "critical_rate": 0.02
+      }
+    },
+    "3609": {
+      "parent_id": 3602,
+      "bonuses": {
+        "health_pct": 0.12
+      }
+    },
+    "3610": {
+      "parent_id": 3609,
+      "bonuses": {
+        "critical_rate": 0.02
+      }
+    },
+    "3611": {
+      "parent_id": 3609,
+      "bonuses": {
+        "critical_rate": 0.02
+      }
+    },
+    "4101": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.05,
+        "defense_pct": 0.15,
+        "health_pct": 0.15
+      }
+    },
+    "4102": {
+      "parent_id": 4101,
+      "bonuses": {
+        "attack_pct": 0.08
+      }
+    },
+    "4103": {
+      "parent_id": 4102,
+      "bonuses": {
+        "mana_generation": 7
+      }
+    },
+    "4104": {
+      "parent_id": 4103,
+      "bonuses": {
+        "health_pct": 0.08
+      }
+    },
+    "4105": {
+      "parent_id": 4102,
+      "bonuses": {
+        "resistance": 6
+      }
+    },
+    "4106": {
+      "parent_id": 4105,
+      "bonuses": {
+        "health_pct": 0.08
+      }
+    },
+    "4107": {
+      "parent_id": 4101,
+      "bonuses": {
+        "defense_pct": 0.08
+      }
+    },
+    "4108": {
+      "parent_id": 4107,
+      "bonuses": {
+        "resistance": 6
+      }
+    },
+    "4109": {
+      "parent_id": 4108,
+      "bonuses": {
+        "defense_pct": 0.08
+      }
+    },
+    "4110": {
+      "parent_id": 4107,
+      "bonuses": {
+        "resistance": 6
+      }
+    },
+    "4111": {
+      "parent_id": 4110,
+      "bonuses": {
+        "resistance": 6
+      }
+    },
+    "4201": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.05,
+        "defense_pct": 0.15,
+        "health_pct": 0.15
+      }
+    },
+    "4202": {
+      "parent_id": 4201,
+      "bonuses": {
+        "attack_pct": 0.08
+      }
+    },
+    "4203": {
+      "parent_id": 4202,
+      "bonuses": {
+        "mana_generation": 14
+      }
+    },
+    "4204": {
+      "parent_id": 4203,
+      "bonuses": {
+        "special": 1
+      }
+    },
+    "4205": {
+      "parent_id": 4204,
+      "bonuses": {
+        "accuracy": 10
+      }
+    },
+    "4206": {
+      "parent_id": 4205,
+      "bonuses": {
+        "defense_pct": 0.08
+      }
+    },
+    "4207": {
+      "parent_id": 4201,
+      "bonuses": {
+        "defense_pct": 0.08
+      }
+    },
+    "4208": {
+      "parent_id": 4207,
+      "bonuses": {
+        "accuracy": 10
+      }
+    },
+    "4209": {
+      "parent_id": 4208,
+      "bonuses": {
+        "resistance": 6
+      }
+    },
+    "4210": {
+      "parent_id": 4209,
+      "bonuses": {
+        "resistance": 6
+      }
+    },
+    "4211": {
+      "parent_id": 4210,
+      "bonuses": {
+        "health_pct": 0.08
+      }
+    },
+    "4301": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.1,
+        "defense_pct": 0.2,
+        "health_pct": 0.2
+      }
+    },
+    "4302": {
+      "parent_id": 4301,
+      "bonuses": {
+        "attack_pct": 0.1
+      }
+    },
+    "4303": {
+      "parent_id": 4302,
+      "bonuses": {
+        "health_pct": 0.1
+      }
+    },
+    "4304": {
+      "parent_id": 4301,
+      "bonuses": {
+        "defense_pct": 0.1
+      }
+    },
+    "4305": {
+      "parent_id": 4304,
+      "bonuses": {
+        "health_pct": 0.1
+      }
+    },
+    "4306": {
+      "parent_id": 4301,
+      "bonuses": {
+        "run_speed": 15
+      }
+    },
+    "4307": {
+      "parent_id": 4306,
+      "bonuses": {
+        "skill_recovery": 4
+      }
+    },
+    "4308": {
+      "parent_id": 4307,
+      "bonuses": {
+        "defense_pct": 0.1
+      }
+    },
+    "4309": {
+      "parent_id": 4306,
+      "bonuses": {
+        "skill_recovery": 4
+      }
+    },
+    "4310": {
+      "parent_id": 4306,
+      "bonuses": {
+        "skill_recovery": 4
+      }
+    },
+    "4311": {
+      "parent_id": 4310,
+      "bonuses": {
+        "skill_recovery": 4
+      }
+    },
+    "4401": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.1,
+        "defense_pct": 0.2,
+        "health_pct": 0.2
+      }
+    },
+    "4402": {
+      "parent_id": 4401,
+      "bonuses": {
+        "defense_pct": 0.1
+      }
+    },
+    "4403": {
+      "parent_id": 4402,
+      "bonuses": {
+        "special": 1
+      }
+    },
+    "4404": {
+      "parent_id": 4402,
+      "bonuses": {
+        "health_pct": 0.1
+      }
+    },
+    "4405": {
+      "parent_id": 4402,
+      "bonuses": {
+        "resistance": 6
+      }
+    },
+    "4406": {
+      "parent_id": 4405,
+      "bonuses": {
+        "resistance": 6
+      }
+    },
+    "4407": {
+      "parent_id": 4401,
+      "bonuses": {
+        "defense_pct": 0.1
+      }
+    },
+    "4408": {
+      "parent_id": 4407,
+      "bonuses": {
+        "health_pct": 0.1
+      }
+    },
+    "4409": {
+      "parent_id": 4407,
+      "bonuses": {
+        "mana_generation": 14
+      }
+    },
+    "4410": {
+      "parent_id": 4407,
+      "bonuses": {
+        "resistance": 6
+      }
+    },
+    "4411": {
+      "parent_id": 4410,
+      "bonuses": {
+        "resistance": 6
+      }
+    },
+    "4501": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.15,
+        "defense_pct": 0.25,
+        "health_pct": 0.25
+      }
+    },
+    "4502": {
+      "parent_id": 4501,
+      "bonuses": {
+        "attack_pct": 0.12
+      }
+    },
+    "4503": {
+      "parent_id": 4502,
+      "bonuses": {
+        "run_speed": 25
+      }
+    },
+    "4504": {
+      "parent_id": 4503,
+      "bonuses": {
+        "skill_recovery": 6
+      }
+    },
+    "4505": {
+      "parent_id": 4501,
+      "bonuses": {
+        "defense_pct": 0.12
+      }
+    },
+    "4506": {
+      "parent_id": 4505,
+      "bonuses": {
+        "skill_recovery": 6
+      }
+    },
+    "4507": {
+      "parent_id": 4506,
+      "bonuses": {
+        "skill_recovery": 6
+      }
+    },
+    "4508": {
+      "parent_id": 4501,
+      "bonuses": {
+        "health_pct": 0.12
+      }
+    },
+    "4509": {
+      "parent_id": 4508,
+      "bonuses": {
+        "defense_pct": 0.12
+      }
+    },
+    "4510": {
+      "parent_id": 4501,
+      "bonuses": {
+        "health_pct": 0.12
+      }
+    },
+    "4511": {
+      "parent_id": 4510,
+      "bonuses": {
+        "skill_recovery": 6
+      }
+    },
+    "4601": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.15,
+        "defense_pct": 0.25,
+        "health_pct": 0.25
+      }
+    },
+    "4602": {
+      "parent_id": 4601,
+      "bonuses": {
+        "health_pct": 0.12
+      }
+    },
+    "4603": {
+      "parent_id": 4602,
+      "bonuses": {
+        "attack_pct": 0.12
+      }
+    },
+    "4604": {
+      "parent_id": 4603,
+      "bonuses": {
+        "mana_generation": 14
+      }
+    },
+    "4605": {
+      "parent_id": 4603,
+      "bonuses": {
+        "special": 1
+      }
+    },
+    "4606": {
+      "parent_id": 4602,
+      "bonuses": {
+        "defense_pct": 0.12
+      }
+    },
+    "4607": {
+      "parent_id": 4606,
+      "bonuses": {
+        "accuracy": 17
+      }
+    },
+    "4608": {
+      "parent_id": 4606,
+      "bonuses": {
+        "accuracy": 17
+      }
+    },
+    "4609": {
+      "parent_id": 4602,
+      "bonuses": {
+        "defense_pct": 0.12
+      }
+    },
+    "4610": {
+      "parent_id": 4609,
+      "bonuses": {
+        "accuracy": 17
+      }
+    },
+    "4611": {
+      "parent_id": 4609,
+      "bonuses": {
+        "accuracy": 17
+      }
+    },
+    "5101": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.05,
+        "defense_pct": 0.15,
+        "health_pct": 0.15
+      }
+    },
+    "5102": {
+      "parent_id": 5101,
+      "bonuses": {
+        "attack_pct": 0.08
+      }
+    },
+    "5103": {
+      "parent_id": 5102,
+      "bonuses": {
+        "mana_generation": 8
+      }
+    },
+    "5104": {
+      "parent_id": 5103,
+      "bonuses": {
+        "defense_pct": 0.08
+      }
+    },
+    "5105": {
+      "parent_id": 5102,
+      "bonuses": {
+        "instinct": 3
+      }
+    },
+    "5106": {
+      "parent_id": 5105,
+      "bonuses": {
+        "health_pct": 0.08
+      }
+    },
+    "5107": {
+      "parent_id": 5101,
+      "bonuses": {
+        "defense_pct": 0.08
+      }
+    },
+    "5108": {
+      "parent_id": 5107,
+      "bonuses": {
+        "instinct": 3
+      }
+    },
+    "5109": {
+      "parent_id": 5108,
+      "bonuses": {
+        "defense_pct": 0.08
+      }
+    },
+    "5110": {
+      "parent_id": 5107,
+      "bonuses": {
+        "instinct": 3
+      }
+    },
+    "5111": {
+      "parent_id": 5110,
+      "bonuses": {
+        "instinct": 3
+      }
+    },
+    "5201": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.05,
+        "defense_pct": 0.15,
+        "health_pct": 0.15
+      }
+    },
+    "5202": {
+      "parent_id": 5201,
+      "bonuses": {
+        "defense_pct": 0.08
+      }
+    },
+    "5203": {
+      "parent_id": 5202,
+      "bonuses": {
+        "mana_generation": 16
+      }
+    },
+    "5204": {
+      "parent_id": 5203,
+      "bonuses": {
+        "special": 1
+      }
+    },
+    "5205": {
+      "parent_id": 5204,
+      "bonuses": {
+        "resistance": 3
+      }
+    },
+    "5206": {
+      "parent_id": 5205,
+      "bonuses": {
+        "health_pct": 0.08
+      }
+    },
+    "5207": {
+      "parent_id": 5201,
+      "bonuses": {
+        "defense_pct": 0.08
+      }
+    },
+    "5208": {
+      "parent_id": 5207,
+      "bonuses": {
+        "resistance": 3
+      }
+    },
+    "5209": {
+      "parent_id": 5208,
+      "bonuses": {
+        "resistance": 3
+      }
+    },
+    "5210": {
+      "parent_id": 5209,
+      "bonuses": {
+        "resistance": 3
+      }
+    },
+    "5211": {
+      "parent_id": 5210,
+      "bonuses": {
+        "health_pct": 0.08
+      }
+    },
+    "5301": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.1,
+        "defense_pct": 0.2,
+        "health_pct": 0.2
+      }
+    },
+    "5302": {
+      "parent_id": 5301,
+      "bonuses": {
+        "attack_pct": 0.1
+      }
+    },
+    "5303": {
+      "parent_id": 5302,
+      "bonuses": {
+        "health_pct": 0.1
+      }
+    },
+    "5304": {
+      "parent_id": 5301,
+      "bonuses": {
+        "defense_pct": 0.1
+      }
+    },
+    "5305": {
+      "parent_id": 5304,
+      "bonuses": {
+        "health_pct": 0.1
+      }
+    },
+    "5306": {
+      "parent_id": 5301,
+      "bonuses": {
+        "run_speed": 15
+      }
+    },
+    "5307": {
+      "parent_id": 5306,
+      "bonuses": {
+        "instinct": 4
+      }
+    },
+    "5308": {
+      "parent_id": 5307,
+      "bonuses": {
+        "defense_pct": 0.1
+      }
+    },
+    "5309": {
+      "parent_id": 5306,
+      "bonuses": {
+        "instinct": 4
+      }
+    },
+    "5310": {
+      "parent_id": 5306,
+      "bonuses": {
+        "instinct": 4
+      }
+    },
+    "5311": {
+      "parent_id": 5310,
+      "bonuses": {
+        "instinct": 4
+      }
+    },
+    "5401": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.1,
+        "defense_pct": 0.2,
+        "health_pct": 0.2
+      }
+    },
+    "5402": {
+      "parent_id": 5401,
+      "bonuses": {
+        "defense_pct": 0.1
+      }
+    },
+    "5403": {
+      "parent_id": 5402,
+      "bonuses": {
+        "special": 1
+      }
+    },
+    "5404": {
+      "parent_id": 5402,
+      "bonuses": {
+        "health_pct": 0.1
+      }
+    },
+    "5405": {
+      "parent_id": 5402,
+      "bonuses": {
+        "resistance": 6
+      }
+    },
+    "5406": {
+      "parent_id": 5405,
+      "bonuses": {
+        "resistance": 6
+      }
+    },
+    "5407": {
+      "parent_id": 5401,
+      "bonuses": {
+        "defense_pct": 0.1
+      }
+    },
+    "5408": {
+      "parent_id": 5407,
+      "bonuses": {
+        "health_pct": 0.1
+      }
+    },
+    "5409": {
+      "parent_id": 5407,
+      "bonuses": {
+        "mana_generation": 16
+      }
+    },
+    "5410": {
+      "parent_id": 5407,
+      "bonuses": {
+        "resistance": 6
+      }
+    },
+    "5411": {
+      "parent_id": 5410,
+      "bonuses": {
+        "resistance": 6
+      }
+    },
+    "5501": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.15,
+        "defense_pct": 0.25,
+        "health_pct": 0.25
+      }
+    },
+    "5502": {
+      "parent_id": 5501,
+      "bonuses": {
+        "attack_pct": 0.12
+      }
+    },
+    "5503": {
+      "parent_id": 5502,
+      "bonuses": {
+        "run_speed": 25
+      }
+    },
+    "5504": {
+      "parent_id": 5503,
+      "bonuses": {
+        "resistance": 9
+      }
+    },
+    "5505": {
+      "parent_id": 5501,
+      "bonuses": {
+        "defense_pct": 0.12
+      }
+    },
+    "5506": {
+      "parent_id": 5505,
+      "bonuses": {
+        "resistance": 9
+      }
+    },
+    "5507": {
+      "parent_id": 5506,
+      "bonuses": {
+        "resistance": 9
+      }
+    },
+    "5508": {
+      "parent_id": 5501,
+      "bonuses": {
+        "defense_pct": 0.12
+      }
+    },
+    "5509": {
+      "parent_id": 5508,
+      "bonuses": {
+        "defense_pct": 0.12
+      }
+    },
+    "5510": {
+      "parent_id": 5501,
+      "bonuses": {
+        "health_pct": 0.12
+      }
+    },
+    "5511": {
+      "parent_id": 5510,
+      "bonuses": {
+        "resistance": 9
+      }
+    },
+    "5601": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.15,
+        "defense_pct": 0.25,
+        "health_pct": 0.25
+      }
+    },
+    "5602": {
+      "parent_id": 5601,
+      "bonuses": {
+        "health_pct": 0.12
+      }
+    },
+    "5603": {
+      "parent_id": 5602,
+      "bonuses": {
+        "defense_pct": 0.12
+      }
+    },
+    "5604": {
+      "parent_id": 5603,
+      "bonuses": {
+        "mana_generation": 16
+      }
+    },
+    "5605": {
+      "parent_id": 5603,
+      "bonuses": {
+        "special": 1
+      }
+    },
+    "5606": {
+      "parent_id": 5602,
+      "bonuses": {
+        "defense_pct": 0.12
+      }
+    },
+    "5607": {
+      "parent_id": 5606,
+      "bonuses": {
+        "instinct": 8
+      }
+    },
+    "5608": {
+      "parent_id": 5606,
+      "bonuses": {
+        "instinct": 8
+      }
+    },
+    "5609": {
+      "parent_id": 5602,
+      "bonuses": {
+        "health_pct": 0.12
+      }
+    },
+    "5610": {
+      "parent_id": 5609,
+      "bonuses": {
+        "instinct": 8
+      }
+    },
+    "5611": {
+      "parent_id": 5609,
+      "bonuses": {
+        "instinct": 8
+      }
+    },
+    "6101": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.05,
+        "defense_pct": 0.05,
+        "health_pct": 0.25
+      }
+    },
+    "6102": {
+      "parent_id": 6101,
+      "bonuses": {
+        "attack_pct": 0.08
+      }
+    },
+    "6103": {
+      "parent_id": 6102,
+      "bonuses": {
+        "mana_generation": 6
+      }
+    },
+    "6104": {
+      "parent_id": 6103,
+      "bonuses": {
+        "health_pct": 0.08
+      }
+    },
+    "6105": {
+      "parent_id": 6102,
+      "bonuses": {
+        "resistance": 5
+      }
+    },
+    "6106": {
+      "parent_id": 6105,
+      "bonuses": {
+        "health_pct": 0.08
+      }
+    },
+    "6107": {
+      "parent_id": 6101,
+      "bonuses": {
+        "defense_pct": 0.08
+      }
+    },
+    "6108": {
+      "parent_id": 6107,
+      "bonuses": {
+        "resistance": 5
+      }
+    },
+    "6109": {
+      "parent_id": 6108,
+      "bonuses": {
+        "defense_pct": 0.08
+      }
+    },
+    "6110": {
+      "parent_id": 6107,
+      "bonuses": {
+        "resistance": 5
+      }
+    },
+    "6111": {
+      "parent_id": 6110,
+      "bonuses": {
+        "resistance": 5
+      }
+    },
+    "6201": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.05,
+        "defense_pct": 0.05,
+        "health_pct": 0.25
+      }
+    },
+    "6202": {
+      "parent_id": 6201,
+      "bonuses": {
+        "attack_pct": 0.08
+      }
+    },
+    "6203": {
+      "parent_id": 6202,
+      "bonuses": {
+        "mana_generation": 12
+      }
+    },
+    "6204": {
+      "parent_id": 6203,
+      "bonuses": {
+        "special": 1
+      }
+    },
+    "6205": {
+      "parent_id": 6204,
+      "bonuses": {
+        "combo_speed": 3
+      }
+    },
+    "6206": {
+      "parent_id": 6205,
+      "bonuses": {
+        "health_pct": 0.08
+      }
+    },
+    "6207": {
+      "parent_id": 6201,
+      "bonuses": {
+        "defense_pct": 0.08
+      }
+    },
+    "6208": {
+      "parent_id": 6207,
+      "bonuses": {
+        "combo_speed": 3
+      }
+    },
+    "6209": {
+      "parent_id": 6208,
+      "bonuses": {
+        "combo_speed": 3
+      }
+    },
+    "6210": {
+      "parent_id": 6209,
+      "bonuses": {
+        "combo_speed": 3
+      }
+    },
+    "6211": {
+      "parent_id": 6210,
+      "bonuses": {
+        "health_pct": 0.08
+      }
+    },
+    "6301": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.1,
+        "defense_pct": 0.1,
+        "health_pct": 0.3
+      }
+    },
+    "6302": {
+      "parent_id": 6301,
+      "bonuses": {
+        "attack_pct": 0.1
+      }
+    },
+    "6303": {
+      "parent_id": 6302,
+      "bonuses": {
+        "health_pct": 0.1
+      }
+    },
+    "6304": {
+      "parent_id": 6301,
+      "bonuses": {
+        "attack_pct": 0.1
+      }
+    },
+    "6305": {
+      "parent_id": 6304,
+      "bonuses": {
+        "health_pct": 0.1
+      }
+    },
+    "6306": {
+      "parent_id": 6301,
+      "bonuses": {
+        "run_speed": 15
+      }
+    },
+    "6307": {
+      "parent_id": 6306,
+      "bonuses": {
+        "resistance": 6
+      }
+    },
+    "6308": {
+      "parent_id": 6307,
+      "bonuses": {
+        "defense_pct": 0.1
+      }
+    },
+    "6309": {
+      "parent_id": 6306,
+      "bonuses": {
+        "resistance": 6
+      }
+    },
+    "6310": {
+      "parent_id": 6306,
+      "bonuses": {
+        "instinct": 3
+      }
+    },
+    "6311": {
+      "parent_id": 6310,
+      "bonuses": {
+        "instinct": 3
+      }
+    },
+    "6401": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.1,
+        "defense_pct": 0.1,
+        "health_pct": 0.3
+      }
+    },
+    "6402": {
+      "parent_id": 6401,
+      "bonuses": {
+        "attack_pct": 0.1
+      }
+    },
+    "6403": {
+      "parent_id": 6402,
+      "bonuses": {
+        "special": 1
+      }
+    },
+    "6404": {
+      "parent_id": 6402,
+      "bonuses": {
+        "health_pct": 0.1
+      }
+    },
+    "6405": {
+      "parent_id": 6402,
+      "bonuses": {
+        "combo_speed": 4
+      }
+    },
+    "6406": {
+      "parent_id": 6405,
+      "bonuses": {
+        "combo_speed": 4
+      }
+    },
+    "6407": {
+      "parent_id": 6401,
+      "bonuses": {
+        "defense_pct": 0.1
+      }
+    },
+    "6408": {
+      "parent_id": 6407,
+      "bonuses": {
+        "health_pct": 0.1
+      }
+    },
+    "6409": {
+      "parent_id": 6407,
+      "bonuses": {
+        "mana_generation": 12
+      }
+    },
+    "6410": {
+      "parent_id": 6407,
+      "bonuses": {
+        "combo_speed": 4
+      }
+    },
+    "6411": {
+      "parent_id": 6410,
+      "bonuses": {
+        "combo_speed": 4
+      }
+    },
+    "6501": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.15,
+        "defense_pct": 0.15,
+        "health_pct": 0.35
+      }
+    },
+    "6502": {
+      "parent_id": 6501,
+      "bonuses": {
+        "attack_pct": 0.12
+      }
+    },
+    "6503": {
+      "parent_id": 6502,
+      "bonuses": {
+        "run_speed": 20
+      }
+    },
+    "6504": {
+      "parent_id": 6503,
+      "bonuses": {
+        "instinct": 4
+      }
+    },
+    "6505": {
+      "parent_id": 6501,
+      "bonuses": {
+        "defense_pct": 0.12
+      }
+    },
+    "6506": {
+      "parent_id": 6505,
+      "bonuses": {
+        "instinct": 4
+      }
+    },
+    "6507": {
+      "parent_id": 6506,
+      "bonuses": {
+        "instinct": 4
+      }
+    },
+    "6508": {
+      "parent_id": 6501,
+      "bonuses": {
+        "health_pct": 0.12
+      }
+    },
+    "6509": {
+      "parent_id": 6508,
+      "bonuses": {
+        "defense_pct": 0.12
+      }
+    },
+    "6510": {
+      "parent_id": 6501,
+      "bonuses": {
+        "health_pct": 0.12
+      }
+    },
+    "6511": {
+      "parent_id": 6510,
+      "bonuses": {
+        "instinct": 4
+      }
+    },
+    "6601": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.15,
+        "defense_pct": 0.15,
+        "health_pct": 0.35
+      }
+    },
+    "6602": {
+      "parent_id": 6601,
+      "bonuses": {
+        "health_pct": 0.12
+      }
+    },
+    "6603": {
+      "parent_id": 6602,
+      "bonuses": {
+        "attack_pct": 0.12
+      }
+    },
+    "6604": {
+      "parent_id": 6603,
+      "bonuses": {
+        "mana_generation": 12
+      }
+    },
+    "6605": {
+      "parent_id": 6603,
+      "bonuses": {
+        "special": 1
+      }
+    },
+    "6606": {
+      "parent_id": 6602,
+      "bonuses": {
+        "defense_pct": 0.12
+      }
+    },
+    "6607": {
+      "parent_id": 6606,
+      "bonuses": {
+        "combo_speed": 5
+      }
+    },
+    "6608": {
+      "parent_id": 6606,
+      "bonuses": {
+        "combo_speed": 5
+      }
+    },
+    "6609": {
+      "parent_id": 6602,
+      "bonuses": {
+        "health_pct": 0.12
+      }
+    },
+    "6610": {
+      "parent_id": 6609,
+      "bonuses": {
+        "combo_speed": 5
+      }
+    },
+    "6611": {
+      "parent_id": 6609,
+      "bonuses": {
+        "combo_speed": 5
+      }
+    },
+    "7101": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.1,
+        "defense_pct": 0.05,
+        "health_pct": 0.2
+      }
+    },
+    "7102": {
+      "parent_id": 7101,
+      "bonuses": {
+        "attack_pct": 0.08
+      }
+    },
+    "7103": {
+      "parent_id": 7102,
+      "bonuses": {
+        "mana_generation": 6
+      }
+    },
+    "7104": {
+      "parent_id": 7103,
+      "bonuses": {
+        "health_pct": 0.08
+      }
+    },
+    "7105": {
+      "parent_id": 7102,
+      "bonuses": {
+        "accuracy": 7
+      }
+    },
+    "7106": {
+      "parent_id": 7105,
+      "bonuses": {
+        "health_pct": 0.08
+      }
+    },
+    "7107": {
+      "parent_id": 7101,
+      "bonuses": {
+        "attack_pct": 0.08
+      }
+    },
+    "7108": {
+      "parent_id": 7107,
+      "bonuses": {
+        "accuracy": 7
+      }
+    },
+    "7109": {
+      "parent_id": 7108,
+      "bonuses": {
+        "defense_pct": 0.08
+      }
+    },
+    "7110": {
+      "parent_id": 7107,
+      "bonuses": {
+        "skill_speed": 3
+      }
+    },
+    "7111": {
+      "parent_id": 7110,
+      "bonuses": {
+        "skill_speed": 3
+      }
+    },
+    "7201": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.15,
+        "defense_pct": 0.05,
+        "health_pct": 0.15
+      }
+    },
+    "7202": {
+      "parent_id": 7201,
+      "bonuses": {
+        "attack_pct": 0.08
+      }
+    },
+    "7203": {
+      "parent_id": 7202,
+      "bonuses": {
+        "mana_generation": 12
+      }
+    },
+    "7204": {
+      "parent_id": 7203,
+      "bonuses": {
+        "special": 1
+      }
+    },
+    "7205": {
+      "parent_id": 7204,
+      "bonuses": {
+        "combo_speed": 3
+      }
+    },
+    "7206": {
+      "parent_id": 7205,
+      "bonuses": {
+        "defense_pct": 0.08
+      }
+    },
+    "7207": {
+      "parent_id": 7201,
+      "bonuses": {
+        "attack_pct": 0.08
+      }
+    },
+    "7208": {
+      "parent_id": 7207,
+      "bonuses": {
+        "combo_speed": 3
+      }
+    },
+    "7209": {
+      "parent_id": 7208,
+      "bonuses": {
+        "combo_speed": 3
+      }
+    },
+    "7210": {
+      "parent_id": 7209,
+      "bonuses": {
+        "combo_speed": 3
+      }
+    },
+    "7211": {
+      "parent_id": 7210,
+      "bonuses": {
+        "health_pct": 0.08
+      }
+    },
+    "7301": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.15,
+        "defense_pct": 0.1,
+        "health_pct": 0.25
+      }
+    },
+    "7302": {
+      "parent_id": 7301,
+      "bonuses": {
+        "attack_pct": 0.1
+      }
+    },
+    "7303": {
+      "parent_id": 7302,
+      "bonuses": {
+        "health_pct": 0.1
+      }
+    },
+    "7304": {
+      "parent_id": 7301,
+      "bonuses": {
+        "attack_pct": 0.1
+      }
+    },
+    "7305": {
+      "parent_id": 7304,
+      "bonuses": {
+        "health_pct": 0.1
+      }
+    },
+    "7306": {
+      "parent_id": 7301,
+      "bonuses": {
+        "run_speed": 10
+      }
+    },
+    "7307": {
+      "parent_id": 7306,
+      "bonuses": {
+        "skill_speed": 4
+      }
+    },
+    "7308": {
+      "parent_id": 7307,
+      "bonuses": {
+        "defense_pct": 0.1
+      }
+    },
+    "7309": {
+      "parent_id": 7306,
+      "bonuses": {
+        "skill_speed": 4
+      }
+    },
+    "7310": {
+      "parent_id": 7306,
+      "bonuses": {
+        "skill_speed": 4
+      }
+    },
+    "7311": {
+      "parent_id": 7310,
+      "bonuses": {
+        "skill_speed": 4
+      }
+    },
+    "7401": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.2,
+        "defense_pct": 0.1,
+        "health_pct": 0.2
+      }
+    },
+    "7402": {
+      "parent_id": 7401,
+      "bonuses": {
+        "attack_pct": 0.1
+      }
+    },
+    "7403": {
+      "parent_id": 7402,
+      "bonuses": {
+        "special": 1
+      }
+    },
+    "7404": {
+      "parent_id": 7402,
+      "bonuses": {
+        "health_pct": 0.1
+      }
+    },
+    "7405": {
+      "parent_id": 7402,
+      "bonuses": {
+        "accuracy": 10
+      }
+    },
+    "7406": {
+      "parent_id": 7405,
+      "bonuses": {
+        "accuracy": 10
+      }
+    },
+    "7407": {
+      "parent_id": 7401,
+      "bonuses": {
+        "defense_pct": 0.1
+      }
+    },
+    "7408": {
+      "parent_id": 7407,
+      "bonuses": {
+        "health_pct": 0.1
+      }
+    },
+    "7409": {
+      "parent_id": 7407,
+      "bonuses": {
+        "mana_generation": 12
+      }
+    },
+    "7410": {
+      "parent_id": 7407,
+      "bonuses": {
+        "accuracy": 10
+      }
+    },
+    "7411": {
+      "parent_id": 7410,
+      "bonuses": {
+        "accuracy": 10
+      }
+    },
+    "7501": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.2,
+        "defense_pct": 0.15,
+        "health_pct": 0.3
+      }
+    },
+    "7502": {
+      "parent_id": 7501,
+      "bonuses": {
+        "attack_pct": 0.12
+      }
+    },
+    "7503": {
+      "parent_id": 7502,
+      "bonuses": {
+        "run_speed": 15
+      }
+    },
+    "7504": {
+      "parent_id": 7503,
+      "bonuses": {
+        "combo_speed": 4
+      }
+    },
+    "7505": {
+      "parent_id": 7501,
+      "bonuses": {
+        "attack_pct": 0.12
+      }
+    },
+    "7506": {
+      "parent_id": 7505,
+      "bonuses": {
+        "combo_speed": 4
+      }
+    },
+    "7507": {
+      "parent_id": 7506,
+      "bonuses": {
+        "skill_speed": 4
+      }
+    },
+    "7508": {
+      "parent_id": 7501,
+      "bonuses": {
+        "health_pct": 0.12
+      }
+    },
+    "7509": {
+      "parent_id": 7508,
+      "bonuses": {
+        "defense_pct": 0.12
+      }
+    },
+    "7510": {
+      "parent_id": 7501,
+      "bonuses": {
+        "health_pct": 0.12
+      }
+    },
+    "7511": {
+      "parent_id": 7510,
+      "bonuses": {
+        "skill_speed": 4
+      }
+    },
+    "7601": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.25,
+        "defense_pct": 0.15,
+        "health_pct": 0.25
+      }
+    },
+    "7602": {
+      "parent_id": 7601,
+      "bonuses": {
+        "health_pct": 0.12
+      }
+    },
+    "7603": {
+      "parent_id": 7602,
+      "bonuses": {
+        "attack_pct": 0.12
+      }
+    },
+    "7604": {
+      "parent_id": 7603,
+      "bonuses": {
+        "mana_generation": 12
+      }
+    },
+    "7605": {
+      "parent_id": 7603,
+      "bonuses": {
+        "special": 1
+      }
+    },
+    "7606": {
+      "parent_id": 7602,
+      "bonuses": {
+        "attack_pct": 0.12
+      }
+    },
+    "7607": {
+      "parent_id": 7606,
+      "bonuses": {
+        "combo_speed": 5
+      }
+    },
+    "7608": {
+      "parent_id": 7606,
+      "bonuses": {
+        "combo_speed": 5
+      }
+    },
+    "7609": {
+      "parent_id": 7602,
+      "bonuses": {
+        "defense_pct": 0.12
+      }
+    },
+    "7610": {
+      "parent_id": 7609,
+      "bonuses": {
+        "combo_speed": 5
+      }
+    },
+    "7611": {
+      "parent_id": 7609,
+      "bonuses": {
+        "combo_speed": 5
+      }
+    },
+    "8101": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.25,
+        "defense_pct": 0.05,
+        "health_pct": 0.05
+      }
+    },
+    "8102": {
+      "parent_id": 8101,
+      "bonuses": {
+        "attack_pct": 0.08
+      }
+    },
+    "8103": {
+      "parent_id": 8102,
+      "bonuses": {
+        "mana_generation": 6
+      }
+    },
+    "8104": {
+      "parent_id": 8103,
+      "bonuses": {
+        "defense_pct": 0.08
+      }
+    },
+    "8105": {
+      "parent_id": 8102,
+      "bonuses": {
+        "skill_recovery": 3
+      }
+    },
+    "8106": {
+      "parent_id": 8105,
+      "bonuses": {
+        "health_pct": 0.08
+      }
+    },
+    "8107": {
+      "parent_id": 8101,
+      "bonuses": {
+        "attack_pct": 0.08
+      }
+    },
+    "8108": {
+      "parent_id": 8107,
+      "bonuses": {
+        "skill_recovery": 3
+      }
+    },
+    "8109": {
+      "parent_id": 8108,
+      "bonuses": {
+        "attack_pct": 0.08
+      }
+    },
+    "8110": {
+      "parent_id": 8107,
+      "bonuses": {
+        "skill_recovery": 3
+      }
+    },
+    "8111": {
+      "parent_id": 8110,
+      "bonuses": {
+        "skill_recovery": 3
+      }
+    },
+    "8201": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.25,
+        "defense_pct": 0.05,
+        "health_pct": 0.05
+      }
+    },
+    "8202": {
+      "parent_id": 8201,
+      "bonuses": {
+        "attack_pct": 0.08
+      }
+    },
+    "8203": {
+      "parent_id": 8202,
+      "bonuses": {
+        "mana_generation": 12
+      }
+    },
+    "8204": {
+      "parent_id": 8203,
+      "bonuses": {
+        "special": 1
+      }
+    },
+    "8205": {
+      "parent_id": 8204,
+      "bonuses": {
+        "critical_rate": 0.008
+      }
+    },
+    "8206": {
+      "parent_id": 8205,
+      "bonuses": {
+        "defense_pct": 0.08
+      }
+    },
+    "8207": {
+      "parent_id": 8201,
+      "bonuses": {
+        "attack_pct": 0.08
+      }
+    },
+    "8208": {
+      "parent_id": 8207,
+      "bonuses": {
+        "critical_rate": 0.008
+      }
+    },
+    "8209": {
+      "parent_id": 8208,
+      "bonuses": {
+        "critical_rate": 0.008
+      }
+    },
+    "8210": {
+      "parent_id": 8209,
+      "bonuses": {
+        "critical_rate": 0.008
+      }
+    },
+    "8211": {
+      "parent_id": 8210,
+      "bonuses": {
+        "health_pct": 0.08
+      }
+    },
+    "8301": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.3,
+        "defense_pct": 0.1,
+        "health_pct": 0.1
+      }
+    },
+    "8302": {
+      "parent_id": 8301,
+      "bonuses": {
+        "attack_pct": 0.1
+      }
+    },
+    "8303": {
+      "parent_id": 8302,
+      "bonuses": {
+        "defense_pct": 0.1
+      }
+    },
+    "8304": {
+      "parent_id": 8301,
+      "bonuses": {
+        "attack_pct": 0.1
+      }
+    },
+    "8305": {
+      "parent_id": 8304,
+      "bonuses": {
+        "health_pct": 0.1
+      }
+    },
+    "8306": {
+      "parent_id": 8301,
+      "bonuses": {
+        "run_speed": 10
+      }
+    },
+    "8307": {
+      "parent_id": 8306,
+      "bonuses": {
+        "critical_rate": 0.01
+      }
+    },
+    "8308": {
+      "parent_id": 8307,
+      "bonuses": {
+        "attack_pct": 0.1
+      }
+    },
+    "8309": {
+      "parent_id": 8306,
+      "bonuses": {
+        "critical_rate": 0.01
+      }
+    },
+    "8310": {
+      "parent_id": 8306,
+      "bonuses": {
+        "critical_rate": 0.01
+      }
+    },
+    "8311": {
+      "parent_id": 8310,
+      "bonuses": {
+        "critical_rate": 0.01
+      }
+    },
+    "8401": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.3,
+        "defense_pct": 0.1,
+        "health_pct": 0.1
+      }
+    },
+    "8402": {
+      "parent_id": 8401,
+      "bonuses": {
+        "attack_pct": 0.1
+      }
+    },
+    "8403": {
+      "parent_id": 8402,
+      "bonuses": {
+        "special": 1
+      }
+    },
+    "8404": {
+      "parent_id": 8402,
+      "bonuses": {
+        "health_pct": 0.1
+      }
+    },
+    "8405": {
+      "parent_id": 8402,
+      "bonuses": {
+        "skill_recovery": 5
+      }
+    },
+    "8406": {
+      "parent_id": 8405,
+      "bonuses": {
+        "skill_recovery": 5
+      }
+    },
+    "8407": {
+      "parent_id": 8401,
+      "bonuses": {
+        "attack_pct": 0.1
+      }
+    },
+    "8408": {
+      "parent_id": 8407,
+      "bonuses": {
+        "health_pct": 0.1
+      }
+    },
+    "8409": {
+      "parent_id": 8407,
+      "bonuses": {
+        "mana_generation": 12
+      }
+    },
+    "8410": {
+      "parent_id": 8407,
+      "bonuses": {
+        "skill_recovery": 5
+      }
+    },
+    "8411": {
+      "parent_id": 8410,
+      "bonuses": {
+        "skill_recovery": 5
+      }
+    },
+    "8501": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.35,
+        "defense_pct": 0.15,
+        "health_pct": 0.15
+      }
+    },
+    "8502": {
+      "parent_id": 8501,
+      "bonuses": {
+        "attack_pct": 0.12
+      }
+    },
+    "8503": {
+      "parent_id": 8502,
+      "bonuses": {
+        "run_speed": 15
+      }
+    },
+    "8504": {
+      "parent_id": 8503,
+      "bonuses": {
+        "critical_rate": 0.012
+      }
+    },
+    "8505": {
+      "parent_id": 8501,
+      "bonuses": {
+        "attack_pct": 0.12
+      }
+    },
+    "8506": {
+      "parent_id": 8505,
+      "bonuses": {
+        "critical_rate": 0.012
+      }
+    },
+    "8507": {
+      "parent_id": 8506,
+      "bonuses": {
+        "critical_rate": 0.012
+      }
+    },
+    "8508": {
+      "parent_id": 8501,
+      "bonuses": {
+        "defense_pct": 0.12
+      }
+    },
+    "8509": {
+      "parent_id": 8508,
+      "bonuses": {
+        "attack_pct": 0.12
+      }
+    },
+    "8510": {
+      "parent_id": 8501,
+      "bonuses": {
+        "health_pct": 0.12
+      }
+    },
+    "8511": {
+      "parent_id": 8510,
+      "bonuses": {
+        "critical_rate": 0.012
+      }
+    },
+    "8601": {
+      "parent_id": 0,
+      "bonuses": {
+        "attack_pct": 0.35,
+        "defense_pct": 0.15,
+        "health_pct": 0.15
+      }
+    },
+    "8602": {
+      "parent_id": 8601,
+      "bonuses": {
+        "health_pct": 0.12
+      }
+    },
+    "8603": {
+      "parent_id": 8602,
+      "bonuses": {
+        "attack_pct": 0.12
+      }
+    },
+    "8604": {
+      "parent_id": 8603,
+      "bonuses": {
+        "mana_generation": 12
+      }
+    },
+    "8605": {
+      "parent_id": 8603,
+      "bonuses": {
+        "special": 1
+      }
+    },
+    "8606": {
+      "parent_id": 8602,
+      "bonuses": {
+        "attack_pct": 0.12
+      }
+    },
+    "8607": {
+      "parent_id": 8606,
+      "bonuses": {
+        "critical_rate": 0.02
+      }
+    },
+    "8608": {
+      "parent_id": 8606,
+      "bonuses": {
+        "critical_rate": 0.02
+      }
+    },
+    "8609": {
+      "parent_id": 8602,
+      "bonuses": {
+        "defense_pct": 0.12
+      }
+    },
+    "8610": {
+      "parent_id": 8609,
+      "bonuses": {
+        "critical_rate": 0.02
+      }
+    },
+    "8611": {
+      "parent_id": 8609,
+      "bonuses": {
+        "critical_rate": 0.02
+      }
+    }
+  }
+}
