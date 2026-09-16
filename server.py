@@ -2340,23 +2340,43 @@ def _gg_fetch_hero_page(name):
         except Exception as e:last=e
     raise RuntimeError(str(last or 'page GGNoLuck introuvable'))
 
-def _gg_target_count_from_text(text):
+def _gg_target_count_from_text(text, rarity=None):
     t=' '.join(unescape(str(text or '')).split())
-    # Primary wording on GGNoLuck: "Selects 1 enemy ... Attacks N enemies ... around the target".
-    # In this construction N means surrounding enemies; total = selected target + N.
+    # Explicit "selected target + N around it" => total is N+1.
     m=re.search(r'Selects\s+1\s+enemy.*?Attacks\s+(?:the\s+)?(\d+)\s+enemies.*?around\s+the\s+target',t,re.I)
     if m:return min(11,int(m.group(1))+1),'selected+around'
-    # Other AoE wording counts total enemies directly.
-    m=re.search(r'Attacks\s+(?:the\s+)?(\d+)\s+enemies\b',t,re.I)
-    if m:return min(11,int(m.group(1))),'direct'
-    m=re.search(r'Attacks\s+1\s+enemy\b',t,re.I)
-    if m:return 1,'single'
+    # Explicit total target count.
+    for pat in (
+        r'Attacks\s+(?:the\s+)?(\d+)\s+enemies\b',
+        r'Pulls\s+(\d+)\s+enemies\b',
+        r'Hits\s+(\d+)\s+enemies\b',
+        r'Damages\s+(\d+)\s+enemies\b',
+    ):
+        m=re.search(pat,t,re.I)
+        if m:return min(11,int(m.group(1))),'explicit'
+    # Clear single-target wording wins over later references to "targets".
+    if re.search(r'Attacks\s+1\s+enemy\b',t,re.I):
+        return 1,'single'
+    # Geometry/path AoE without an explicit count. Use the game's rarity target cap,
+    # but only when the wording clearly says multiple enemies can be damaged.
+    geom=(
+        re.search(r'damaging\s+each\s+enemy\s+hit',t,re.I) or
+        re.search(r'all\s+enemies',t,re.I) or
+        re.search(r'enemies\s+in\s+(?:a|the)\s+\d',t,re.I) or
+        re.search(r'(?:cone|radius|area|path).*?(?:enemies|targets)',t,re.I)
+    )
+    if geom:
+        caps={'common':8,'uncommon':8,'rare':8,'epic':9,'legendary':10}
+        cap=caps.get(str(rarity or '').strip().lower())
+        if cap:return cap,'geometry-cap'
     return None,None
 
 def _gg_extract_aoe_for_hero(name):
     url,html=_gg_fetch_hero_page(name)
     p=_GGSkillHTMLParser(); p.feed(html); p.close()
     sections=p.sections
+    hero=hero_row(name) or {}
+    rarity=hero.get('rarity')
     out={}; evidence={}; unresolved=[]
     aliases={'Active 1':'Skill 1','Active 2':'Skill 2','Active 3':'Skill 3','Ultimate':'Ultimate'}
     for suffix,action in aliases.items():
@@ -2364,29 +2384,56 @@ def _gg_extract_aoe_for_hero(name):
         if not matches:
             unresolved.append(action); continue
         h,b=matches[0]
-        n,kind=_gg_target_count_from_text(b)
-        if n is None: unresolved.append(action); continue
-        out[action]=n; evidence[action]={'heading':h,'kind':kind,'excerpt':' '.join(b.split())[:260]}
+        n,kind=_gg_target_count_from_text(b,rarity)
+        if n is None:
+            unresolved.append(action); continue
+        out[action]=n
+        evidence[action]={'heading':h,'kind':kind,'excerpt':' '.join(b.split())[:300]}
+
     combos=[(h,b) for h,b in sections if str(h).strip().lower()=='combo' or str(h).strip().lower().endswith(' combo')]
     if combos:
         body=' '.join(combos[0][1].split())
+        mapped=False
+
+        # Older GGNoLuck layout: Hit 1..Hit 6.
+        # Hit 1 is the opening strike; the game's five autos are Hit 2..Hit 6.
         hitpos=[]
         for m in re.finditer(r'\b([1-9])\.\s*Hit\s+\1\b',body,re.I):
             hitpos.append((int(m.group(1)),m.start(),m.end()))
-        # Smishie's Lab rule: there are exactly 5 auto-attacks, never 6.
-        # The public Combo section must therefore map only five attack hits to Auto 1..5.
-        byhit={}
-        for j,(hn,s,e) in enumerate(hitpos):
-            end=hitpos[j+1][1] if j+1<len(hitpos) else len(body)
-            seg=body[e:end]
-            n,kind=_gg_target_count_from_text(seg)
-            if n is not None:byhit[hn]=(n,kind,seg[:260])
-        combo_hits=sorted(h for h in byhit if h>=1)[:5]
-        if len(combo_hits)==5:
-            for auto_idx,h in enumerate(combo_hits,1):
-                action=f'Auto {auto_idx}'; n,kind,seg=byhit[h]
-                out[action]=n; evidence[action]={'heading':f'Combo Hit {h}','kind':kind,'excerpt':' '.join(seg.split())[:260]}
-        else:
+        if hitpos:
+            byhit={}
+            for j,(hn,s,e) in enumerate(hitpos):
+                seg=body[e:(hitpos[j+1][1] if j+1<len(hitpos) else len(body))]
+                n,kind=_gg_target_count_from_text(seg,rarity)
+                if n is not None: byhit[hn]=(n,kind,seg[:300])
+            if all(h in byhit for h in range(2,7)):
+                for auto_idx,h in enumerate(range(2,7),1):
+                    n,kind,seg=byhit[h]; action=f'Auto {auto_idx}'
+                    out[action]=n
+                    evidence[action]={'heading':f'Combo Hit {h}','kind':kind,'excerpt':' '.join(seg.split())[:300]}
+                mapped=True
+
+        # Newer layout: Combo 0 is opening, Combo 1..5 are the five autos.
+        if not mapped:
+            marks=[]
+            for m in re.finditer(r'\bCombo\s+([0-5])(?:\s*·\s*Combo\s+([0-5]))?',body,re.I):
+                nums=[int(m.group(1))]
+                if m.group(2) is not None: nums.append(int(m.group(2)))
+                marks.append((nums,m.start(),m.end()))
+            bycombo={}
+            for j,(nums,s,e) in enumerate(marks):
+                seg=body[e:(marks[j+1][1] if j+1<len(marks) else len(body))]
+                n,kind=_gg_target_count_from_text(seg,rarity)
+                if n is None: continue
+                for hn in nums: bycombo[hn]=(n,kind,seg[:300])
+            if all(h in bycombo for h in range(1,6)):
+                for h in range(1,6):
+                    n,kind,seg=bycombo[h]; action=f'Auto {h}'
+                    out[action]=n
+                    evidence[action]={'heading':f'Combo {h}','kind':kind,'excerpt':' '.join(seg.split())[:300]}
+                mapped=True
+
+        if not mapped:
             unresolved.extend([f'Auto {i}' for i in range(1,6)])
     else:
         unresolved.extend([f'Auto {i}' for i in range(1,6)])
@@ -2394,6 +2441,10 @@ def _gg_extract_aoe_for_hero(name):
 
 def import_ggnoluck_aoe_all():
     ensure_aoe_table()
+    # Rebuild automatic rows from scratch. Manual corrections are preserved.
+    with sqlite3.connect(DB) as con:
+        con.execute("DELETE FROM aoe_targets WHERE lower(source)='ggnoluck'")
+        con.commit()
     heroes=[r['name'] for r in q('SELECT name FROM heroes WHERE name IS NOT NULL ORDER BY name')]
     done=[]; failed=[]; saved=0
     for name in heroes:
@@ -2408,9 +2459,12 @@ def import_ggnoluck_aoe_all():
             'saved_actions':saved,'done':done,'failed':failed[:100]}
 
 AOE_KNOWN_TARGETS={
-    # Confirmed mechanics validated against current public skill descriptions.
-    # Moros: Auto 5, S2, S3 and Ultimate are described as hitting up to 10 enemies.
+    # Confirmed mechanics.
     'Moros': {'Auto 1':1,'Auto 2':1,'Auto 3':1,'Auto 4':1,'Auto 5':11,'Skill 1':1,'Skill 2':10,'Skill 3':11,'Ultimate':11},
+    # Cezal: only the fifth real auto is AoE; GGNoLuck represents it as Combo/Hit 6 after the opening hit.
+    'Cezal': {'Auto 1':1,'Auto 2':1,'Auto 3':1,'Auto 4':1,'Auto 5':9},
+    # User-confirmed: Sildrea has AoE only on S2 and S3; autos, S1 and Ult are single-target.
+    'Sildrea': {'Auto 1':1,'Auto 2':1,'Auto 3':1,'Auto 4':1,'Auto 5':1,'Skill 1':1,'Skill 2':10,'Skill 3':10,'Ultimate':1},
 }
 
 def ensure_aoe_table():
@@ -2497,18 +2551,15 @@ def save_aoe_targets(name,targets,source='manual'):
 def aoe_default_targets(name,enemies=11):
     out={a:1 for a in _aoe_actions()}
     sources={a:'unknown' for a in _aoe_actions()}
-    # 1) weak fallback: text inference
-    inferred,_=infer_aoe_targets_from_text(name,enemies)
-    for a,v in inferred.items(): out[a]=v; sources[a]='text'
     saved=saved_aoe_targets(name)
-    # 2) imported public data
+    # Automatic source, only when the skill parser resolved it cleanly.
     for a,meta in saved.items():
         if str(meta.get('source') or '').lower()=='ggnoluck':
             out[a]=int(meta['targets']); sources[a]='ggnoluck'
-    # 3) project-validated mechanics
+    # Project-validated mechanics override imported data.
     for a,v in AOE_KNOWN_TARGETS.get(str(name or ''),{}).items():
         out[a]=v; sources[a]='validated'
-    # 4) explicit manual corrections always win
+    # Explicit/manual corrections always win.
     for a,meta in saved.items():
         if str(meta.get('source') or '').lower()!='ggnoluck':
             out[a]=int(meta['targets']); sources[a]=meta.get('source') or 'manual'
