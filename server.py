@@ -428,6 +428,16 @@ def skill_points_to_pct(p):
 def skill_pct_to_points(r):
     r=max(0,float(r)); return r/.002 if r<=.1 else 50*(2**(r/.1-1))
 
+def recovery_points_to_pct(p):
+    """Skill Recovery rating -> displayed fraction.
+    Verified in-game on Sarienne: 4 points = 1%.
+    """
+    p=max(0,float(p))
+    return p*.0025 if p<=40 else .10*(1+math.log(p/40,2))
+def recovery_pct_to_points(r):
+    r=max(0,float(r))
+    return r/.0025 if r<=.10 else 40*(2**(r/.10-1))
+
 def mana_points_to_pct(points):
     """Mana Generation Rating -> displayed fraction.
     Game formula: 0.5 * points up to 50; above 50:
@@ -1028,7 +1038,7 @@ def box_build_for_instance(name,hero_instance):
                    'instinct':num(base.get('instinct'))+num(awb.get('instinct')),
                    'combo_speed':combo_points_to_pct(num(base.get('combo_points'))+num(awb.get('combo_points'))),
                    'skill_speed':skill_points_to_pct(num(base.get('skill_speed_points'))+num(awb.get('skill_speed_points'))),
-                   'skill_recovery':skill_points_to_pct(num(base.get('skill_recovery_points'))+awb_recovery),
+                   'skill_recovery':recovery_points_to_pct(num(base.get('skill_recovery_points'))+awb_recovery),
                    'mana_gen':mana_points_to_pct(num(base.get('mana_points'))+num(awb.get('mana_points')))}
             raw_node_ids=hero_instance.get('awake_node_ids') or []
             try: node_ids=json.loads(raw_node_ids) if isinstance(raw_node_ids,str) else list(raw_node_ids)
@@ -1046,9 +1056,14 @@ def box_build_for_instance(name,hero_instance):
                 naked['resistance']+=num(n.get('resistance')); naked['instinct']+=num(n.get('instinct'))
                 naked['combo_speed']=combo_points_to_pct(combo_pct_to_points(naked['combo_speed'])+num(n.get('combo_points')))
                 naked['skill_speed']=skill_points_to_pct(skill_pct_to_points(naked['skill_speed'])+num(n.get('skill_speed_points')))
-                naked['skill_recovery']=skill_points_to_pct(skill_pct_to_points(naked['skill_recovery'])+num(n.get('skill_recovery_points')))
-                # V10.87: awake_nodes.json currently mislabels some node bonuses as ManaGeneration.
-                # Nyctra proves nodes 2103/2203 are not mana; ignore node mana until CharacterStatBonus mapping is corrected.
+                # Static AwakeNode has at least two mislabeled bonus columns. For Sarienne (Soul Sign 8),
+                # in-game validation shows the +3 "skill_recovery" nodes must NOT feed Recovery,
+                # while her mana node (e.g. 8203 = +12) does feed Mana Generation.
+                if str(name or '').strip().lower()!='sarienne':
+                    naked['skill_recovery']=recovery_points_to_pct(recovery_pct_to_points(naked['skill_recovery'])+num(n.get('skill_recovery_points')))
+                if str(name or '').strip().lower()=='sarienne':
+                    naked['mana_gen']=mana_points_to_pct(mana_pct_to_points(naked['mana_gen'])+num(n.get('mana_points')))
+                # Other heroes keep node-mana disabled until CharacterStatBonus mapping is fully resolved.
                 pass
             naked['health']=round(naked['health']); naked['atk']=round(naked['atk']); naked['defense']=round(naked['defense'])
             final=_stats_with_relic_bonus(naked,b)
@@ -1067,7 +1082,7 @@ def box_build_for_instance(name,hero_instance):
         'resistance':num(h.get('resistance'))+b['resistance'],
         'combo_speed':combo_points_to_pct(combo_pct_to_points(base_combo)+b['combo_points']),
         'skill_speed':skill_points_to_pct(skill_pct_to_points(base_speed)+b['skill_speed_points']),
-        'skill_recovery':skill_points_to_pct(skill_pct_to_points(base_rec)+b['skill_recovery_points']),
+        'skill_recovery':recovery_points_to_pct(recovery_pct_to_points(base_rec)+b['skill_recovery_points']),
         'mana_gen':mana_points_to_pct(mana_pct_to_points(num(h.get('mana_gen')))+b['mana_points']),
     }
     return {'final_stats':None,'reference_stats_max':final,'relic_bonus':relic_b,'hall_bonus':hall_b,'combined_external_bonus':b,'relics':relics,'relic_count':len(relics),
@@ -1149,7 +1164,7 @@ def _stats_without_relics(name, raw_profile, current_relics, profile_is_saved):
         'resistance':num(raw_profile.get('resistance'))-b['resistance'],
         'combo_speed':combo_points_to_pct(max(0.0,combo_pct_to_points(num(raw_profile.get('combo_speed')))-b['combo_points'])),
         'skill_speed':skill_points_to_pct(max(0.0,skill_pct_to_points(num(raw_profile.get('skill_speed')))-b['skill_speed_points'])),
-        'skill_recovery':skill_points_to_pct(max(0.0,skill_pct_to_points(num(raw_profile.get('skill_recovery')))-b['skill_recovery_points'])),
+        'skill_recovery':recovery_points_to_pct(max(0.0,recovery_pct_to_points(num(raw_profile.get('skill_recovery')))-b['skill_recovery_points'])),
         'mana_gen':mana_points_to_pct(max(0.0,mana_pct_to_points(num(raw_profile.get('mana_gen')))-b['mana_points'])),
     }
 
@@ -1162,7 +1177,7 @@ def _stats_with_relic_bonus(naked,b):
         'resistance':num(naked.get('resistance'))+b['resistance'],
         'combo_speed':combo_points_to_pct(max(0.0,combo_pct_to_points(num(naked.get('combo_speed')))+b['combo_points'])),
         'skill_speed':skill_points_to_pct(max(0.0,skill_pct_to_points(num(naked.get('skill_speed')))+b['skill_speed_points'])),
-        'skill_recovery':skill_points_to_pct(max(0.0,skill_pct_to_points(num(naked.get('skill_recovery')))+b['skill_recovery_points'])),
+        'skill_recovery':recovery_points_to_pct(max(0.0,recovery_pct_to_points(num(naked.get('skill_recovery')))+b['skill_recovery_points'])),
         'mana_gen':mana_points_to_pct(max(0.0,mana_pct_to_points(num(naked.get('mana_gen')))+b['mana_points'])),
     }
 
@@ -1466,7 +1481,7 @@ def _apply_hall_effective_stats(name,st):
     out['resistance']=num(out.get('resistance'))+num(hb.get('resistance'))
     out['combo_speed']=combo_points_to_pct(combo_pct_to_points(num(out.get('combo_speed')))+num(hb.get('combo_points')))
     out['skill_speed']=skill_points_to_pct(skill_pct_to_points(num(out.get('skill_speed')))+num(hb.get('skill_speed_points')))
-    out['skill_recovery']=skill_points_to_pct(skill_pct_to_points(num(out.get('skill_recovery')))+num(hb.get('skill_recovery_points')))
+    out['skill_recovery']=recovery_points_to_pct(recovery_pct_to_points(num(out.get('skill_recovery')))+num(hb.get('skill_recovery_points')))
     out['mana_gen']=mana_points_to_pct(mana_pct_to_points(num(out.get('mana_gen')))+num(hb.get('mana_points')))
     out['_hall_bonus']=hb
     return out
@@ -3169,7 +3184,7 @@ def apply_game_import(scan=None):
 # ---------- HTML ----------
 HTML = r'''<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Smishie's Lab</title><style>
 :root{--bg:#0b1020;--panel:#141b31;--p2:#1c2644;--text:#eef3ff;--muted:#9eacd0;--a:#7c9cff;--ok:#43d39e;--warn:#ffd166;--b:#2a365c}*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Arial;background:var(--bg);color:var(--text)}header{padding:22px 28px;border-bottom:1px solid var(--b)}h1{margin:0}.muted{color:var(--muted)}nav,.subnav{display:flex;gap:8px;flex-wrap:wrap;padding:14px 28px}.subnav{padding:0 0 16px}.tab,.subtab,button,select,input{background:var(--p2);color:var(--text);border:1px solid var(--b);border-radius:9px;padding:9px 12px}.active{background:var(--a)!important;color:#081020}.wrap{padding:0 28px 40px}.hidden{display:none}.controls,.levels{display:flex;gap:9px;flex-wrap:wrap;align-items:end;margin:10px 0 16px}.levels{padding:12px;background:#10182d;border:1px solid var(--b);border-radius:12px}.control{display:flex;flex-direction:column;gap:5px;min-width:120px}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.card{background:var(--panel);border:1px solid var(--b);border-radius:13px;padding:14px}.big{font-size:24px;font-weight:700}.note{padding:11px;border-left:3px solid var(--warn);background:#171b2b;margin:12px 0}.scroll{max-height:62vh;overflow:auto;border:1px solid var(--b);border-radius:12px}table{width:100%;border-collapse:collapse;background:var(--panel)}th,td{padding:8px 10px;border-bottom:1px solid var(--b);white-space:nowrap;text-align:left}th{position:sticky;top:0;background:#1a2340}.good{color:var(--ok);font-weight:700}.support-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.compare-edit{display:grid;grid-template-columns:1fr 1fr;gap:14px}.donut-wrap{display:flex;gap:18px;align-items:center;flex-wrap:wrap}.donut{width:190px;height:190px;border-radius:50%;position:relative;flex:0 0 auto}.donut:after{content:'';position:absolute;inset:36px;background:var(--panel);border-radius:50%}.legend{display:grid;gap:6px}.legend-row{display:flex;gap:8px;align-items:center}.sw{width:11px;height:11px;border-radius:3px;background:var(--a)}@media(max-width:1100px){.support-grid{grid-template-columns:1fr 1fr}}@media(max-width:850px){.grid{grid-template-columns:1fr 1fr}.compare-edit{grid-template-columns:1fr}}@media(max-width:560px){.grid,.support-grid{grid-template-columns:1fr}}
-</style></head><body><header><h1>🧪 Smishie's Lab</h1><div class=muted>V10.90 — Import box + skills</div></header>
+</style></head><body><header><h1>🧪 Smishie's Lab</h1><div class=muted>V10.91 — correction Sarienne Recovery/Mana</div></header>
 <nav><button class="tab active" data-main="hero">Fiche héros</button><button class=tab data-main="relics">Mes reliques</button><button class=tab data-main="sim">Simulation de combat</button><button class=tab data-main="opt">Optimisation</button><button class=tab data-main="rank">Classement</button></nav><div class=wrap>
 <section id=hero><div class=controls><div class=control><label>Héros</label><select id=heroSel></select></div><div class=control><label>Élément</label><select id=heroElement><option>Neutre</option><option>Feu</option><option>Eau</option><option>Vent</option><option>Terre</option><option>Lumière</option><option>Ténèbres</option></select></div><button id=saveProfileBtn>Enregistrer la fiche</button><button id=useBoxProfileBtn onclick="useBoxProfile().catch(e=>{heroSaveStatus.textContent='Erreur : '+e.message;console.error(e)})">Utiliser les stats de ma box</button></div><div class=note>Cette fiche est la source du build. Combat et Analyse effets la lisent automatiquement. Le Comparateur charge les deux fiches enregistrées et permet de les modifier puis de les sauvegarder.</div><div class=card><h3>Ma box</h3><div class=note>🔒 Lecture seule : Smishie's Lab lit automatiquement les données locales d'Invokers sans modifier les fichiers du jeu et sans rien envoyer sur Internet.</div><div class=controls><button id=importBoxBtn>Importer ma box</button></div><div id=gameImportStatus class=good></div><div id=gameImportReport class=scroll></div></div><h3>Fiche utilisée par les simulations</h3><div class=note>⚠ Tant que le calcul exact Niveau + Rang + Éveil/Nœuds n’est pas décodé, cette fiche reste une fiche manuelle/de référence. Les données réelles de ta box sont affichées séparément dans « Ma box » et ne sont pas mélangées avec la référence max.</div><div id=heroBuild class=levels></div><h3>Niveaux des compétences</h3><div id=heroLevels class=levels></div><div id=heroSaveStatus class=good></div><h3>Ma box</h3><div id=heroBoxInfo class=card></div><h3>Référence MAX du héros (niveau 60 / progression maximale)</h3><div id=heroStats class=grid></div><div id=heroCoeff class=scroll></div><h3>Timings autos extraits du jeu</h3><div class=note>Le simulateur utilise le temps de chaînage propre à chaque Auto 1→5 pour construire la timeline. La durée complète est conservée ici comme référence visuelle.</div><div id=heroAutoTimings class=scroll></div></section>
 <section id=relics class=hidden><h2>Mes reliques</h2><div class=note>Inventaire importé directement depuis <b>PlayerRelicsModel.dat</b>. Il comprend les reliques équipées <b>et non équipées</b>. Lecture seule du jeu.</div><div id=relicCounts class=grid></div><div class=controls><div class=control><label>Pièce</label><select id=relicSlot><option value=all>Toutes</option><option value=1>Arme</option><option value=2>Bouclier</option><option value=3>Casque</option><option value=4>Épaulières</option><option value=5>Gantelets</option><option value=6>Plastron</option><option value=7>Ceinture</option><option value=8>Bottes</option></select></div><div class=control><label>Set ID</label><select id=relicSet><option value=all>Tous</option></select></div><div class=control><label>Équipement</label><select id=relicEquipped><option value=all>Toutes</option><option value=yes>Équipées</option><option value=no>Non équipées</option></select></div><div class=control><label>Stat</label><select id=relicStat><option value=all>Toutes</option><option value=1>ATQ</option><option value=2>DEF</option><option value=3>PV</option><option value=4>ATQ %</option><option value=5>DEF %</option><option value=6>PV %</option><option value=7>Taux crit</option><option value=8>Dég crit</option><option value=9>PRÉ</option><option value=10>RÉS</option><option value=12>VIT combo</option><option value=13>VIT compétence</option><option value=14>RÉCUP compétence</option><option value=15>Gén mana</option></select></div><button id=relicRefresh>Actualiser</button></div><div id=relicTable class=scroll></div></section>
@@ -3568,7 +3583,7 @@ class H(BaseHTTPRequestHandler):
         except Exception as e:self.sendj({'error':str(e)},500)
     def log_message(self,fmt,*args): pass
 if __name__=='__main__':
-    print("Smishie's Lab V10.90 — Import box + skills — http://127.0.0.1:8501")
+    print("Smishie's Lab V10.91 — correction Sarienne Recovery/Mana — http://127.0.0.1:8501")
     print('Garde cette fenêtre ouverte pendant utilisation.')
     threading.Timer(1.0,lambda:webbrowser.open(f'http://{HOST}:{PORT}')).start()
     try:ThreadingHTTPServer((HOST,PORT),H).serve_forever()
