@@ -1,0 +1,38 @@
+{
+  "_meta": {
+    "purpose": "Effets complexes absents/incomplets de coefficients_raw.",
+    "rule": "Toujours séparer les valeurs provisoires des valeurs confirmées."
+  },
+  "Nirvelle": {
+    "status": "provisional",
+    "notes": [
+      "Le rapport réel Ulgorim confirme que Nirvelle soigne.",
+      "Le mécanisme de résurrection est conservé comme effet avancé du prototype.",
+      "Les paramètres avancés restent à confirmer directement dans SkillConfig/Graph."
+    ],
+    "advanced_effects": [
+      {
+        "skill": "S3",
+        "type": "heal_pct_max_hp",
+        "value_pct": 25.0,
+        "targets": 9,
+        "validation": "provisional"
+      },
+      {
+        "skill": "Ult",
+        "type": "revive",
+        "hp_restored_pct": 35.0,
+        "max_targets": 1,
+        "max_revivals_per_cast": 1,
+        "validation": "provisional"
+      },
+      {
+        "skill": "Ult",
+        "type": "unkillable",
+        "duration_s": 10.0,
+        "targets": 9,
+        "validation": "db_effect_known; target_count provisional"
+      }
+    ]
+  }
+}
