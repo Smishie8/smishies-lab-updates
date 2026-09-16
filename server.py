@@ -3701,7 +3701,7 @@ class H(BaseHTTPRequestHandler):
             if p.path=='/api/game-import/static-hall-live': self.sendj({'ok':bool(_LIVE_ARENA_HALL_INFO),'source':ARENA_HALL_SOURCE,'live':_LIVE_ARENA_HALL_INFO,'values':ARENA_HALL_VALUES,**_game_readonly_status()}); return
             if p.path=='/api/game-import/player-arena-hall-raw': self.sendj(inspect_playerarena_hall_raw()); return
             if p.path=='/api/game-import/hero-skills-raw':
-                q=parse_qs(p.query); name=(q.get('name') or [''])[0]
+                skill_qs=parse_qs(p.query); name=(skill_qs.get('name') or [''])[0]
                 self.sendj(inspect_box_hero_skilllevels(name)); return
             if p.path=='/api/game-import/decode-box': self.sendj(decode_local_box()); return
             if p.path=='/api/game-import/analyze-diff': self.sendj(analyze_last_game_diff()); return
