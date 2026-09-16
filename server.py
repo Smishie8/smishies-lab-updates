@@ -3144,6 +3144,72 @@ def _mp_upgradeable_skills(data,span):
     except Exception:
         return {}
 
+def inspect_box_hero_skilllevels(name):
+    """Read-only raw inspector for one PlayerHero.SkillLevels member."""
+    fp=_find_aggregate_snapshot('PlayerHeroesModel.dat')
+    if not fp:
+        return {'ok':False,'error':'PlayerHeroesModel.dat introuvable',**_game_readonly_status()}
+    target=None
+    for cfg,row in STATIC_1302_CONFIG_MAP.items():
+        if str(row.get('hero_name') or '').strip().lower()==str(name or '').strip().lower():
+            try: target=int(cfg)
+            except Exception: target=None
+            break
+    if target is None:
+        return {'ok':False,'error':'Héros inconnu: %s'%name,**_game_readonly_status()}
+    try:
+        with _game_ro_open(fp,'rb') as fh:data=fh.read()
+        mc,lens,root,end=_mp_vt(data,25)
+        if len(root)<2:return {'ok':False,'error':'PlayerHeroesModel incomplet',**_game_readonly_status()}
+        s,e=root[1]; count=struct.unpack_from('<i',data,s)[0]; p=s+4
+        rows=[]
+        for _ in range(count):
+            dict_id=struct.unpack_from('<i',data,p)[0]; p+=4
+            hmc,hlens,hv,hend=_mp_vt(data,p)
+            cfg=_mp_i64(data,hv[1]) if len(hv)>1 else None
+            if cfg==target:
+                item={'dictionary_id':dict_id,'inventory_id':_mp_i32(data,hv[0]),
+                      'config_id':cfg,'member_count':hmc,'member_lengths':hlens}
+                if len(hv)>10:
+                    a,b=hv[10]; raw=data[a:b]
+                    item['skill_span']={'start':a,'end':b,'size':b-a,'hex':raw.hex()}
+                    if b-a>=4:
+                        n=struct.unpack_from('<i',data,a)[0]
+                        item['declared_count']=n
+                        item['compact_i32_pairs']=[]
+                        if 0<=n<=32 and a+4+n*8<=b:
+                            for i in range(n):
+                                x,y=struct.unpack_from('<ii',data,a+4+i*8)
+                                item['compact_i32_pairs'].append([x,y])
+                        # Try object-by-object version-tolerant parsing, without assuming semantics.
+                        objs=[]; q=a+4
+                        if 0<=n<=32:
+                            for i in range(n):
+                                try:
+                                    omc,olens,ov,oend=_mp_vt(data,q)
+                                    members=[]
+                                    for mi,(ms,me) in enumerate(ov):
+                                        rr=data[ms:me]
+                                        z={'member':mi,'size':me-ms,'hex':rr.hex()}
+                                        if me-ms>=4:
+                                            z['i32']=struct.unpack_from('<i',data,ms)[0]
+                                        if me-ms>=8:
+                                            z['i64']=struct.unpack_from('<q',data,ms)[0]
+                                        members.append(z)
+                                    objs.append({'index':i,'member_count':omc,'lengths':olens,
+                                                 'start':q,'end':oend,'members':members})
+                                    q=oend
+                                except Exception as ex:
+                                    objs.append({'index':i,'error':str(ex),'start':q}); break
+                        item['vt_objects']=objs
+                    item['decoded_current']=_mp_upgradeable_skills(data,hv[10])
+                rows.append(item)
+            p=hend
+        return {'ok':True,'hero':name,'target_config_id':target,'file':fp,'matches':rows,
+                **_game_readonly_status()}
+    except Exception as e:
+        return {'ok':False,'hero':name,'file':fp,'error':str(e),**_game_readonly_status()}
+
 def _decode_playerheroes_file(fp):
     with _game_ro_open(fp,'rb') as f:data=f.read()
     # Snapshot wrapper observed in the game's aggregate_snapshots: 25-byte envelope.
@@ -3627,6 +3693,9 @@ class H(BaseHTTPRequestHandler):
             if p.path=='/api/game-import/static-hall-scan': self.sendj(scan_static_hall_f64_arrays()); return
             if p.path=='/api/game-import/static-hall-live': self.sendj({'ok':bool(_LIVE_ARENA_HALL_INFO),'source':ARENA_HALL_SOURCE,'live':_LIVE_ARENA_HALL_INFO,'values':ARENA_HALL_VALUES,**_game_readonly_status()}); return
             if p.path=='/api/game-import/player-arena-hall-raw': self.sendj(inspect_playerarena_hall_raw()); return
+            if p.path=='/api/game-import/hero-skills-raw':
+                q=parse_qs(p.query); name=(q.get('name') or [''])[0]
+                self.sendj(inspect_box_hero_skilllevels(name)); return
             if p.path=='/api/game-import/decode-box': self.sendj(decode_local_box()); return
             if p.path=='/api/game-import/analyze-diff': self.sendj(analyze_last_game_diff()); return
             if p.path=='/api/heroes': self.sendj(q('SELECT name,faction,rarity,role,element FROM heroes WHERE name IS NOT NULL ORDER BY name')); return
