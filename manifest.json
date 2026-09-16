@@ -1,11 +1,11 @@
 {
-  "version": "11.14",
+  "version": "11.15",
   "channel": "stable",
   "files": [
     {
       "path": "server.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.14",
-      "git_sha1": "12e501b1bcd7b96ff73f3a85dbddb6a3e46a0941"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.15",
+      "git_sha1": "c18f190b85074a59890b46d10a2c98bf17078841"
     },
     {
       "path": "awake_nodes.json",
@@ -46,7 +46,22 @@
       "path": "arena_static_data.json",
       "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/arena_static_data.json?v=11.14",
       "git_sha1": "4b0acfa8907655fe866821c492a6bb05e05671c6"
+    },
+    {
+      "path": "support_eval/__init__.py",
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/support_eval/__init__.py?v=11.15",
+      "git_sha1": "2b2a967e17ea634e96179411a836d8f91f98f090"
+    },
+    {
+      "path": "support_eval/support_evaluator_v2.py",
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/support_eval/support_evaluator_v2.py?v=11.15",
+      "git_sha1": "e3496f3446e89674f7abee97d777a7b68b0c2ef4"
+    },
+    {
+      "path": "support_eval/support_effect_overrides.json",
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/support_eval/support_effect_overrides.json?v=11.15",
+      "git_sha1": "4b126eeeb546f54833ffcd048c35d77c22c83a46"
     }
   ],
-  "notes": "v11.14 : l'optimiseur Salle des trophées utilise automatiquement les coûts réels StaticArenaData.HallPrices et les taux MedalToMedalExchangeRates. Affichage du coût brut Bronze/Argent/Or, équivalent médaille d'or, gain DPS et DPS par médaille d'or. Plus besoin de saisir ou capturer les coûts manuellement."
+  "notes": "v11.15 : début de l’évaluateur de supports intégré à « Meilleur support ». Ajout d’un score offensif /100 basé sur le percentile du gain DPS réellement simulé, affichage de la couverture des effets support, des effets avancés (heal/rez/Unkillable) et des notes spécifiques Ulgorim. Les scores globaux survie/soin/rez restent volontairement en attente tant que le modèle de dégâts entrants n’est pas branché."
 }
