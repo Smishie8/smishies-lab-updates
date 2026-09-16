@@ -3707,29 +3707,56 @@ async function relicPotential(){
 }
 
 let rankRun=0; async function rank(){const run=++rankRun;let b=bosses[rankBoss.value],mode=rankMode.value;let rankElem=(rankElement.value==='Auto'?b.element:rankElement.value);let sups=[rankSupport1.value,rankSupport2.value,rankSupport3.value,rankSupport4.value];rankBtn.disabled=true;rankBtn.textContent='Calcul en cours…';rankStatus.textContent='Simulation en cours…';let endq=`&end_atk=${endAtk.value}&end_cr=${endCr.value/100}&end_cd=${endCd.value/100}&end_pre=${endPre.value}&end_res=${endRes.value}&end_combo=${endCombo.value/100}&end_speed=${endSpeed.value/100}&end_rec=${endRec.value/100}&end_mana=${endMana.value/100}&end_lvl=${endLvl.value}`;let supq=`&support1=${encodeURIComponent(sups[0])}&support2=${encodeURIComponent(sups[1])}&support3=${encodeURIComponent(sups[2])}&support4=${encodeURIComponent(sups[3])}`;try{let d=await api(`/api/rank?mode=${mode}&rarity=${encodeURIComponent(rarity.value)}&role=${encodeURIComponent(role.value)}&duration=${rankDur.value}&boss=${b.defense}&boss_res=${b.resistance}&boss_hp=${b.hp}&boss_atk=${b.attack}&element=${encodeURIComponent(rankElem)}${supq}${endq}`);if(run!==rankRun)return;let active=[...new Set(sups.filter(x=>x&&x!=='Aucun'))];rankStatus.textContent=`${d.length} héros simulés — ${mode==='box'?'fiches enregistrées uniquement':mode==='base'?'stats de base, skills niveau 7':'build endgame standardisé'} — élément boss : ${rankElem}${active.length?' — supports : '+active.join(' + '):' — sans support'}.`;rankTable.innerHTML='<table><tr><th>#</th><th>Héros</th><th>Élément</th><th>Rareté</th><th>Rôle</th><th>DPS simulé</th><th>Dégâts</th><th>ATK</th><th>Crit</th><th>Crit DMG</th><th>PRE</th><th>Combo</th><th>Skill Speed</th><th>Recovery</th></tr>'+d.map((x,i)=>`<tr><td>${i+1}</td><td>${x.name}</td><td>${x.element||'Neutre'}</td><td>${x.rarity||''}</td><td>${x.role||''}</td><td>${F1(x.dps)}</td><td>${F(x.total_damage)}</td><td>${F(x.final_stats.atk)}</td><td>${P(x.final_stats.crit_rate)}</td><td>${P(x.final_stats.crit_dmg)}</td><td>${F(x.final_stats.accuracy)}</td><td>${P(x.final_stats.combo_speed)}</td><td>${P(x.final_stats.skill_speed)}</td><td>${P(x.final_stats.skill_recovery)}</td></tr>`).join('')+'</table>'}catch(e){if(run===rankRun)rankStatus.textContent='Erreur classement : '+e.message;throw e}finally{if(run===rankRun){rankBtn.disabled=false;rankBtn.textContent='Calculer'}}}
-(async()=>{heroes=await api('/api/heroes');let n=heroes.map(x=>x.name);[heroSel,combatHero,aSel,bSel,optHero].forEach((e,i)=>opts(e,n,i===3?'Sildrea':'Senhachi'));for(let e of [support1,support2,support3,support4,rankSupport1,rankSupport2,rankSupport3,rankSupport4])opts(e,['Aucun',...n],'Aucun');[support1,support2,support3,support4].forEach(e=>e.onchange=combat);[rankSupport1,rankSupport2,rankSupport3,rankSupport4].forEach(e=>e.onchange=rank);rankElement.onchange=rank;addsMode.onchange=combat;bosses=await api('/api/boss-setups');titans=await api('/api/titans');[simBoss,optBoss,rankBoss].forEach(e=>{Object.keys(bosses).forEach(x=>e.add(new Option(x,x)));e.value='Ulgorim 16'});optBoss.onchange=async()=>{await critAnalysis();await recAnalysis();await relicPotential()};rankBoss.onchange=rank;simBossCards.innerHTML=bossCards(bosses[simBoss.value]);simBoss.onchange=()=>{simBossCards.innerHTML=bossCards(bosses[simBoss.value])};build(heroBuild,'hero');levels(heroLevels,'heroLvl');build(aBuild,'a');levels(aLevels,'a');build(bBuild,'b');levels(bLevels,'b');levels(optLevels,'opt');heroSel.onchange=hero;combatHero.onchange=combat;combatPreset.onchange=()=>{let notes={box:'Ma box : stats et niveaux réellement importés.',early:'Early game : skills niv. 1, Crit 20%, Dég crit 50%. Les autres stats restent celles de la box.',mid:'Mid game : skills niv. 5, Crit 50%, Dég crit 75%. Les autres stats restent celles de la box.',late:'Late game : skills max, Crit 100%, Dég crit 120%. Les autres stats restent celles de la box.'};combatPresetNote.textContent=notes[combatPreset.value]||'';combat()};aSel.onchange=async()=>{await loadCompareProfile('a',aSel.value);await compare()};bSel.onchange=async()=>{await loadCompareProfile('b',bSel.value);await compare()};saveA.onclick=()=>saveCompareProfile('a',aSel,aSaveStatus);saveB.onclick=()=>saveCompareProfile('b',bSel,bSaveStatus);recFields(recCurrentStats,'recCur');recTestFields(recTestStats,'recTest');optHero.onchange=async()=>{await loadRecStats();await critAnalysis();await recAnalysis();await relicPotential()};[...new Set(heroes.map(x=>x.rarity).filter(Boolean))].sort().forEach(x=>rarity.add(new Option(x,x)));[...new Set(heroes.map(x=>x.role).filter(Boolean))].sort().forEach(x=>role.add(new Option(x,x)));rankMode.onchange=()=>{endgameCfg.classList.toggle('hidden',rankMode.value!=='endgame');rankModeNote.textContent=rankMode.value==='box'?'Ma box : seuls les héros dont une fiche a réellement été enregistrée sont classés.':rankMode.value==='base'?'Stats de base : tous les héros sont comparés avec leurs stats natives et skills niveau 7.':'Build endgame : tous les héros reçoivent le même standard configurable ci-dessus.'};combatBtn.onclick=combat;bestSupportBtn.onclick=bestSupports;cmpBtn.onclick=compare;critBtn.onclick=critAnalysis;recBtn.onclick=recAnalysis;recBalanceBtn.onclick=recBalance;relicOptBtn.onclick=relicOptimize;setOptBtn.onclick=setOptimize;potentialBtn.onclick=relicPotential;rankBtn.onclick=rank;importBoxBtn.onclick=importBoxOneClick;relicRefresh.onclick=loadRelics;[relicSlot,relicSet,relicEquipped,relicStat].forEach(e=>e.onchange=loadRelics);await loadRelics();await hero();await loadCompareProfile('a',aSel.value);await loadCompareProfile('b',bSel.value);await loadRecStats();await combat();await compare();await critAnalysis();await recAnalysis();await relicPotential();await rank()})().catch(e=>document.body.insertAdjacentHTML('beforeend',`<pre>${e.stack}</pre>`));
+(async()=>{heroes=await api('/api/heroes');let n=heroes.map(x=>x.name);[heroSel,combatHero,aSel,bSel,optHero].forEach((e,i)=>opts(e,n,i===3?'Sildrea':'Senhachi'));for(let e of [support1,support2,support3,support4,rankSupport1,rankSupport2,rankSupport3,rankSupport4])opts(e,['Aucun',...n],'Aucun');[support1,support2,support3,support4].forEach(e=>e.onchange=combat);[rankSupport1,rankSupport2,rankSupport3,rankSupport4].forEach(e=>e.onchange=rank);rankElement.onchange=rank;addsMode.onchange=combat;bosses=await api('/api/boss-setups');titans=await api('/api/titans');[simBoss,optBoss,rankBoss].forEach(e=>{Object.keys(bosses).forEach(x=>e.add(new Option(x,x)));e.value='Ulgorim 16'});optBoss.onchange=async()=>{await critAnalysis();await recAnalysis();await relicPotential()};rankBoss.onchange=rank;simBossCards.innerHTML=bossCards(bosses[simBoss.value]);simBoss.onchange=()=>{simBossCards.innerHTML=bossCards(bosses[simBoss.value])};build(heroBuild,'hero');levels(heroLevels,'heroLvl');build(aBuild,'a');levels(aLevels,'a');build(bBuild,'b');levels(bLevels,'b');levels(optLevels,'opt');heroSel.onchange=hero;combatHero.onchange=combat;combatPreset.onchange=()=>{let notes={box:'Ma box : stats et niveaux réellement importés.',early:'Early : skills 1 · ATQ +30% · Crit 20% · Dég crit 50% · PRE +80 · Combo/Skill/Recovery/Mana +5%.',mid:'Mid : skills 5 · ATQ +80% · Crit 50% · Dég crit 75% · PRE +220 · Combo/Skill/Recovery/Mana +15%.',late:'Late : skills max · ATQ +150% · Crit 100% · Dég crit 120% · PRE +400 · Combo/Skill/Recovery/Mana +30%.'};combatPresetNote.textContent=notes[combatPreset.value]||'';combat()};aSel.onchange=async()=>{await loadCompareProfile('a',aSel.value);await compare()};bSel.onchange=async()=>{await loadCompareProfile('b',bSel.value);await compare()};saveA.onclick=()=>saveCompareProfile('a',aSel,aSaveStatus);saveB.onclick=()=>saveCompareProfile('b',bSel,bSaveStatus);recFields(recCurrentStats,'recCur');recTestFields(recTestStats,'recTest');optHero.onchange=async()=>{await loadRecStats();await critAnalysis();await recAnalysis();await relicPotential()};[...new Set(heroes.map(x=>x.rarity).filter(Boolean))].sort().forEach(x=>rarity.add(new Option(x,x)));[...new Set(heroes.map(x=>x.role).filter(Boolean))].sort().forEach(x=>role.add(new Option(x,x)));rankMode.onchange=()=>{endgameCfg.classList.toggle('hidden',rankMode.value!=='endgame');rankModeNote.textContent=rankMode.value==='box'?'Ma box : seuls les héros dont une fiche a réellement été enregistrée sont classés.':rankMode.value==='base'?'Stats de base : tous les héros sont comparés avec leurs stats natives et skills niveau 7.':'Build endgame : tous les héros reçoivent le même standard configurable ci-dessus.'};combatBtn.onclick=combat;bestSupportBtn.onclick=bestSupports;cmpBtn.onclick=compare;critBtn.onclick=critAnalysis;recBtn.onclick=recAnalysis;recBalanceBtn.onclick=recBalance;relicOptBtn.onclick=relicOptimize;setOptBtn.onclick=setOptimize;potentialBtn.onclick=relicPotential;rankBtn.onclick=rank;importBoxBtn.onclick=importBoxOneClick;relicRefresh.onclick=loadRelics;[relicSlot,relicSet,relicEquipped,relicStat].forEach(e=>e.onchange=loadRelics);await loadRelics();await hero();await loadCompareProfile('a',aSel.value);await loadCompareProfile('b',bSel.value);await loadRecStats();await combat();await compare();await critAnalysis();await recAnalysis();await relicPotential();await rank()})().catch(e=>document.body.insertAdjacentHTML('beforeend',`<pre>${e.stack}</pre>`));
 </script></body></html>'''
 
 COMBAT_PRESETS={
-    'early': {'label':'Early game','skill_level':1,'crit_rate':0.20,'crit_dmg':0.50},
-    'mid':   {'label':'Mid game','skill_level':5,'crit_rate':0.50,'crit_dmg':0.75},
-    'late':  {'label':'Late game','skill_level':11,'crit_rate':1.00,'crit_dmg':1.20},
+    'early': {
+        'label':'Early game','skill_level':1,
+        'atk_bonus_pct':0.30,'crit_rate':0.20,'crit_dmg':0.50,'accuracy_bonus':80,
+        'combo_speed':0.05,'skill_speed':0.05,'skill_recovery':0.05,'mana_gen':0.05
+    },
+    'mid': {
+        'label':'Mid game','skill_level':5,
+        'atk_bonus_pct':0.80,'crit_rate':0.50,'crit_dmg':0.75,'accuracy_bonus':220,
+        'combo_speed':0.15,'skill_speed':0.15,'skill_recovery':0.15,'mana_gen':0.15
+    },
+    'late': {
+        'label':'Late game','skill_level':11,
+        'atk_bonus_pct':1.50,'crit_rate':1.00,'crit_dmg':1.20,'accuracy_bonus':400,
+        'combo_speed':0.30,'skill_speed':0.30,'skill_recovery':0.30,'mana_gen':0.30
+    },
 }
 
 def combat_preset_for(name,preset='box'):
-    """Build a standardized combat preset without overwriting the saved box profile.
-    Early/Mid/Late currently override only skill levels, Crit Rate and Crit DMG;
-    every other final stat stays on the imported box value until calibrated.
+    """Build standardized Early/Mid/Late combat states without overwriting Ma box.
+
+    Presets are expressed from each hero's native/reference stats so heroes keep
+    their natural stat differences while receiving the same investment standard.
     """
     p=profile_for(name)
-    st=profile_stats(name,p)
+    box_st=profile_stats(name,p)
     key=str(preset or 'box').strip().lower()
     if key not in COMBAT_PRESETS:
-        return final_to_build(name,st),st,profile_levels(p),'Ma box','box'
+        return final_to_build(name,box_st),box_st,profile_levels(p),'Ma box','box'
+
     cfg=COMBAT_PRESETS[key]
-    pst=dict(st)
-    pst['crit_rate']=cfg['crit_rate']
-    pst['crit_dmg']=cfg['crit_dmg']
+    h=hero_row(name) or {}
+    base_atk=max(1.0,num(h.get('atk')))
+    base_pre=num(h.get('accuracy'))
+    base_res=num(h.get('resistance'))
+
+    pst={
+        'atk':base_atk*(1.0+cfg['atk_bonus_pct']),
+        'crit_rate':cfg['crit_rate'],
+        'crit_dmg':cfg['crit_dmg'],
+        'accuracy':base_pre+cfg['accuracy_bonus'],
+        'resistance':base_res,
+        'combo_speed':cfg['combo_speed'],
+        'skill_speed':cfg['skill_speed'],
+        'skill_recovery':cfg['skill_recovery'],
+        'mana_gen':cfg['mana_gen'],
+    }
     lv={k:int(cfg['skill_level']) for k in ('auto','s1','s2','s3','ult')}
     return final_to_build(name,pst),pst,lv,cfg['label'],key
 
