@@ -1,11 +1,11 @@
 {
-  "version": "11.16",
+  "version": "11.17",
   "channel": "stable",
   "files": [
     {
       "path": "server.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.16",
-      "git_sha1": "290adee34e8e5040d9146299a3f1aea9e965b792"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.17",
+      "git_sha1": "fa90138c7331b1d307ffcbecdd9ecff36fc03dbc"
     },
     {
       "path": "awake_nodes.json",
@@ -49,19 +49,19 @@
     },
     {
       "path": "support_eval/__init__.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/support_eval/__init__.py?v=11.16",
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/support_eval/__init__.py?v=11.17",
       "git_sha1": "2b2a967e17ea634e96179411a836d8f91f98f090"
     },
     {
       "path": "support_eval/support_evaluator_v2.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/support_eval/support_evaluator_v2.py?v=11.16",
-      "git_sha1": "832bff0c35278073ab684f29dd4c16ad271eef57"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/support_eval/support_evaluator_v2.py?v=11.17",
+      "git_sha1": "d692eb3bae14dcd24a077ddedaee40a2e802faf0"
     },
     {
       "path": "support_eval/support_effect_overrides.json",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/support_eval/support_effect_overrides.json?v=11.16",
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/support_eval/support_effect_overrides.json?v=11.17",
       "git_sha1": "4b126eeeb546f54833ffcd048c35d77c22c83a46"
     }
   ],
-  "notes": "v11.16 : évaluateur de supports avec modèle de survie de référence. Le score général combine le gain DPS réel du carry avec 5 scénarios de pression standardisés; le score boss combine offense et survie lorsqu'un TTD boss calibré existe. Ulgorim 16 utilise la référence réelle de wipe à 129 s. Heal utile, overheal, DEF Up, ATK Down, Unkillable et Revive sont pris en compte dans le modèle. Les HP/DEF exacts importés de la box sont utilisés lorsqu'ils sont disponibles. Correction de la formule DEF globale : coefficient quadratique 0.0000001245."
+  "notes": "v11.17 : l’évaluateur de supports couvre maintenant tous les héros pouvant buffer/debuffer, quel que soit leur rôle. Le Top 3 affiche Score offensif /100, Score général /100 et Score boss /100, plus la décomposition survie (temps gagné, heal utile, dégâts évités, rez) et l’apport marginal de chaque buff/debuff obtenu par contre-factuel. Les effets avancés provisoires restent explicitement signalés."
 }
