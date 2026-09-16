@@ -1623,9 +1623,13 @@ def team_buff_targets_allies(effect, source=None, action=None):
     cond=str(effect.get('condition') or '').lower()
     # Les buffs explicitement Self ne sont pas propagés à l'équipe.
     if 'self' in cond: return False
-    key=(str(source or '').strip().lower(), str(action or '').strip(), effect.get('name'))
+    src=str(source or '').strip().lower()
+    eff=effect.get('name')
+    # Klissa: son ATK Up est personnel, quel que soit le skill qui le déclenche.
+    if src=='klissa' and eff=='ATK Up': return False
+    key=(src, str(action or '').strip(), eff)
     if key in SELF_ONLY_SUPPORT_EFFECTS: return False
-    return effect.get('name') in TEAM_BUFF_NAMES and num(effect.get('duration'),0)>0
+    return eff in TEAM_BUFF_NAMES and num(effect.get('duration'),0)>0
 
 def support_buff_schedule(name, duration=120, adds_mode='none', boss_element='Neutre', support_mode='real'):
     """Timeline V1 d'un support: vraie rotation/cooldowns/mana selon sa fiche,
