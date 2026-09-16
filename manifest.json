@@ -1,11 +1,11 @@
 {
-  "version": "10.98",
+  "version": "10.99",
   "channel": "stable",
   "files": [
     {
       "path": "server.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=10.98",
-      "git_sha1": "32b85073047ffbd35135c92b0c1daf2bab544f30"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=10.99",
+      "git_sha1": "9c2b253e1f98f629d6f4f0e94978339bc8ca51b1"
     },
     {
       "path": "awake_nodes.json",
@@ -28,5 +28,5 @@
       "git_sha1": "e59089a46a250e16182266a8618f03c0c6dcd554"
     }
   ],
-  "notes": "v10.98 : ajout d’un import séparé de la Salle des trophées. Le bouton lit uniquement PlayerArenaModel.dat et remplace uniquement arena_hall_levels, sans toucher aux héros, reliques ou profils."
+  "notes": "v10.99 : correction globale de la base des stats importées. PRE/RES de base remis à PRE 0 / RES 10. Les champs base_awake_stats sont désormais lus littéralement : Skill Speed reste Skill Speed, Mana Generation reste Mana Generation, etc. Sarienne récupère ainsi ses +6 points de Mana de base d’éveil."
 }
