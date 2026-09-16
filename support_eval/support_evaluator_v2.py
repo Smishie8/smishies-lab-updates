@@ -8,7 +8,7 @@ import math
 import sqlite3
 
 VALIDATED_DEF_LINEAR = 0.0001696
-VALIDATED_DEF_QUADRATIC = 0.0000001245
+VALIDATED_DEF_QUADRATIC = 0.00000001245
 
 
 def damage_received_multiplier(defense: float) -> float:
