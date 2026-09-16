@@ -1855,12 +1855,19 @@ def simulate_combat(name, levels=None, duration=120, boss_def=1320, boss_res=0, 
         return final_debuff_pass_chance(acc,boss_res,resist_mod)
     def register_interval(effect,start,end): intervals.setdefault(effect,[]).append((max(0,start),min(duration,end)))
     def brandis_burn_cap_mult(action, level):
-        # GGNoLuck published limits for Brandis target Burns. Values are ×ATK per tick.
+        """Official Brandis Burn target damage caps, expressed as xATK per tick.
+
+        Brand Heresy (S1) burns Brandis himself, so it never contributes target
+        DoT here. Fiery Prayer (S2), Litany of Flames (S3), and Conflagration
+        (Ultimate) use the published per-level target Burn caps:
+        200/200/250/250/300/300/350/350/400/400/500 % ATK.
+        """
         L=max(1,min(11,int(level if isinstance(level,(int,float)) else (11 if str(level)=='♛' else 1))))
-        common=[2.0,2.0,2.5,2.5,3.0,3.0,3.5,3.5,4.0,4.0,5.0]
-        if action in ('Skill 2','Skill 3','Ultimate'): return common[L-1]
-        if action=='Auto 5': return common[L-1]
-        return common[L-1]
+        target_caps=[2.0,2.0,2.5,2.5,3.0,3.0,3.5,3.5,4.0,4.0,5.0]
+        if action in ('Skill 2','Skill 3','Ultimate'):
+            return target_caps[L-1]
+        # Defensive fallback for any legacy/imported target Burn row.
+        return target_caps[L-1]
     def process_dot_ticks(until):
         nonlocal total
         if not burns or until<=0: return
