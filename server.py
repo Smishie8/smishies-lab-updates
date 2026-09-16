@@ -2471,14 +2471,19 @@ def saved_aoe_targets(name):
 
 def save_aoe_targets(name,targets,source='manual'):
     ensure_aoe_table(); saved=0
+    src=str(source or 'manual')
     with sqlite3.connect(DB) as con:
         for action,val in (targets or {}).items():
             if action not in _aoe_actions():continue
-            n=max(1,min(200,int(val or 1)))
+            n=max(1,min(11,int(val or 1)))
+            cur=con.execute('SELECT source FROM aoe_targets WHERE lower(hero_name)=lower(?) AND action=?',(name,action)).fetchone()
+            # Automatic imports must never overwrite a user-confirmed manual mapping.
+            if src=='ggnoluck' and cur and str(cur[0] or '').lower()=='manual':
+                continue
             con.execute("""INSERT INTO aoe_targets(hero_name,action,targets,source,confidence,updated_at)
                            VALUES(?,?,?,?,1,CURRENT_TIMESTAMP)
                            ON CONFLICT(hero_name,action) DO UPDATE SET targets=excluded.targets,source=excluded.source,confidence=1,updated_at=CURRENT_TIMESTAMP""",
-                        (name,action,n,source))
+                        (name,action,n,src))
             saved+=1
         con.commit()
     return saved
@@ -2486,14 +2491,22 @@ def save_aoe_targets(name,targets,source='manual'):
 def aoe_default_targets(name,enemies=11):
     out={a:1 for a in _aoe_actions()}
     sources={a:'unknown' for a in _aoe_actions()}
-    # Conservative automatic inference from any descriptive skill text available.
+    # 1) weak fallback: text inference
     inferred,_=infer_aoe_targets_from_text(name,enemies)
     for a,v in inferred.items(): out[a]=v; sources[a]='text'
-    # Project-validated constants override text inference.
-    for a,v in AOE_KNOWN_TARGETS.get(str(name or ''),{}).items(): out[a]=v; sources[a]='validated'
-    # User-validated saved mappings have final priority.
-    for a,meta in saved_aoe_targets(name).items():
-        out[a]=int(meta['targets']); sources[a]=meta.get('source') or 'manual'
+    saved=saved_aoe_targets(name)
+    # 2) imported public data
+    for a,meta in saved.items():
+        if str(meta.get('source') or '').lower()=='ggnoluck':
+            out[a]=int(meta['targets']); sources[a]='ggnoluck'
+    # 3) project-validated mechanics
+    for a,v in AOE_KNOWN_TARGETS.get(str(name or ''),{}).items():
+        out[a]=v; sources[a]='validated'
+    # 4) explicit manual corrections always win
+    for a,meta in saved.items():
+        if str(meta.get('source') or '').lower()!='ggnoluck':
+            out[a]=int(meta['targets']); sources[a]=meta.get('source') or 'manual'
+    out={a:min(max(1,int(v)),int(enemies)) for a,v in out.items()}
     return out,sources
 
 def simulate_aoe(name,preset='box',duration=60,enemies=11,defense=0,resistance=0,element='Neutre',target_overrides=None):
@@ -4175,7 +4188,7 @@ const aoeActionIds=[['Auto 1','a1'],['Auto 2','a2'],['Auto 3','a3'],['Auto 4','a
 function renderAoeTargetInputs(defaults={}){aoeTargets.innerHTML=aoeActionIds.map(([lab,id])=>`<div class=control><label>${lab}</label><input id=aoeT_${id} type=number min=1 max=200 value="${defaults[lab]||1}"></div>`).join('')}
 function aoeTargetQuery(){return aoeActionIds.map(([lab,id])=>`&t_${id}=${Math.max(1,+document.getElementById('aoeT_'+id).value||1)}`).join('')}
 async function loadAoeDefaults(){let d=await api(`/api/aoe-defaults?name=${encodeURIComponent(aoeHero.value)}&enemies=${aoeEnemies.value}`);renderAoeTargetInputs(d.targets||{});let parts=aoeActionIds.map(([lab])=>`${lab}: ${d.targets?.[lab]||1} [${d.sources?.[lab]||'unknown'}]`);aoeTargetStatus.textContent=parts.join(' · ')}
-async function importAllAoe(){aoeImportAll.disabled=true;aoeImportAll.textContent='Import en cours…';aoeProbeStatus.textContent='Lecture des fiches GGNoLuck pour tous les héros…';try{let r=await fetch('/api/aoe-import-all',{method:'POST'});let d=await r.json();if(!r.ok||!d.ok)throw Error(d.error||'Import impossible');aoeProbeStatus.textContent=`Import AoE terminé : ${d.heroes_read}/${d.heroes_total} héros lus · ${d.saved_actions} actions enregistrées · ${d.failed_count} échec(s).`;await loadAoeDefaults();await aoeCombatRun();await aoeRankRun()}catch(e){aoeProbeStatus.textContent='Erreur import AoE : '+e.message}finally{aoeImportAll.disabled=false;aoeImportAll.textContent='Importer AoE des 222 héros'}}
+async function importAllAoe(){aoeImportAll.disabled=true;aoeImportAll.textContent='Import en cours…';aoeProbeStatus.textContent='Lecture des fiches GGNoLuck pour tous les héros…';try{let r=await fetch('/api/aoe-import-all',{method:'POST'});let d=await r.json();if(!r.ok||!d.ok)throw Error(d.error||'Import impossible');let fails=(d.failed||[]).map(x=>x.hero).filter(Boolean);aoeProbeStatus.textContent=`Import AoE terminé : ${d.heroes_read}/${d.heroes_total} héros lus · ${d.saved_actions} actions enregistrées · ${d.failed_count} échec(s)`+(fails.length?` — échec : ${fails.join(', ')}`:'')+'.';await loadAoeDefaults();await aoeCombatRun();await aoeRankRun()}catch(e){aoeProbeStatus.textContent='Erreur import AoE : '+e.message}finally{aoeImportAll.disabled=false;aoeImportAll.textContent='Importer AoE des 222 héros'}}
 async function probeAoeStatic(){aoeProbeStatic.disabled=true;aoeProbeStatus.textContent='Analyse locale de static.data…';try{let d=await api(`/api/aoe-static-probe?name=${encodeURIComponent(aoeHero.value)}`);if(!d.ok){aoeProbeStatus.textContent='Probe: '+(d.error||'indisponible');return}let rows=(d.candidates||[]).slice(0,12).map(x=>`cat ${x.category} · id ${x.id} · ${(x.reasons||[]).join('+')} · ${x.uncompressed_size||x.size} o`);aoeProbeStatus.textContent=`static.data: ${d.candidate_count} chunk(s) candidat(s) pour ${d.hero} (${d.code}, GDID ${d.gdid}). `+(rows.length?rows.join(' | '):'Aucun match direct.') }finally{aoeProbeStatic.disabled=false}}
 async function saveAoeTargets(){let targets={};for(let [lab,id] of aoeActionIds)targets[lab]=Math.max(1,+document.getElementById('aoeT_'+id).value||1);let r=await fetch('/api/aoe-targets',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:aoeHero.value,targets})});if(!r.ok)throw Error(await r.text());aoeTargetStatus.textContent='✓ Portées enregistrées pour '+aoeHero.value;await aoeCombatRun()}
 async function aoeRankRun(){aoeRankBtn.disabled=true;aoeRankBtn.textContent='Calcul…';aoeRankStatus.textContent='Classement AoE en cours…';try{let b=bosses[aoeBoss.value];let d=await api(`/api/aoe-rank?preset=${encodeURIComponent(aoePreset.value)}&duration=${aoeDur.value}&enemies=${aoeEnemies.value}&defense=${b.defense}&resistance=${b.resistance}&element=${encodeURIComponent(b.element)}`);aoeRankStatus.textContent=`${d.length} héros simulés — ${aoeEnemies.value} ennemis — boss ${aoeBoss.value}.`;aoeRankTable.innerHTML='<table><tr><th>#</th><th>Héros</th><th>Élément</th><th>Rareté</th><th>Rôle</th><th>DPS AoE</th><th>DPS mono</th><th>Dégâts AoE</th><th>Actions AoE connues</th></tr>'+d.map((x,i)=>`<tr><td>${i+1}</td><td>${x.name}</td><td>${x.element||'Neutre'}</td><td>${x.rarity||''}</td><td>${x.role||''}</td><td><b>${F1(x.dps)}</b></td><td>${F1(x.single_target_dps)}</td><td>${F(x.total_damage)}</td><td>${(x.mapped_aoe_actions||[]).join(', ')||'—'}</td></tr>`).join('')+'</table>'}finally{aoeRankBtn.disabled=false;aoeRankBtn.textContent='Calculer le classement AoE'}}
@@ -4285,6 +4298,8 @@ class H(BaseHTTPRequestHandler):
                 if row:self.sendj({'hero':name,'source':'extracted','timings':row})
                 else:self.sendj({'hero':name,'source':'legacy_fallback','timings':None,'cycle_base_s':auto_chain_cycle_base(name)})
                 return
+            if p.path=='/api/aoe-audit':
+                n=qs.get('name',[''])[0]; targets,sources=aoe_default_targets(n,max(1,min(11,int(f('enemies',11))))); self.sendj({'hero':n,'targets':targets,'sources':sources,'saved':saved_aoe_targets(n),'validated':AOE_KNOWN_TARGETS.get(n,{})}); return
             if p.path=='/api/aoe-static-probe':
                 n=qs.get('name',[''])[0]; self.sendj(probe_static_for_hero(n)); return
             if p.path=='/api/aoe-defaults':
