@@ -3697,11 +3697,11 @@ def _extract_live_arena_hall_values():
     }
 
 def scan_static_hall_cost_candidates():
-    """Read-only search for Hall medal-cost arrays near StaticArenaData.HallBonuses.
+    """Read-only search for Trophy Hall medal costs in StaticArenaData.
 
-    We already know the exact offsets of the 12 Hall bonus arrays. Costs are expected
-    to live in the same StaticArenaData object, so scan a bounded neighborhood for
-    15-level monotone integer arrays (Int32 / Int64). Nothing is written to game files.
+    Supports both simple 15-value arrays and structured 15-record layouts such as
+    (level,cost,currency/flags). MemoryPack often serializes lists of small value
+    objects this way rather than a single unmanaged int array.
     """
     try:
         live=_extract_live_arena_hall_values()
@@ -3713,8 +3713,7 @@ def scan_static_hall_cost_candidates():
 
         pos=0
         tag,version=struct.unpack_from('<II',data,pos); pos+=8
-        if tag!=0x50435A48:
-            return {'ok':False,'error':'static.data invalide'}
+        if tag!=0x50435A48:return {'ok':False,'error':'static.data invalide'}
         config_version,pos=_read_dotnet_string(data,pos)
         shared_version,pos=_read_dotnet_string(data,pos)
         header_size,header_result_size=struct.unpack_from('<ii',data,pos); pos+=8
@@ -3731,65 +3730,109 @@ def scan_static_hall_cost_candidates():
 
         hall_offsets=list(live.get('offsets',{}).values())
         hall_lo=min(hall_offsets); hall_hi=max(hall_offsets)+128
-        scan_lo=max(0,hall_lo-65536); scan_hi=min(len(raw),hall_hi+65536)
+        # Structured prices may be elsewhere in StaticArenaData, so inspect a much wider area.
+        scan_lo=max(0,hall_lo-1024*1024); scan_hi=min(len(raw),hall_hi+1024*1024)
         out=[]
 
-        def score_vals(vals,off,kind):
+        def add_candidate(off,encoding,vals,levels=None,extra=None):
             if len(vals)!=15:return
-            if not all(isinstance(v,int) for v in vals):return
-            if not all(0 < v <= 10000000 for v in vals):return
-            # Cost curves should be non-decreasing and have several distinct levels.
-            mono=all(vals[i]>=vals[i-1] for i in range(1,15))
-            if not mono:return
+            vals=[int(v) for v in vals]
+            if not all(0 < v <= 100000000 for v in vals):return
+            if not all(vals[i]>=vals[i-1] for i in range(1,15)):return
             uniq=len(set(vals))
             if uniq<4:return
-            # Prefer plausible progression rather than nearly-flat/random data.
             increases=sum(1 for i in range(1,15) if vals[i]>vals[i-1])
             if increases<5:return
             dist=0 if hall_lo<=off<=hall_hi else min(abs(off-hall_lo),abs(off-hall_hi))
-            # Stronger score for proximity, positive monotone progression, and rounded values.
             rounded=sum(1 for v in vals if v%5==0 or v%10==0 or v%25==0 or v%50==0 or v%100==0)
-            growth=(vals[-1]/max(1,vals[0]))
-            score=100000/(100+dist)+increases*4+rounded*1.5+min(30.0,growth)
-            out.append({'offset':off,'distance_to_hall':dist,'encoding':kind,'values':vals,
-                        'first':vals[0],'last':vals[-1],'growth':round(growth,3),
-                        'score':round(score,3)})
+            growth=vals[-1]/max(1,vals[0])
+            score=150000/(250+dist)+increases*4+rounded*1.5+min(40.0,growth)
+            row={'offset':off,'distance_to_hall':dist,'encoding':encoding,'values':vals,
+                 'first':vals[0],'last':vals[-1],'growth':round(growth,3),'score':round(score,3)}
+            if levels is not None:row['levels']=levels
+            if extra:row.update(extra)
+            out.append(row)
 
-        # Common MemoryPack unmanaged arrays: Int32 count=15 + payload.
-        marker=struct.pack('<i',15)
-        off=scan_lo
+        # A) Plain MemoryPack array: count=15 followed by Int32/Int64 values.
+        marker=struct.pack('<i',15); off=scan_lo
         while True:
             idx=raw.find(marker,off,scan_hi)
             if idx<0:break
             p=idx+4
-            if p+15*4<=scan_hi:
-                vals=list(struct.unpack_from('<15i',raw,p))
-                score_vals(vals,idx,'int32[15]')
-            if p+15*8<=scan_hi:
+            if p+60<=scan_hi:
+                add_candidate(idx,'int32[15]',list(struct.unpack_from('<15i',raw,p)))
+            if p+120<=scan_hi:
                 vals64=list(struct.unpack_from('<15q',raw,p))
                 if all(-(2**31)<=v<2**31 for v in vals64):
-                    score_vals([int(v) for v in vals64],idx,'int64[15]')
+                    add_candidate(idx,'int64[15]',vals64)
             off=idx+1
 
-        # Also inspect raw 15x Int32 windows near Hall in case the list count is serialized elsewhere.
-        for idx in range(scan_lo,scan_hi-60,4):
-            try:vals=list(struct.unpack_from('<15i',raw,idx))
-            except Exception:continue
-            score_vals(vals,idx,'int32-window')
+        # B) Structured records. Search for level fields 1..15 or 0..14 at a
+        # fixed stride and inspect every Int32 slot in the record as a possible cost.
+        # Common unmanaged value-object sizes are 8..48 bytes.
+        for stride in (8,12,16,20,24,28,32,36,40,44,48):
+            rec_ints=stride//4
+            max_start=scan_hi-stride*15
+            for base in range(scan_lo,max_start+1,4):
+                try:
+                    first=struct.unpack_from('<i',raw,base)[0]
+                except Exception:
+                    continue
+                if first not in (0,1):continue
+                expected0=first
+                ok=True
+                for i in range(15):
+                    if struct.unpack_from('<i',raw,base+i*stride)[0] != expected0+i:
+                        ok=False; break
+                if not ok:continue
+                for field in range(1,rec_ints):
+                    vals=[]
+                    plausible=True
+                    for i in range(15):
+                        v=struct.unpack_from('<i',raw,base+i*stride+field*4)[0]
+                        if v<=0 or v>100000000:
+                            plausible=False; break
+                        vals.append(v)
+                    if plausible:
+                        add_candidate(base,f'records[{stride}] level@0 cost@{field*4}',vals,
+                                      levels=list(range(expected0,expected0+15)),
+                                      extra={'stride':stride,'cost_field_offset':field*4})
+                # Also support layouts where level isn't field 0: inspect every field
+                # as level and every other field as cost, but only after finding one
+                # plausible first-field sequence to keep runtime bounded.
 
-        # De-duplicate same offset/values, return strongest candidates first.
+        # C) Broader interleaved pattern: count=15 then 15 records, where each record
+        # has 2..8 Int32 members and one member is the level sequence.
+        off=scan_lo
+        while True:
+            idx=raw.find(marker,off,scan_hi)
+            if idx<0:break
+            payload=idx+4
+            for rec_ints in range(2,9):
+                stride=rec_ints*4
+                if payload+stride*15>scan_hi:continue
+                fields=[[struct.unpack_from('<i',raw,payload+i*stride+j*4)[0] for i in range(15)] for j in range(rec_ints)]
+                level_fields=[j for j,v in enumerate(fields) if v==list(range(1,16)) or v==list(range(0,15))]
+                for lj in level_fields:
+                    for cj in range(rec_ints):
+                        if cj==lj:continue
+                        add_candidate(idx,f'list<record{stride}> level@{lj*4} cost@{cj*4}',fields[cj],
+                                      levels=fields[lj],extra={'stride':stride,'level_field_offset':lj*4,'cost_field_offset':cj*4})
+            off=idx+1
+
         seen=set(); ranked=[]
         for row in sorted(out,key=lambda x:x['score'],reverse=True):
-            key=(row['offset'],tuple(row['values']))
+            key=(row['offset'],row['encoding'],tuple(row['values']))
             if key in seen:continue
             seen.add(key); ranked.append(row)
-            if len(ranked)>=80:break
+            if len(ranked)>=120:break
         return {'ok':True,'file':fp,'config_version':config_version,
                 'hall_span':{'start':hall_lo,'end':hall_hi},
                 'scan_span':{'start':scan_lo,'end':scan_hi},
                 'candidate_count':len(ranked),'candidates':ranked,**_game_readonly_status()}
     except Exception as e:
         return {'ok':False,'error':str(e),**_game_readonly_status()}
+
 
 def _refresh_live_arena_hall_values():
     global ARENA_HALL_VALUES,ARENA_HALL_SOURCE
