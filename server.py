@@ -2732,6 +2732,132 @@ def _find_static_data_file():
                     except OSError:pass
     return max(cands)[1] if cands else None
 
+def _read_7bit_int(data,pos):
+    """BinaryReader.Read7BitEncodedInt compatible reader."""
+    value=0; shift=0
+    for _ in range(5):
+        if pos>=len(data): raise ValueError('Chaîne ChunkPack tronquée')
+        b=data[pos]; pos+=1
+        value|=(b & 0x7f)<<shift
+        if not (b & 0x80): return value,pos
+        shift+=7
+    raise ValueError('Longueur de chaîne ChunkPack invalide')
+
+def _read_dotnet_string(data,pos):
+    n,pos=_read_7bit_int(data,pos)
+    if n<0 or pos+n>len(data): raise ValueError('Chaîne ChunkPack hors limites')
+    return data[pos:pos+n].decode('utf-8','replace'),pos+n
+
+def _brotli_decompress_bytes(raw):
+    """Use an optional Brotli implementation without making app startup depend on it."""
+    last=None
+    for modname in ('brotli','brotlicffi'):
+        try:
+            mod=__import__(modname)
+            return mod.decompress(raw),modname
+        except ImportError as e:
+            last=e
+        except Exception as e:
+            raise ValueError('Décompression Brotli impossible: %s'%e)
+    raise RuntimeError('Module Brotli Python absent (brotli/brotlicffi)')
+
+def _mp_unmanaged_array(data,pos,item_size):
+    if pos+4>len(data): raise ValueError('Array MemoryPack tronqué')
+    n=struct.unpack_from('<i',data,pos)[0]; pos+=4
+    if n<0: return [],pos
+    if n>1000000 or pos+n*item_size>len(data): raise ValueError('Array MemoryPack invalide')
+    out=[data[pos+i*item_size:pos+(i+1)*item_size] for i in range(n)]
+    return out,pos+n*item_size
+
+def _parse_chunkpack_header_blob(data):
+    if not data: raise ValueError('Header ChunkPack vide')
+    members=data[0]
+    if members not in (3,255):
+        raise ValueError('Header MemoryPack inattendu: %s'%members)
+    if members==255: raise ValueError('Header ChunkPack null')
+    pos=1
+    keys_raw,pos=_mp_unmanaged_array(data,pos,16)
+    chunks_raw,pos=_mp_unmanaged_array(data,pos,16)
+    hashes_raw,pos=_mp_unmanaged_array(data,pos,8)
+    keys=[]
+    for raw in keys_raw:
+        # PackChunkKey: Int64 Id, byte Category, 7 bytes explicit padding.
+        keys.append({'id':struct.unpack_from('<q',raw,0)[0],'category':raw[8]})
+    chunks=[]
+    for raw in chunks_raw:
+        # PackChunk: Int32 Offset, Size, UncompressedSize, bool IsCompressed (+3 pad).
+        chunks.append({'offset':struct.unpack_from('<i',raw,0)[0],
+                       'size':struct.unpack_from('<i',raw,4)[0],
+                       'uncompressed_size':struct.unpack_from('<i',raw,8)[0],
+                       'compressed':bool(raw[12])})
+    hashes=[struct.unpack_from('<Q',raw,0)[0] for raw in hashes_raw]
+    if len(keys)!=len(chunks):
+        raise ValueError('Header ChunkPack incohérent: %s clés / %s chunks'%(len(keys),len(chunks)))
+    return {'member_count':members,'keys':keys,'chunks':chunks,'hashes':hashes,'bytes_consumed':pos}
+
+def inspect_static_chunkpack():
+    """Read-only parser for the game's current ChunkPack static.data container."""
+    fp=_find_static_data_file()
+    if not fp:
+        return {'ok':False,'error':'static.data / static-data.*.dat introuvable',**_game_readonly_status()}
+    try:
+        with _game_ro_open(fp,'rb') as fh: data=fh.read()
+        if len(data)<24: raise ValueError('Fichier StaticData trop court')
+        pos=0
+        tag,version=struct.unpack_from('<II',data,pos); pos+=8
+        if tag!=0x50435A48:
+            raise ValueError('Signature ChunkPack invalide: 0x%08X'%tag)
+        config_version,pos=_read_dotnet_string(data,pos)
+        shared_version,pos=_read_dotnet_string(data,pos)
+        if pos+8>len(data): raise ValueError('Tailles du header ChunkPack absentes')
+        header_size,header_result_size=struct.unpack_from('<ii',data,pos); pos+=8
+        if header_size<0 or header_result_size<0 or pos+header_size>len(data):
+            raise ValueError('Tailles du header ChunkPack invalides')
+        compressed_header=data[pos:pos+header_size]; pos+=header_size
+        try:
+            header_blob,brotli_backend=_brotli_decompress_bytes(compressed_header)
+        except RuntimeError as e:
+            return {'ok':True,'file':fp,'tag':'0x%08X'%tag,'file_version':version,
+                    'config_version':config_version,'shared_version':shared_version,
+                    'header_size':header_size,'header_uncompressed_size':header_result_size,
+                    'chunk_data_start':pos,'brotli_available':False,'header_decoded':False,
+                    'warning':str(e),**_game_readonly_status()}
+        if len(header_blob)!=header_result_size:
+            raise ValueError('Header décompressé: %s octets, attendu %s'%(len(header_blob),header_result_size))
+        hdr=_parse_chunkpack_header_blob(header_blob)
+        rows=[]
+        for idx,(key,ch) in enumerate(zip(hdr['keys'],hdr['chunks'])):
+            rows.append({'index':idx,**key,**ch,
+                         'hash':hdr['hashes'][idx] if idx<len(hdr['hashes']) else None})
+        main=None
+        for row in rows:
+            if row['category']==0 and row['id']==0:
+                main=dict(row); break
+        main_probe=None
+        if main:
+            s=pos+main['offset']; e=s+main['size']
+            if 0<=s<=e<=len(data):
+                packed=data[s:e]
+                try:
+                    if main['compressed']:
+                        raw,_=_brotli_decompress_bytes(packed)
+                    else:
+                        raw=packed
+                    main_probe={'decoded_size':len(raw),
+                                'expected_size':main['uncompressed_size'],
+                                'first_byte':raw[0] if raw else None,
+                                'first_64_hex':raw[:64].hex()}
+                except Exception as e:
+                    main_probe={'error':str(e)}
+        return {'ok':True,'file':fp,'file_size':len(data),'tag':'0x%08X'%tag,
+                'file_version':version,'config_version':config_version,'shared_version':shared_version,
+                'header_size':header_size,'header_uncompressed_size':header_result_size,
+                'chunk_data_start':pos,'brotli_available':True,'brotli_backend':brotli_backend,
+                'header_decoded':True,'chunk_count':len(rows),'chunks':rows[:200],
+                'main_chunk':main,'main_probe':main_probe,**_game_readonly_status()}
+    except Exception as e:
+        return {'ok':False,'file':fp,'error':str(e),**_game_readonly_status()}
+
 def scan_static_data_cache():
     """Locate downloaded StaticData versions in Unity persistentDataPath/static_data.
     Read-only diagnostic: reports paths, sizes and simple version hints only."""
@@ -3240,6 +3366,7 @@ class H(BaseHTTPRequestHandler):
             if p.path=='/api/game-import/diff': self.sendj(compare_game_diff_snapshot()); return
             if p.path=='/api/game-import/player-aggregate': self.sendj(scan_player_aggregate_artifacts()); return
             if p.path=='/api/game-import/static-cache': self.sendj(scan_static_data_cache()); return
+            if p.path=='/api/game-import/static-pack': self.sendj(inspect_static_chunkpack()); return
             if p.path=='/api/game-import/decode-box': self.sendj(decode_local_box()); return
             if p.path=='/api/game-import/analyze-diff': self.sendj(analyze_last_game_diff()); return
             if p.path=='/api/heroes': self.sendj(q('SELECT name,faction,rarity,role,element FROM heroes WHERE name IS NOT NULL ORDER BY name')); return
