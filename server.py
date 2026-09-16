@@ -3105,6 +3105,45 @@ def scan_static_data_cache():
     rows.sort(key=lambda x:(x.get('mtime',0),x.get('size',0)),reverse=True)
     return {'count':len(rows),'files':rows,**_game_readonly_status()}
 
+def _mp_upgradeable_skills(data,span):
+    """Decode PlayerHero.SkillLevels = List<UpgradeableSkill>.
+    UpgradeableSkill is effectively (SkillKind, Level). Handles unmanaged 8-byte
+    records and version-tolerant 2-member objects.
+    Returns {skill_kind: level}.
+    """
+    s,e=span
+    if e-s<4:return {}
+    try:
+        count=struct.unpack_from('<i',data,s)[0]
+    except Exception:
+        return {}
+    if count<0 or count>32:return {}
+    p=s+4; out={}
+    # Common MemoryPack path for an unmanaged/value-type pair.
+    if p+count*8<=e:
+        vals={}
+        ok=True
+        for i in range(count):
+            kind,level=struct.unpack_from('<ii',data,p+i*8)
+            if not (-1<=kind<=32 and 0<=level<=20):
+                ok=False; break
+            vals[int(kind)]=int(level)
+        if ok and vals:
+            return vals
+    # Version-tolerant object fallback.
+    p=s+4
+    try:
+        for _ in range(count):
+            mc,lens,spans,p2=_mp_vt(data,p)
+            if len(spans)<2:return {}
+            kind=_mp_i32(data,spans[0]); level=_mp_i32(data,spans[1])
+            if kind is None or level is None:return {}
+            out[int(kind)]=int(level)
+            p=p2
+        return out
+    except Exception:
+        return {}
+
 def _decode_playerheroes_file(fp):
     with _game_ro_open(fp,'rb') as f:data=f.read()
     # Snapshot wrapper observed in the game's aggregate_snapshots: 25-byte envelope.
@@ -3119,7 +3158,8 @@ def _decode_playerheroes_file(fp):
         if len(hv)<13:raise ValueError('PlayerHero incomplet')
         relics=_mp_dict_i32_i32(data,hv[11])
         accessories=_mp_dict_i32_i32(data,hv[12])
-        skills=_mp_pairs_i32(data,hv[21]) if len(hv)>21 else {}
+        # PlayerHero member 10 is SkillLevels (List<UpgradeableSkill>).
+        skills=_mp_upgradeable_skills(data,hv[10]) if len(hv)>10 else {}
         heroes.append({
             'dictionary_id':dict_id,'inventory_id':_mp_i32(data,hv[0]),'config_id':_mp_i64(data,hv[1]),
             'rank':_mp_i32(data,hv[2]),'level':_mp_i32(data,hv[3]),'experience':_mp_i32(data,hv[4]),
