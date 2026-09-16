@@ -691,7 +691,8 @@ def _arena_hall_bonus_for_element(element):
          'hp_pct':0.0,'def_pct':0.0,'instinct':0.0,'unapplied':{}}
     if not eid:return out
     ensure_box_tables()
-    for r in q('SELECT stat_id,level FROM arena_hall_levels WHERE element_id=?',(eid,)):
+    rows=q('SELECT stat_id,level FROM arena_hall_levels WHERE element_id=?',(eid,))
+    for r in rows:
         sid=int(r.get('stat_id') or 0); lv=int(r.get('level') or 0)
         vals=ARENA_HALL_VALUES.get(sid) or []
         if not (1<=lv<=len(vals)):continue
@@ -699,6 +700,27 @@ def _arena_hall_bonus_for_element(element):
         key={4:'atk_pct',5:'def_pct',6:'hp_pct',7:'crit_rate',8:'crit_dmg',9:'accuracy',10:'resistance',
              12:'combo_points',13:'skill_speed_points',14:'skill_recovery_points',15:'mana_points',16:'instinct'}.get(sid)
         if key:out[key]+=v
+
+    # v11.02 — calibration du snapshot Eau validée sur 3 héros différents
+    # (Ardell, Gralmund, Fulrik) + capture de la Salle des trophées Eau.
+    # Le décodeur MemoryPack actuel produit la signature erronée suivante :
+    # Crit +6%, CritDmg +6%, PRE +30, RES +20, Recovery +0, Mana +24.
+    # La Salle réelle affichée en jeu est :
+    # Crit +5%, CritDmg 0%, PRE +40, RES +20, Recovery +20, Mana +20.
+    # On n'applique la correction que si cette signature exacte est détectée,
+    # afin de ne pas masquer une future modification de la Salle ou un décodeur corrigé.
+    if eid==3:
+        bad=(abs(out['crit_rate']-.06)<1e-9 and abs(out['crit_dmg']-.06)<1e-9
+             and abs(out['accuracy']-30)<1e-9 and abs(out['resistance']-20)<1e-9
+             and abs(out['skill_recovery_points'])<1e-9 and abs(out['mana_points']-24)<1e-9)
+        if bad:
+            out['crit_rate']=.05
+            out['crit_dmg']=0.0
+            out['accuracy']=40.0
+            out['resistance']=20.0
+            out['skill_recovery_points']=20.0
+            out['mana_points']=20.0
+            out['unapplied']['water_hall_calibration']='v11.02 verified snapshot'
     return out
 
 def _arena_hall_bonus_for_hero(name):
