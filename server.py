@@ -2858,6 +2858,73 @@ def inspect_static_chunkpack():
     except Exception as e:
         return {'ok':False,'file':fp,'error':str(e),**_game_readonly_status()}
 
+def scan_static_hall_f64_arrays():
+    """Read-only heuristic scanner for 15-value F64 arrays inside the main StaticData chunk.
+    Used only to locate StaticArenaData.HallBonuses before enabling live decoding."""
+    pack=inspect_static_chunkpack()
+    if not pack.get('ok') or not pack.get('main_chunk'):
+        return {'ok':False,'error':pack.get('error') or 'Chunk principal introuvable',
+                'pack':pack,**_game_readonly_status()}
+    fp=pack.get('file'); main=pack['main_chunk']
+    try:
+        with _game_ro_open(fp,'rb') as fh: data=fh.read()
+        # Re-read container prefix to locate chunk_data_start reliably.
+        pos=8
+        _,pos=_read_dotnet_string(data,pos)
+        _,pos=_read_dotnet_string(data,pos)
+        header_size,header_result_size=struct.unpack_from('<ii',data,pos); pos+=8
+        pos+=header_size
+        s=pos+int(main['offset']); e=s+int(main['size'])
+        packed=data[s:e]
+        raw,_=_brotli_decompress_bytes(packed) if main.get('compressed') else (packed,None)
+        scales=[
+            ('q32',4294967296.0),
+            ('1e6',1000000.0),
+            ('1e9',1000000000.0),
+            ('q16',65536.0),
+            ('1e4',10000.0),
+        ]
+        out=[]
+        n=len(raw)
+        # MemoryPack arrays of unmanaged F64 are typically: Int32 count + count*8 raw bytes.
+        for off in range(0,n-124):
+            if raw[off:off+4]!=b'\x0f\x00\x00\x00':
+                continue
+            vals=[struct.unpack_from('<q',raw,off+4+i*8)[0] for i in range(15)]
+            if all(v==0 for v in vals): continue
+            best=None
+            for label,scale in scales:
+                ds=[v/scale for v in vals]
+                finite=all(abs(x)<100000 for x in ds)
+                mono=all(ds[i]>=ds[i-1] for i in range(1,15))
+                nonneg=all(x>=0 for x in ds)
+                # Hall curves are generally non-negative and usually monotone.
+                small=sum(1 for x in ds if 0<=x<=1000)
+                score=(20 if finite else 0)+(20 if nonneg else 0)+(30 if mono else 0)+small
+                if best is None or score>best[0]:
+                    best=(score,label,ds)
+            if not best or best[0]<55: continue
+            # Favor arrays with actual progression; reject mostly identical/random huge patterns.
+            ds=best[2]
+            unique=len(set(round(x,10) for x in ds))
+            if unique<4: continue
+            prev=raw[max(0,off-16):off].hex()
+            out.append({
+                'offset':off,
+                'prefix16_hex':prev,
+                'raw_i64':vals,
+                'best_scale':best[1],
+                'decoded':[round(x,10) for x in ds],
+                'monotone':all(ds[i]>=ds[i-1] for i in range(1,15)),
+                'unique':unique
+            })
+            if len(out)>=250: break
+        return {'ok':True,'file':fp,'config_version':pack.get('config_version'),
+                'main_decoded_size':len(raw),'candidate_count':len(out),
+                'candidates':out,**_game_readonly_status()}
+    except Exception as e:
+        return {'ok':False,'file':fp,'error':str(e),**_game_readonly_status()}
+
 def scan_static_data_cache():
     """Locate downloaded StaticData versions in Unity persistentDataPath/static_data.
     Read-only diagnostic: reports paths, sizes and simple version hints only."""
@@ -3367,6 +3434,7 @@ class H(BaseHTTPRequestHandler):
             if p.path=='/api/game-import/player-aggregate': self.sendj(scan_player_aggregate_artifacts()); return
             if p.path=='/api/game-import/static-cache': self.sendj(scan_static_data_cache()); return
             if p.path=='/api/game-import/static-pack': self.sendj(inspect_static_chunkpack()); return
+            if p.path=='/api/game-import/static-hall-scan': self.sendj(scan_static_hall_f64_arrays()); return
             if p.path=='/api/game-import/decode-box': self.sendj(decode_local_box()); return
             if p.path=='/api/game-import/analyze-diff': self.sendj(analyze_last_game_diff()); return
             if p.path=='/api/heroes': self.sendj(q('SELECT name,faction,rarity,role,element FROM heroes WHERE name IS NOT NULL ORDER BY name')); return
