@@ -1,11 +1,11 @@
 {
-  "version": "11.01",
+  "version": "11.02",
   "channel": "stable",
   "files": [
     {
       "path": "server.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.01",
-      "git_sha1": "6266e6eaf2ffee6dde80a2d68de7b621cf4121ad"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.02",
+      "git_sha1": "e7b50ec2875f376b58e220813210506582c4e48a"
     },
     {
       "path": "awake_nodes.json",
@@ -28,5 +28,5 @@
       "git_sha1": "e59089a46a250e16182266a8618f03c0c6dcd554"
     }
   ],
-  "notes": "v11.01 : correction globale du mapping PRE/RÉS dans les stats d'éveil de base. Les champs extraits Accuracy/Resistance étaient inversés : Ardell récupère +3 PRE et Gralmund +4 PRE. Diagnostic PRE/RÉS conservé. La Salle des trophées Eau reste en cours de calibration séparée."
+  "notes": "v11.02 : correction ciblée et sécurisée de la Salle des trophées Eau, validée sur Ardell, Gralmund et Fulrik. Si la signature erronée du snapshot est détectée (Crit +6%, Dég crit +6%, PRE +30, RES +20, Recovery 0, Mana +24), elle est corrigée en Crit +5%, Dég crit 0%, PRE +40, RES +20, Recovery +20, Mana +20. Le correctif PRE/RÉS d'éveil de base de v11.01 est conservé."
 }
