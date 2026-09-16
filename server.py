@@ -11,6 +11,7 @@ HOST='127.0.0.1'; PORT=8501
 AUTO_TIMINGS_FILE=os.path.join(BASE,'auto_timings.json')
 ASCENSION_DATA_FILE=os.path.join(BASE,'ascension_multipliers.json')
 CHARACTER_STATIC_FILE=os.path.join(BASE,'character_static_1302.json')
+RELIC_STATIC_FILE=os.path.join(BASE,'relic_static_data.json')
 
 def _load_static_character_sources():
     """Authoritative tables extracted from the game's StaticCharacterData/CharacterConfig."""
@@ -618,62 +619,20 @@ def _box_relic_rows(hero_inventory_id):
 
 # Relic set IDs recovered from the game RelicSet enum. Public set names/effects
 # follow the current Invokers relic guide. A 5-piece set ALSO grants its 3-piece tier.
-RELIC_SET_INFO = {
-    # Standard sets — 5p tier is additive with 3p tier.
-    101: {'name':'Attack','three':{'atk_pct':0.10},'five':{'atk_pct':0.20},'total':'ATQ +30%'},
-    102: {'name':'Attack','three':{'atk_pct':0.10},'five':{'atk_pct':0.20},'total':'ATQ +30%'},
-    103: {'name':'Defense','three':{'def_pct':0.10},'five':{'def_pct':0.20},'total':'DEF +30%'},
-    104: {'name':'Crit Rate','three':{'crit_rate':0.10},'five':{'crit_rate':0.20},'total':'Crit Rate +30%'},
-    105: {'name':'Crit Damage','three':{'crit_dmg':0.20},'five':{'crit_dmg':0.40},'total':'Crit DMG +60%'},
-    106: {'name':'Accuracy','three':{'accuracy':50.0},'five':{'accuracy':75.0},'total':'PRÉ +125'},
-    107: {'name':'Resistance','three':{'resistance':50.0},'five':{'resistance':75.0},'total':'RÉS +125'},
-    108: {'name':'Instinct','three':{'instinct':30.0},'five':{'instinct':45.0},'total':'Instinct +75'},
-    109: {'name':'Mana','three':{'mana_points':30.0},'five':{'mana_points':45.0},'total':'Mana Gen +75'},
+def _load_relic_static_source():
+    """Load relic configuration extracted from StaticRelicData."""
+    with open(RELIC_STATIC_FILE,'r',encoding='utf-8') as f:
+        d=json.load(f)
+    sets={int(k):v for k,v in (d.get('sets') or {}).items()}
+    stages={int(rank):{int(stat):vals for stat,vals in stats.items()}
+            for rank,stats in (d.get('substat_stage') or {}).items()}
+    rolls=tuple(float(x) for x in (d.get('roll_strengths') or []))
+    initial={int(k):int(v) for k,v in (d.get('initial_substats_by_rarity') or {}).items()}
+    if not sets or not stages or not rolls or not initial:
+        raise RuntimeError('StaticRelicData extraction is empty')
+    return sets,stages,rolls,initial
 
-    # Advanced general-purpose sets.
-    110: {'name':'Spark','three':{'skill_speed_points':30.0},'five':{'skill_speed_points':45.0},'total':'Skill SPD +75'},
-    111: {'name':'Fury','three':{'skill_recovery_points':30.0},'five':{'skill_recovery_points':45.0},'total':'Skill RECOV +75'},
-    112: {'name':'Vampire','three':{'atk_pct':0.10},'five':{},'total':'ATQ +10% + Lifesteal','note':'5p: Lifesteal Skills +6% / Combo +1%; no direct DPS stat'},
-    113: {'name':'Predator','three':{'atk_pct':0.10},'five':{'crit_dmg':0.40},'total':'ATQ +10% + Crit DMG +40%'},
-    114: {'name':'Predator','three':{'atk_pct':0.10},'five':{'crit_dmg':0.40},'total':'ATQ +10% + Crit DMG +40%'},
-    115: {'name':'Voodoo','three':{},'five':{},'total':'Buff Reduction -3s','note':'3p: -1s buff duration on target with Combo 3/5; 5p adds -2s'},
-
-    # Corruption-tolerance sets. Their 3p effect is encounter-specific; 5p always grants +20% HP/ATK/DEF.
-    116: {'name':'Crush Tolerance','three':{},'five':{'hp_pct':0.20,'atk_pct':0.20,'def_pct':0.20},'total':'Crush Tol. +50% + HP/ATK/DEF +20%','tolerance':'Crush'},
-    117: {'name':'Manashock Tolerance','three':{},'five':{'hp_pct':0.20,'atk_pct':0.20,'def_pct':0.20},'total':'Manashock Tol. +50% + HP/ATK/DEF +20%','tolerance':'Manashock'},
-    118: {'name':'Frost Tolerance','three':{},'five':{'hp_pct':0.20,'atk_pct':0.20,'def_pct':0.20},'total':'Frost Tol. +50% + HP/ATK/DEF +20%','tolerance':'Frost'},
-    119: {'name':'Daze Tolerance','three':{},'five':{'hp_pct':0.20,'atk_pct':0.20,'def_pct':0.20},'total':'Daze Tol. +50% + HP/ATK/DEF +20%','tolerance':'Daze'},
-    120: {'name':'Paralysis Tolerance','three':{},'five':{'hp_pct':0.20,'atk_pct':0.20,'def_pct':0.20},'total':'Paralysis Tol. +50% + HP/ATK/DEF +20%','tolerance':'Paralysis'},
-    121: {'name':'Nightmare Tolerance','three':{},'five':{'hp_pct':0.20,'atk_pct':0.20,'def_pct':0.20},'total':'Nightmare Tol. +50% + HP/ATK/DEF +20%','tolerance':'Nightmare'},
-    122: {'name':'Mindfog Tolerance','three':{},'five':{'hp_pct':0.20,'atk_pct':0.20,'def_pct':0.20},'total':'Mindfog Tol. +50% + HP/ATK/DEF +20%','tolerance':'Mindfog'},
-    123: {'name':'Fatigue Tolerance','three':{},'five':{'hp_pct':0.20,'atk_pct':0.20,'def_pct':0.20},'total':'Fatigue Tol. +50% + HP/ATK/DEF +20%','tolerance':'Fatigue'},
-    124: {'name':'Blight Tolerance','three':{},'five':{'hp_pct':0.20,'atk_pct':0.20,'def_pct':0.20},'total':'Blight Tol. +50% + HP/ATK/DEF +20%','tolerance':'Blight'},
-    125: {'name':'Manaburn Tolerance','three':{},'five':{'hp_pct':0.20,'atk_pct':0.20,'def_pct':0.20},'total':'Manaburn Tol. +50% + HP/ATK/DEF +20%','tolerance':'Manaburn'},
-    126: {'name':'Atrophy Tolerance','three':{},'five':{'hp_pct':0.20,'atk_pct':0.20,'def_pct':0.20},'total':'Atrophy Tol. +50% + HP/ATK/DEF +20%','tolerance':'Atrophy'},
-    127: {'name':'Bloodrot Tolerance','three':{},'five':{'hp_pct':0.20,'atk_pct':0.20,'def_pct':0.20},'total':'Bloodrot Tol. +50% + HP/ATK/DEF +20%','tolerance':'Bloodrot'},
-}
-
-
-# Exact 5★/6★ substat stage coefficients recovered from static.data.
-# Values are the 100% roll amount for initial roll, then upgrade #1..#4.
-RELIC_SUBSTAT_STAGE = {
-    5: {
-        1:[21,21,27,34,47], 2:[21,21,27,34,47], 3:[210,210,270,340,470],
-        4:[2.7,2.7,3.5,4.3,5.6], 5:[2.7,2.7,3.5,4.3,5.6], 6:[2.7,2.7,3.5,4.3,5.6],
-        7:[3.2,3.2,4.2,5.1,6.8], 8:[3.8,3.8,4.9,6.1,7.7],
-        9:[17,17,22,27,37], 10:[17,17,22,27,37],
-        12:[9,9,12,14,16], 13:[9,9,12,14,16], 14:[9,9,12,14,16], 15:[9,9,12,14,16], 16:[9,9,12,14,16],
-    },
-    6: {
-        1:[29,29,38,46,58], 2:[29,29,38,46,58], 3:[290,290,380,460,580],
-        4:[3.6,3.6,4.7,5.7,7.4], 5:[3.6,3.6,4.7,5.7,7.4], 6:[3.6,3.6,4.7,5.7,7.4],
-        7:[4.3,4.3,5.6,6.9,8.9], 8:[5.0,5.0,6.5,8.0,10.5],
-        9:[23,23,30,37,47], 10:[23,23,30,37,47],
-        12:[11,11,14,18,26], 13:[11,11,14,18,26], 14:[11,11,14,18,26], 15:[11,11,14,18,26], 16:[11,11,14,18,26],
-    },
-}
-RELIC_ROLL_STRENGTHS=(0.7,0.8,0.9,1.0)
-RELIC_INITIAL_SUBS={1:0,2:1,3:2,4:3,5:4}
+RELIC_SET_INFO, RELIC_SUBSTAT_STAGE, RELIC_ROLL_STRENGTHS, RELIC_INITIAL_SUBS = _load_relic_static_source()
 
 def _relic_upgrade_events(rarity, level):
     initial=RELIC_INITIAL_SUBS.get(int(rarity or 0),0)
