@@ -12,6 +12,7 @@ AUTO_TIMINGS_FILE=os.path.join(BASE,'auto_timings.json')
 ASCENSION_DATA_FILE=os.path.join(BASE,'ascension_multipliers.json')
 CHARACTER_STATIC_FILE=os.path.join(BASE,'character_static_1302.json')
 RELIC_STATIC_FILE=os.path.join(BASE,'relic_static_data.json')
+ARENA_STATIC_FILE=os.path.join(BASE,'arena_static_data.json')
 
 def _load_static_character_sources():
     """Authoritative tables extracted from the game's StaticCharacterData/CharacterConfig."""
@@ -438,20 +439,16 @@ def save_config_mappings(mappings):
 ARENA_ELEMENT_ID_TO_NAME={1:'Feu',2:'Terre',3:'Eau',4:'Vent',5:'Lumière',6:'Ténèbres'}
 ARENA_ELEMENT_NAME_TO_ID={v:k for k,v in ARENA_ELEMENT_ID_TO_NAME.items()}
 
-ARENA_HALL_VALUES={
-    4:[.02,.04,.06,.08,.10,.12,.14,.16,.18,.20,.22,.24,.26,.28,.30],
-    5:[.02,.04,.06,.08,.10,.12,.14,.16,.18,.20,.22,.24,.26,.28,.30],
-    6:[.02,.04,.06,.08,.10,.12,.14,.16,.18,.20,.22,.24,.26,.28,.30],
-    7:[.01,.02,.03,.04,.05,.06,.07,.08,.09,.10,.11,.12,.13,.14,.15],
-    8:[.02,.04,.06,.08,.10,.13,.16,.19,.22,.25,.28,.31,.34,.37,.40],
-    9:[5,10,15,20,25,30,35,40,45,50,60,70,80,90,100],
-    10:[5,10,15,20,25,30,35,40,45,50,60,70,80,90,100],
-    12:[4,8,12,16,20,24,28,32,36,40,44,48,52,56,60],
-    13:[4,8,12,16,20,24,28,32,36,40,44,48,52,56,60],
-    14:[4,8,12,16,20,24,28,32,36,40,44,48,52,56,60],
-    15:[4,8,12,16,20,24,28,32,36,40,44,48,52,56,60],
-    16:[4,8,12,16,20,24,28,32,36,40,44,48,52,56,60],
-}
+def _load_arena_static_source():
+    """Load HallBonuses extracted from StaticArenaData."""
+    with open(ARENA_STATIC_FILE,'r',encoding='utf-8') as f:
+        d=json.load(f)
+    vals={int(k):[float(x) for x in v] for k,v in (d.get('character_stat_bonus_values') or {}).items()}
+    if not vals:
+        raise RuntimeError('StaticArenaData HallBonuses extraction is empty')
+    return vals
+
+ARENA_HALL_VALUES=_load_arena_static_source()
 
 def _decode_playerarena_hall_file(fp):
     """Décodage read-only de PlayerArenaModel.dat.
