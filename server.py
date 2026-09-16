@@ -1611,6 +1611,19 @@ def effect_pass_chance(acc,res):
     resist=max(0.0,min(1.0,initial_resist_chance(acc,res)))
     return 1.0-resist
 
+def final_debuff_pass_chance(acc,res,phase2_bonus=0.0,element_delta=0.0):
+    """Apply PRE/RES hard floor first, then secondary modifiers.
+
+    Elemental advantage must never resurrect a debuff when PRE is below the
+    absolute landing floor (RES - 120). Other explicit chance modifiers such
+    as ACC Up / RES Down may still move the result before the elemental step.
+    """
+    base=effect_pass_chance(acc,res)
+    chance=max(0.0,min(1.0,base+num(phase2_bonus)))
+    if chance<=0.0:
+        return 0.0
+    return max(0.0,min(1.0,chance+num(element_delta)))
+
 
 TEAM_BUFF_NAMES={'ATK Up','Crit Rate Up','Crit DMG Up','Combo SPD Up','Skill SPD Up','Skill Recovery Up','Mana Generation Up','ACC Up','RES Up','DEF Up','Move SPD Up'}
 TEAM_TARGET_DEBUFF_NAMES=set(DEBUFF_NAMES)|{'Weakness','Shock'}
@@ -1737,7 +1750,7 @@ def prepare_team_buffs(supports,duration,adds_mode='none',boss_res=0,boss_elemen
         x=dict(e)
         if x.get('kind')=='debuff_attempt':
             active_res_down=max([r['value'] for r in resolved if r.get('kind')=='debuff' and r.get('effect')=='RES Down' and r['start']<=x['start']<r['end']] or [0.0])
-            chance=max(0.0,min(1.0,effect_pass_chance(num(x.get('accuracy')),boss_res)+active_res_down+num(x.get('element_debuff_delta'))))
+            chance=final_debuff_pass_chance(num(x.get('accuracy')),boss_res,active_res_down,num(x.get('element_debuff_delta')))
             x['pass_chance']=chance
             roll=deterministic_roll(f"supportdebuff|{x['source']}|{x['action']}|{x['effect']}|{x['start']:.6f}")
             x['success']=roll<chance
@@ -1826,7 +1839,7 @@ def simulate_combat(name, levels=None, duration=120, boss_def=1320, boss_res=0, 
         # displayed boss RES stat in points.
         # Phase 2 uses percentage-point modifiers; ACC Up does NOT alter the
         # numerical ACC stat. It directly lowers Resist Chance (= raises Land Chance).
-        return max(0.0,min(1.0,effect_pass_chance(acc,boss_res)+effective_buff_value('ACC Up',now)+effective_debuff_value('RES Down',now)+elem_mod['debuff_delta']))
+        return final_debuff_pass_chance(acc,boss_res,effective_buff_value('ACC Up',now)+effective_debuff_value('RES Down',now),elem_mod['debuff_delta'])
     def register_interval(effect,start,end): intervals.setdefault(effect,[]).append((max(0,start),min(duration,end)))
     def brandis_burn_cap_mult(action, level):
         # GGNoLuck published limits for Brandis target Burns. Values are ×ATK per tick.
