@@ -639,7 +639,7 @@ def _trophy_sim_audit(name, sim, levels):
         a=str(x.get('action') or '')
         if a.startswith('Auto'): casts['Auto']+=1
         elif a in casts: casts[a]+=1
-    out={'casts':casts,'damage_by':dict((sim or {}).get('damage_by') or {})}
+    out={'casts':casts,'damage_by':dict((sim or {}).get('damage_by') or {}),'dot_by_source':dict((sim or {}).get('dot_by_source') or {})}
     if str(name).strip().lower()=='brandis':
         ur=coeff_row(name,(levels or {}).get('ult',7)) or {}
         nominal=max(1,int(num(ur.get('Ult Hits'),1)))
@@ -2366,8 +2366,13 @@ def simulate_combat(name, levels=None, duration=120, boss_def=1320, boss_res=0, 
         mana=min(ult_cost,mana)
         action_pass_chance=debuff_pass_chance(start)
         res_down_before=effective_debuff_value('RES Down',start)
+        # For optimizer/comparison runs, anchor proc/debuff RNG to the occurrence
+        # of the same action instead of the absolute timeline row. A small speed/
+        # recovery change can insert/remove autos and must not reroll Brandis Burns
+        # or other PRE/RES checks artificially.
+        effect_seq=occ if comparison_mode else rowno
         for e in effects:
-            ok=apply_effect(e,start,action,rowno,crits,hits,action_pass_chance); effect_results.append(f"{e['name']} {'✓' if ok else '✗'}")
+            ok=apply_effect(e,start,action,effect_seq,crits,hits,action_pass_chance); effect_results.append(f"{e['name']} {'✓' if ok else '✗'}")
         # Auto chain increments after processing Auto5 effect
         if key=='auto': auto_idx=1 if auto_idx==5 else auto_idx+1
         t=min(duration,t+cast)
