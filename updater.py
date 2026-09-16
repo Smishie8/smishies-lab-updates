@@ -64,6 +64,25 @@ def sha256(path):
         for chunk in iter(lambda:f.read(1024*1024),b''):h.update(chunk)
     return h.hexdigest().lower()
 
+def manifest_files_match(manifest):
+    """Verify installed files, not only version.json.
+    A stale server.py must trigger repair even if version.json already says current.
+    """
+    for item in manifest.get('files') or []:
+        rel=str(item.get('path') or '').replace('\\','/').strip('/')
+        expected=str(item.get('sha256') or '').strip().lower()
+        if not rel or not expected:
+            continue
+        p=APP_DIR/rel
+        if not p.is_file():
+            return False
+        try:
+            if sha256(p)!=expected:
+                return False
+        except Exception:
+            return False
+    return True
+
 def backup_file(rel):
     src=APP_DIR/rel
     if not src.exists():return
@@ -143,6 +162,9 @@ def apply_file_manifest(manifest,preserve):
     files=manifest.get('files') or []
     if not files:raise RuntimeError('Manifest sans fichiers')
     preserve={p.replace('\\','/').strip('/') for p in preserve}
+    # Never preserve executable/code payloads: preserve is only for user data.
+    preserve.discard('server.py')
+    preserve.discard('updater.py')
     backup=STATE_DIR/'backup_before_update'; shutil.rmtree(backup,ignore_errors=True)
     tmp=Path(tempfile.mkdtemp(prefix='smishies_files_'))
     try:
@@ -173,8 +195,13 @@ def check_and_apply(force=False):
     try:manifest=fetch_json(manifest_url,int(cfg.get('timeout_seconds',12)))
     except Exception as e:log(f'Vérification impossible ({e}). Démarrage de la version installée.'); return 0
     remote=str(manifest.get('version') or '0'); local=current_version()
-    if not force and version_tuple(remote)<=version_tuple(local):log(f'À jour : v{local}.'); return 0
-    log(f'Nouvelle version v{remote} détectée (installée : v{local}).')
+    files_ok=manifest_files_match(manifest)
+    if not force and version_tuple(remote)<=version_tuple(local) and files_ok:
+        log(f'À jour : v{local}.'); return 0
+    if version_tuple(remote)<=version_tuple(local) and not files_ok:
+        log(f'Réparation détectée : v{local} annoncée mais fichiers locaux différents du manifeste.')
+    else:
+        log(f'Nouvelle version v{remote} détectée (installée : v{local}).')
     try:
         if manifest.get('files'):
             log('Téléchargement des fichiers de mise à jour…'); apply_file_manifest(manifest,cfg.get('preserve',[]))
