@@ -1,11 +1,11 @@
 {
-  "version": "11.04",
+  "version": "11.05",
   "channel": "stable",
   "files": [
     {
       "path": "server.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.04",
-      "git_sha1": "eb9ec7866f9d9dd323767dc128491e92a55dda37"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.05",
+      "git_sha1": "d58359fc058be564ee5011e99926e69aa6ff57de"
     },
     {
       "path": "awake_nodes.json",
@@ -41,7 +41,12 @@
       "path": "relic_static_data.json",
       "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/relic_static_data.json?v=11.04",
       "git_sha1": "804f2e4e156106f4d0a843c8c48374567037782c"
+    },
+    {
+      "path": "arena_static_data.json",
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/arena_static_data.json?v=11.05",
+      "git_sha1": "a8038f48a9f31f76c36d0126141c08e3bce37ac8"
     }
   ],
-  "notes": "v11.04 : migration StaticRelicData. Les définitions de sets, coefficients de substats 5★/6★, forces de rolls et nombre initial de substats ne sont plus codés dans server.py. Ils sont chargés depuis relic_static_data.json, préparant le remplacement direct par un décodeur live de static.data. Les données héros/ascension restent externalisées depuis v11.03."
+  "notes": "v11.05 : migration StaticArenaData. Les courbes HallBonuses ne sont plus codées dans server.py : elles sont chargées depuis arena_static_data.json, source dédiée à StaticArenaData.HallBonuses. Cela prépare le remplacement direct par le décodage live de static.data sans modifier le moteur de calcul. Le correctif Eau reste temporairement actif tant que l'extraction live de StaticArenaData n'est pas branchée."
 }
