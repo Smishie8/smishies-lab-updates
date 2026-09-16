@@ -1,0 +1,513 @@
+{
+  "source": "StaticRelicData extraction / validated game data",
+  "note": "Runtime data file for Smishie's Lab. Values moved out of server.py so StaticRelicData decoding can replace them without changing calculation code.",
+  "sets": {
+    "101": {
+      "name": "Attack",
+      "three": {
+        "atk_pct": 0.1
+      },
+      "five": {
+        "atk_pct": 0.2
+      },
+      "total": "ATQ +30%"
+    },
+    "102": {
+      "name": "Attack",
+      "three": {
+        "atk_pct": 0.1
+      },
+      "five": {
+        "atk_pct": 0.2
+      },
+      "total": "ATQ +30%"
+    },
+    "103": {
+      "name": "Defense",
+      "three": {
+        "def_pct": 0.1
+      },
+      "five": {
+        "def_pct": 0.2
+      },
+      "total": "DEF +30%"
+    },
+    "104": {
+      "name": "Crit Rate",
+      "three": {
+        "crit_rate": 0.1
+      },
+      "five": {
+        "crit_rate": 0.2
+      },
+      "total": "Crit Rate +30%"
+    },
+    "105": {
+      "name": "Crit Damage",
+      "three": {
+        "crit_dmg": 0.2
+      },
+      "five": {
+        "crit_dmg": 0.4
+      },
+      "total": "Crit DMG +60%"
+    },
+    "106": {
+      "name": "Accuracy",
+      "three": {
+        "accuracy": 50
+      },
+      "five": {
+        "accuracy": 75
+      },
+      "total": "PRÉ +125"
+    },
+    "107": {
+      "name": "Resistance",
+      "three": {
+        "resistance": 50
+      },
+      "five": {
+        "resistance": 75
+      },
+      "total": "RÉS +125"
+    },
+    "108": {
+      "name": "Instinct",
+      "three": {
+        "instinct": 30
+      },
+      "five": {
+        "instinct": 45
+      },
+      "total": "Instinct +75"
+    },
+    "109": {
+      "name": "Mana",
+      "three": {
+        "mana_points": 30
+      },
+      "five": {
+        "mana_points": 45
+      },
+      "total": "Mana Gen +75"
+    },
+    "110": {
+      "name": "Spark",
+      "three": {
+        "skill_speed_points": 30
+      },
+      "five": {
+        "skill_speed_points": 45
+      },
+      "total": "Skill SPD +75"
+    },
+    "111": {
+      "name": "Fury",
+      "three": {
+        "skill_recovery_points": 30
+      },
+      "five": {
+        "skill_recovery_points": 45
+      },
+      "total": "Skill RECOV +75"
+    },
+    "112": {
+      "name": "Vampire",
+      "three": {
+        "atk_pct": 0.1
+      },
+      "five": {},
+      "total": "ATQ +10% + Lifesteal",
+      "note": "5p: Lifesteal Skills +6% / Combo +1%; no direct DPS stat"
+    },
+    "113": {
+      "name": "Predator",
+      "three": {
+        "atk_pct": 0.1
+      },
+      "five": {
+        "crit_dmg": 0.4
+      },
+      "total": "ATQ +10% + Crit DMG +40%"
+    },
+    "114": {
+      "name": "Predator",
+      "three": {
+        "atk_pct": 0.1
+      },
+      "five": {
+        "crit_dmg": 0.4
+      },
+      "total": "ATQ +10% + Crit DMG +40%"
+    },
+    "115": {
+      "name": "Voodoo",
+      "three": {},
+      "five": {},
+      "total": "Buff Reduction -3s",
+      "note": "3p: -1s buff duration on target with Combo 3/5; 5p adds -2s"
+    },
+    "116": {
+      "name": "Crush Tolerance",
+      "three": {},
+      "five": {
+        "hp_pct": 0.2,
+        "atk_pct": 0.2,
+        "def_pct": 0.2
+      },
+      "total": "Crush Tol. +50% + HP/ATK/DEF +20%",
+      "tolerance": "Crush"
+    },
+    "117": {
+      "name": "Manashock Tolerance",
+      "three": {},
+      "five": {
+        "hp_pct": 0.2,
+        "atk_pct": 0.2,
+        "def_pct": 0.2
+      },
+      "total": "Manashock Tol. +50% + HP/ATK/DEF +20%",
+      "tolerance": "Manashock"
+    },
+    "118": {
+      "name": "Frost Tolerance",
+      "three": {},
+      "five": {
+        "hp_pct": 0.2,
+        "atk_pct": 0.2,
+        "def_pct": 0.2
+      },
+      "total": "Frost Tol. +50% + HP/ATK/DEF +20%",
+      "tolerance": "Frost"
+    },
+    "119": {
+      "name": "Daze Tolerance",
+      "three": {},
+      "five": {
+        "hp_pct": 0.2,
+        "atk_pct": 0.2,
+        "def_pct": 0.2
+      },
+      "total": "Daze Tol. +50% + HP/ATK/DEF +20%",
+      "tolerance": "Daze"
+    },
+    "120": {
+      "name": "Paralysis Tolerance",
+      "three": {},
+      "five": {
+        "hp_pct": 0.2,
+        "atk_pct": 0.2,
+        "def_pct": 0.2
+      },
+      "total": "Paralysis Tol. +50% + HP/ATK/DEF +20%",
+      "tolerance": "Paralysis"
+    },
+    "121": {
+      "name": "Nightmare Tolerance",
+      "three": {},
+      "five": {
+        "hp_pct": 0.2,
+        "atk_pct": 0.2,
+        "def_pct": 0.2
+      },
+      "total": "Nightmare Tol. +50% + HP/ATK/DEF +20%",
+      "tolerance": "Nightmare"
+    },
+    "122": {
+      "name": "Mindfog Tolerance",
+      "three": {},
+      "five": {
+        "hp_pct": 0.2,
+        "atk_pct": 0.2,
+        "def_pct": 0.2
+      },
+      "total": "Mindfog Tol. +50% + HP/ATK/DEF +20%",
+      "tolerance": "Mindfog"
+    },
+    "123": {
+      "name": "Fatigue Tolerance",
+      "three": {},
+      "five": {
+        "hp_pct": 0.2,
+        "atk_pct": 0.2,
+        "def_pct": 0.2
+      },
+      "total": "Fatigue Tol. +50% + HP/ATK/DEF +20%",
+      "tolerance": "Fatigue"
+    },
+    "124": {
+      "name": "Blight Tolerance",
+      "three": {},
+      "five": {
+        "hp_pct": 0.2,
+        "atk_pct": 0.2,
+        "def_pct": 0.2
+      },
+      "total": "Blight Tol. +50% + HP/ATK/DEF +20%",
+      "tolerance": "Blight"
+    },
+    "125": {
+      "name": "Manaburn Tolerance",
+      "three": {},
+      "five": {
+        "hp_pct": 0.2,
+        "atk_pct": 0.2,
+        "def_pct": 0.2
+      },
+      "total": "Manaburn Tol. +50% + HP/ATK/DEF +20%",
+      "tolerance": "Manaburn"
+    },
+    "126": {
+      "name": "Atrophy Tolerance",
+      "three": {},
+      "five": {
+        "hp_pct": 0.2,
+        "atk_pct": 0.2,
+        "def_pct": 0.2
+      },
+      "total": "Atrophy Tol. +50% + HP/ATK/DEF +20%",
+      "tolerance": "Atrophy"
+    },
+    "127": {
+      "name": "Bloodrot Tolerance",
+      "three": {},
+      "five": {
+        "hp_pct": 0.2,
+        "atk_pct": 0.2,
+        "def_pct": 0.2
+      },
+      "total": "Bloodrot Tol. +50% + HP/ATK/DEF +20%",
+      "tolerance": "Bloodrot"
+    }
+  },
+  "substat_stage": {
+    "5": {
+      "1": [
+        21,
+        21,
+        27,
+        34,
+        47
+      ],
+      "2": [
+        21,
+        21,
+        27,
+        34,
+        47
+      ],
+      "3": [
+        210,
+        210,
+        270,
+        340,
+        470
+      ],
+      "4": [
+        2.7,
+        2.7,
+        3.5,
+        4.3,
+        5.6
+      ],
+      "5": [
+        2.7,
+        2.7,
+        3.5,
+        4.3,
+        5.6
+      ],
+      "6": [
+        2.7,
+        2.7,
+        3.5,
+        4.3,
+        5.6
+      ],
+      "7": [
+        3.2,
+        3.2,
+        4.2,
+        5.1,
+        6.8
+      ],
+      "8": [
+        3.8,
+        3.8,
+        4.9,
+        6.1,
+        7.7
+      ],
+      "9": [
+        17,
+        17,
+        22,
+        27,
+        37
+      ],
+      "10": [
+        17,
+        17,
+        22,
+        27,
+        37
+      ],
+      "12": [
+        9,
+        9,
+        12,
+        14,
+        16
+      ],
+      "13": [
+        9,
+        9,
+        12,
+        14,
+        16
+      ],
+      "14": [
+        9,
+        9,
+        12,
+        14,
+        16
+      ],
+      "15": [
+        9,
+        9,
+        12,
+        14,
+        16
+      ],
+      "16": [
+        9,
+        9,
+        12,
+        14,
+        16
+      ]
+    },
+    "6": {
+      "1": [
+        29,
+        29,
+        38,
+        46,
+        58
+      ],
+      "2": [
+        29,
+        29,
+        38,
+        46,
+        58
+      ],
+      "3": [
+        290,
+        290,
+        380,
+        460,
+        580
+      ],
+      "4": [
+        3.6,
+        3.6,
+        4.7,
+        5.7,
+        7.4
+      ],
+      "5": [
+        3.6,
+        3.6,
+        4.7,
+        5.7,
+        7.4
+      ],
+      "6": [
+        3.6,
+        3.6,
+        4.7,
+        5.7,
+        7.4
+      ],
+      "7": [
+        4.3,
+        4.3,
+        5.6,
+        6.9,
+        8.9
+      ],
+      "8": [
+        5,
+        5,
+        6.5,
+        8,
+        10.5
+      ],
+      "9": [
+        23,
+        23,
+        30,
+        37,
+        47
+      ],
+      "10": [
+        23,
+        23,
+        30,
+        37,
+        47
+      ],
+      "12": [
+        11,
+        11,
+        14,
+        18,
+        26
+      ],
+      "13": [
+        11,
+        11,
+        14,
+        18,
+        26
+      ],
+      "14": [
+        11,
+        11,
+        14,
+        18,
+        26
+      ],
+      "15": [
+        11,
+        11,
+        14,
+        18,
+        26
+      ],
+      "16": [
+        11,
+        11,
+        14,
+        18,
+        26
+      ]
+    }
+  },
+  "roll_strengths": [
+    0.7,
+    0.8,
+    0.9,
+    1
+  ],
+  "initial_substats_by_rarity": {
+    "1": 0,
+    "2": 1,
+    "3": 2,
+    "4": 3,
+    "5": 4
+  }
+}
