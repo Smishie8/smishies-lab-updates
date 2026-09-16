@@ -1,11 +1,11 @@
 {
-  "version": "11.17",
+  "version": "11.18",
   "channel": "stable",
   "files": [
     {
       "path": "server.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.17",
-      "git_sha1": "fa90138c7331b1d307ffcbecdd9ecff36fc03dbc"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.18",
+      "git_sha1": "992ce75bcb8a886d4743cc4698e027a2b6f85719"
     },
     {
       "path": "awake_nodes.json",
@@ -63,5 +63,5 @@
       "git_sha1": "4b126eeeb546f54833ffcd048c35d77c22c83a46"
     }
   ],
-  "notes": "v11.17 : l’évaluateur de supports couvre maintenant tous les héros pouvant buffer/debuffer, quel que soit leur rôle. Le Top 3 affiche Score offensif /100, Score général /100 et Score boss /100, plus la décomposition survie (temps gagné, heal utile, dégâts évités, rez) et l’apport marginal de chaque buff/debuff obtenu par contre-factuel. Les effets avancés provisoires restent explicitement signalés."
+  "notes": "v11.18 : dans « Meilleur support », ajout d’un sélecteur Top 3 / Top 5 / Top 10 / Top 20. L’API renvoie désormais les 20 meilleurs supports ; l’affichage peut être changé instantanément sans relancer l’analyse."
 }
