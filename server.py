@@ -1586,22 +1586,21 @@ def deterministic_roll(seed):
     return int.from_bytes(b,'big')/2**64
 
 def initial_resist_chance(acc,res):
-    """Initial Resist Chance (IRC), before phase-2 modifiers.
+    """Signed Initial Resist Chance (IRC), before Phase-2 modifiers.
 
-    Official rule: RES-ACC is 1:1 between -50 and +50. Outside that
-    interval the game uses diminishing returns, reaching +/-100% at +/-120.
-    The public guide gives +100 -> 89.60%; the exponent below matches that
-    milestone while keeping the known endpoints continuous. IRC is deliberately
-    left signed because phase-2 modifiers are applied before final clamping.
+    RES-ACC is 1:1 between -50 and +50. Outside that interval the official
+    diminishing-returns curve is used. IMPORTANT: IRC is NOT clamped at
+    +/-100% here. Surplus above 100% (or below 0%) must survive into Phase 2,
+    because ACC/RES buffs, elemental modifiers and corruption effects are
+    applied before Final Resist Chance is normalized to [0,100%].
     """
     diff=float(res)-float(acc)
     if -50.0 <= diff <= 50.0:
         return diff/100.0
     sign=1.0 if diff>0 else -1.0
     ad=abs(diff)
-    if ad>=120.0:
-        return sign*1.0
-    # Continuous 50 -> 50%, 100 -> 89.60%, 120 -> 100%.
+    # Continuous curve: 50 -> 50%, 100 -> 89.60%, 120 -> 100%,
+    # and it intentionally continues beyond 100% for Phase-2 surplus.
     exponent=0.692
     return sign*(0.5 + 0.5*(((ad-50.0)/70.0)**exponent))
 
