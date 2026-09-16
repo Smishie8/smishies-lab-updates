@@ -11,6 +11,8 @@ try:
         percentile_scores as _support_percentile_scores,
         boss_mechanic_notes as _support_boss_mechanic_notes,
         evaluate_support_impacts as _evaluate_support_impacts,
+        support_category_breakdown as _support_category_breakdown,
+        counterfactual_effect_plan as _support_counterfactual_effect_plan,
     )
 except Exception:
     _load_support_eval_profiles=None
@@ -18,6 +20,8 @@ except Exception:
     _support_percentile_scores=None
     _support_boss_mechanic_notes=None
     _evaluate_support_impacts=None
+    _support_category_breakdown=None
+    _support_counterfactual_effect_plan=None
 
 BASE=os.path.dirname(os.path.abspath(__file__))
 DB=os.path.join(BASE,'invokers.db')
@@ -2027,9 +2031,11 @@ def support_eval_payload(profile,boss_name=''):
     for e in getattr(profile,'advanced_effects',[]) or []:
         advanced.append({'skill':e.skill,'type':e.type,'params':dict(e.params or {}),'validation':e.validation})
     payload={
+        'role':getattr(profile,'role',''),
         'coverage':coverage,
         'categories':profile.categories() if hasattr(profile,'categories') else {},
         'advanced_effects':advanced,
+        'effect_plan':(_support_counterfactual_effect_plan(profile) if _support_counterfactual_effect_plan else []),
         # Les scores général/boss ne sont volontairement PAS inventés avant
         # branchement du modèle de dégâts entrants / survie.
         'score_general_100':None,
@@ -4756,7 +4762,7 @@ async function bestSupports(){
  try{
   let d=await api(`/api/best-supports?name=${encodeURIComponent(combatHero.value)}&duration=${simDur.value}&boss=${b.defense}&boss_res=${b.resistance}&boss_hp=${b.hp}&boss_atk=${b.attack}&element=${encodeURIComponent(elem)}&support_mode=${encodeURIComponent(bestSupportMode.value)}&boss_name=${encodeURIComponent(simBoss.value)}`);
   bestSupportStatus.textContent=`${d.tested||0} buffers/debuffers utiles testés pour ${d.hero} contre ${simBoss.value}. Profil : ${d.support_mode==='max'?'Max support':d.support_mode==='base'?'Stats de base':'Ma box'}. DPS seul : ${F1(d.base_dps)}. Score offensif = gain DPS réel. Score général = 5 scénarios de pression standardisés. Score boss = offense + survie calibrée quand une référence TTD existe.`;
-  let rows=(d.top3||[]).map((x,i)=>`<tr><td>${i+1}</td><td><b>${x.name}</b></td><td>${x.role||''}</td><td>${x.score_offensif_100==null?'—':F1(x.score_offensif_100)+'/100'}</td><td>${x.score_general_100==null?'—':F1(x.score_general_100)+'/100'}<br><span class=muted>${x.impact_general_pct>=0?'+':''}${F1(x.impact_general_pct)}%</span></td><td>${x.score_boss_100==null?'—':F1(x.score_boss_100)+'/100'}<br><span class=muted>${x.impact_boss_pct>=0?'+':''}${F1(x.impact_boss_pct)}%</span></td><td>${F1(x.dps)}</td><td class=good>+${F1(x.gain_dps)} (${P(x.gain_pct)})</td><td>${x.buff_gain_dps>=0?'+':''}${F1(x.buff_gain_dps)}</td><td>${x.debuff_gain_dps>=0?'+':''}${F1(x.debuff_gain_dps)}</td><td>${x.interaction_gain_dps>=0?'+':''}${F1(x.interaction_gain_dps)}</td><td><b>${x.profile_label||''}</b><br><span class=muted>PRE ${F(x.support_stats?.accuracy||0)} · Recovery ${P(x.support_stats?.skill_recovery||0)} · Skill Speed ${P(x.support_stats?.skill_speed||0)}<br>Auto/S1/S2/S3/Ult : ${['auto','s1','s2','s3','ult'].map(k=>(x.support_levels?.[k]===11?'♛':(x.support_levels?.[k]??'—'))).join(' / ')}</span></td><td>${(x.buffs||[]).map(e=>`${e.effect} (${P(e.uptime)})`).join(' · ')||'—'}</td><td>${(x.debuffs||[]).map(e=>`${e.effect} (${P(e.uptime)})`).join(' · ')||'—'}</td><td>${Object.entries(x.support_eval?.categories||{}).map(([k,v])=>`${k}:${v}`).join(' · ')||'—'}${(x.support_eval?.advanced_effects||[]).length?'<br><span class=muted>'+x.support_eval.advanced_effects.map(e=>e.skill+' '+e.type+' ['+e.validation+']').join(' · ')+'</span>':''}${(x.support_eval?.boss_notes||[]).length?'<br><span class=muted>'+x.support_eval.boss_notes.join(' · ')+'</span>':''}</td></tr>`).join('');
+  let rows=(d.top3||[]).map((x,i)=>`<tr><td>${i+1}</td><td><b>${x.name}</b></td><td>${x.role||''}</td><td>${x.score_offensif_100==null?'—':F1(x.score_offensif_100)+'/100'}</td><td>${x.score_general_100==null?'—':F1(x.score_general_100)+'/100'}<br><span class=muted>${x.impact_general_pct>=0?'+':''}${F1(x.impact_general_pct)}%</span></td><td>${x.score_boss_100==null?'—':F1(x.score_boss_100)+'/100'}<br><span class=muted>${x.impact_boss_pct>=0?'+':''}${F1(x.impact_boss_pct)}%</span></td><td>${F1(x.dps)}</td><td class=good>+${F1(x.gain_dps)} (${P(x.gain_pct)})</td><td>${x.buff_gain_dps>=0?'+':''}${F1(x.buff_gain_dps)}</td><td>${x.debuff_gain_dps>=0?'+':''}${F1(x.debuff_gain_dps)}</td><td>${x.interaction_gain_dps>=0?'+':''}${F1(x.interaction_gain_dps)}</td><td><b>${x.profile_label||''}</b><br><span class=muted>PRE ${F(x.support_stats?.accuracy||0)} · Recovery ${P(x.support_stats?.skill_recovery||0)} · Skill Speed ${P(x.support_stats?.skill_speed||0)}<br>Auto/S1/S2/S3/Ult : ${['auto','s1','s2','s3','ult'].map(k=>(x.support_levels?.[k]===11?'♛':(x.support_levels?.[k]??'—'))).join(' / ')}</span></td><td>${(x.buffs||[]).map(e=>`${e.effect} (${P(e.uptime)})`).join(' · ')||'—'}</td><td>${(x.debuffs||[]).map(e=>`${e.effect} (${P(e.uptime)})`).join(' · ')||'—'}</td><td>${Object.entries(x.support_eval?.categories||{}).map(([k,v])=>`${k}:${v}`).join(' · ')||'—'}${x.category_breakdown?.survival?`<br><span class=muted>Survie: ${x.category_breakdown.survival.survival_gain_s>=0?'+':''}${F1(x.category_breakdown.survival.survival_gain_s)} s · Heal utile ${F(x.category_breakdown.survival.useful_heal||0)} · Dégâts évités ${F(x.category_breakdown.survival.damage_prevented||0)} · Rez ${x.category_breakdown.survival.resurrection_count||0}</span>`:''}${(x.effect_contributions||[]).length?'<br><span class=muted>'+x.effect_contributions.map(e=>`${e.effect}: ${e.gain_dps>=0?'+':''}${F1(e.gain_dps)} DPS`).join(' · ')+'</span>':''}${(x.support_eval?.advanced_effects||[]).length?'<br><span class=muted>'+x.support_eval.advanced_effects.map(e=>e.skill+' '+e.type+' ['+e.validation+']').join(' · ')+'</span>':''}${(x.support_eval?.boss_notes||[]).length?'<br><span class=muted>'+x.support_eval.boss_notes.join(' · ')+'</span>':''}</td></tr>`).join('');
   bestSupportTop.innerHTML='<table><tr><th>#</th><th>Support</th><th>Rôle</th><th>Score offensif</th><th>Score général</th><th>Score boss</th><th>DPS carry</th><th>Gain total</th><th>Buffs seuls</th><th>Debuffs seuls</th><th>Interaction</th><th>Profil utilisé</th><th>Buffs actifs</th><th>Debuffs actifs</th><th>Couverture support</th></tr>'+rows+'</table>';
   let t=d.best_trio;
   if(t){
@@ -5047,7 +5053,7 @@ class H(BaseHTTPRequestHandler):
                             )
                         except Exception:
                             eval_raw=None
-                    results.append({'name':sn,'role':c.get('role'),'profile_label':('Max support' if support_mode in ('best','max','normalized') else 'Stats de base' if support_mode in ('base','base_stats','native') else 'Ma box'),'support_stats':si.get('stats',{}),'support_levels':si.get('levels',{}),'support_casts':si.get('casts',[]),'dps':full['dps'],'gain_dps':gain,'gain_pct':gain_pct,'buff_gain_dps':buff_gain,'debuff_gain_dps':debuff_gain,'interaction_gain_dps':round(gain-buff_gain-debuff_gain,2),'buffs':summarize_team_buffs(buff_events,dur),'debuffs':summarize_team_buffs(debuff_events,dur),'support_eval_raw':eval_raw})
+                    results.append({'name':sn,'role':c.get('role'),'profile_label':('Max support' if support_mode in ('best','max','normalized') else 'Stats de base' if support_mode in ('base','base_stats','native') else 'Ma box'),'support_stats':si.get('stats',{}),'support_levels':si.get('levels',{}),'support_casts':si.get('casts',[]),'dps':full['dps'],'gain_dps':gain,'gain_pct':gain_pct,'buff_gain_dps':buff_gain,'debuff_gain_dps':debuff_gain,'interaction_gain_dps':round(gain-buff_gain-debuff_gain,2),'buffs':summarize_team_buffs(buff_events,dur),'debuffs':summarize_team_buffs(debuff_events,dur),'support_eval_raw':eval_raw,'_eval_events':events,'_eval_support_info':info})
                 # Trois scores distincts :
                 # - offensif : percentile du gain DPS réellement simulé ;
                 # - général : offense + survie sur 5 scénarios de pression standardisés ;
@@ -5072,6 +5078,52 @@ class H(BaseHTTPRequestHandler):
                         x['support_eval']['impact_boss_pct']=x['impact_boss_pct']
                         x['support_eval']['survival']=x.get('support_eval_raw')
                 results.sort(key=lambda x:x['score_boss_100'] if x.get('score_boss_100') is not None else -1,reverse=True)
+
+                # Explication détaillée uniquement pour les meilleurs résultats :
+                # chaque effet buff/debuff est retiré à son tour puis le carry est
+                # resimulé. Cela donne une contribution marginale réelle sans
+                # multiplier inutilement le coût pour tous les candidats.
+                for x in results[:3]:
+                    _prof=eval_profiles.get(x['name'])
+                    _raw=x.get('support_eval_raw') or {}
+                    _boss_surv=_raw.get('boss_survival') or {}
+                    if _prof is not None and _support_category_breakdown:
+                        try:
+                            x['category_breakdown']=_support_category_breakdown(
+                                _prof,
+                                num(x.get('gain_pct'))*100.0,
+                                _boss_surv,
+                            )
+                        except Exception:
+                            x['category_breakdown']={}
+                    else:
+                        x['category_breakdown']={}
+
+                    _events=list(x.get('_eval_events') or [])
+                    _families=sorted(set(str(ev.get('effect') or '') for ev in _events if ev.get('effect')))
+                    _details=[]
+                    for _eff in _families:
+                        _without=[ev for ev in _events if str(ev.get('effect') or '')!=_eff]
+                        _rr=simulate_combat(
+                            name,lv,dur,bd,br,bhp,batk,elem,**bld,
+                            team_supports=[x['name']],
+                            prepared_team={'events':_without,'support_info':x.get('_eval_support_info') or []},
+                        )
+                        _dps_without=(_rr or {}).get('dps',base_dps)
+                        _marg=round(num(x.get('dps'))-num(_dps_without),2)
+                        _details.append({
+                            'effect':_eff,
+                            'gain_dps':_marg,
+                            'gain_pct':(_marg/base_dps if base_dps else 0),
+                        })
+                    _details.sort(key=lambda z:abs(num(z.get('gain_dps'))),reverse=True)
+                    x['effect_contributions']=_details
+                    x.pop('_eval_events',None); x.pop('_eval_support_info',None)
+
+                # Les timelines internes ne doivent jamais sortir dans la réponse.
+                for x in results[3:]:
+                    x.pop('_eval_events',None); x.pop('_eval_support_info',None)
+
                 positive=[x for x in results if x['gain_dps']>0]
                 trio_candidates=positive[:8]
                 trio_results=[]
