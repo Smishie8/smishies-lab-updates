@@ -460,6 +460,54 @@ def _load_arena_static_source():
 ARENA_HALL_VALUES=_load_arena_static_source()
 ARENA_HALL_SOURCE='arena_static_data.json fallback'
 
+def inspect_playerarena_hall_raw():
+    """Read-only dump of every MemoryPack member in PlayerArenaModel.HallBonuses.
+    No semantic assumption about Element/Stat/Level ordering."""
+    afp=_find_aggregate_snapshot('PlayerArenaModel.dat')
+    if not afp:
+        return {'ok':False,'error':'PlayerArenaModel.dat introuvable',**_game_readonly_status()}
+    try:
+        with _game_ro_open(afp,'rb') as fh:
+            data=fh.read()
+        mc,lens,root,end=_mp_vt(data,25)
+        result={'ok':True,'file':afp,'root_member_count':mc,'root_spans':[],
+                'hall_root_index':8,'rows':[],**_game_readonly_status()}
+        for i,(s,e) in enumerate(root):
+            result['root_spans'].append({'index':i,'start':s,'end':e,'size':e-s,
+                                         'prefix_hex':data[s:min(e,s+32)].hex()})
+        if len(root)<=8:
+            result['error']='PlayerArenaModel sans membre #8'; return result
+        s,e=root[8]
+        if e-s<4:
+            result['error']='HallBonuses trop court'; return result
+        count=struct.unpack_from('<i',data,s)[0]
+        result['declared_count']=count
+        if count<0 or count>1000:
+            result['error']='Nombre HallBonuses invalide: %s'%count; return result
+        p=s+4
+        for idx in range(count):
+            imc,ilens,iv,iend=_mp_vt(data,p)
+            vals=[]
+            for mi,span in enumerate(iv):
+                a,b=span
+                raw=data[a:b]
+                item={'member':mi,'start':a,'end':b,'size':b-a,'hex':raw.hex()}
+                if b-a>=4:
+                    try:item['i32']=struct.unpack_from('<i',data,a)[0]
+                    except Exception:pass
+                if b-a>=8:
+                    try:item['i64']=struct.unpack_from('<q',data,a)[0]
+                    except Exception:pass
+                vals.append(item)
+            result['rows'].append({
+                'row':idx,'member_count':imc,'lengths':ilens,'start':p,'end':iend,
+                'members':vals
+            })
+            p=iend
+        return result
+    except Exception as e:
+        return {'ok':False,'file':afp,'error':str(e),**_game_readonly_status()}
+
 def _decode_playerarena_hall_file(fp):
     """Décodage read-only de PlayerArenaModel.dat.
     Le membre MemoryPack #8 est HallBonuses: Element, CharacterStatBonus, Level.
@@ -3557,6 +3605,7 @@ class H(BaseHTTPRequestHandler):
             if p.path=='/api/game-import/static-pack': self.sendj(inspect_static_chunkpack()); return
             if p.path=='/api/game-import/static-hall-scan': self.sendj(scan_static_hall_f64_arrays()); return
             if p.path=='/api/game-import/static-hall-live': self.sendj({'ok':bool(_LIVE_ARENA_HALL_INFO),'source':ARENA_HALL_SOURCE,'live':_LIVE_ARENA_HALL_INFO,'values':ARENA_HALL_VALUES,**_game_readonly_status()}); return
+            if p.path=='/api/game-import/player-arena-hall-raw': self.sendj(inspect_playerarena_hall_raw()); return
             if p.path=='/api/game-import/decode-box': self.sendj(decode_local_box()); return
             if p.path=='/api/game-import/analyze-diff': self.sendj(analyze_last_game_diff()); return
             if p.path=='/api/heroes': self.sendj(q('SELECT name,faction,rarity,role,element FROM heroes WHERE name IS NOT NULL ORDER BY name')); return
