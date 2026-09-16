@@ -1,5 +1,7 @@
-import json, math, os, re, sqlite3, threading, webbrowser, hashlib, struct, csv
+import json, math, os, re, sqlite3, threading, webbrowser, hashlib, struct, csv, unicodedata, urllib.request, urllib.error
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from html.parser import HTMLParser
+from html import unescape
 from urllib.parse import urlparse, parse_qs
 
 BASE=os.path.dirname(os.path.abspath(__file__))
@@ -2279,6 +2281,124 @@ def simulate_combat(name, levels=None, duration=120, boss_def=1320, boss_res=0, 
 
 
 
+
+class _GGSkillHTMLParser(HTMLParser):
+    BLOCKS={'p','div','li','br','h1','h2','h3','h4','section','article','tr','td'}
+    def __init__(self):
+        super().__init__(); self.sections=[]; self._heading=None; self._body=[]; self._hbuf=[]; self._in_h3=False; self._skip=0
+    def handle_starttag(self,tag,attrs):
+        tag=tag.lower()
+        if tag in ('script','style','svg'): self._skip+=1; return
+        if self._skip:return
+        if tag=='h3':
+            if self._heading is not None:self.sections.append((self._heading,' '.join(self._body)))
+            self._heading=None; self._body=[]; self._hbuf=[]; self._in_h3=True
+        elif tag in self.BLOCKS:
+            self._body.append(' ')
+    def handle_endtag(self,tag):
+        tag=tag.lower()
+        if tag in ('script','style','svg') and self._skip:
+            self._skip-=1; return
+        if self._skip:return
+        if tag=='h3':
+            self._heading=' '.join(self._hbuf).strip(); self._in_h3=False
+        elif tag in self.BLOCKS:self._body.append(' ')
+    def handle_data(self,data):
+        if self._skip:return
+        t=' '.join(str(data or '').split())
+        if not t:return
+        if self._in_h3:self._hbuf.append(t)
+        elif self._heading is not None:self._body.append(t)
+    def close(self):
+        super().close()
+        if self._heading is not None:self.sections.append((self._heading,' '.join(self._body)))
+
+def _gg_slug(name):
+    s=unicodedata.normalize('NFKD',str(name or '')).encode('ascii','ignore').decode('ascii').lower()
+    s=s.replace('&',' and ').replace("'",' ')
+    return re.sub(r'[^a-z0-9]+','-',s).strip('-')
+
+def _gg_fetch_hero_page(name):
+    slug=_gg_slug(name)
+    urls=[
+        f'https://www.ggnoluck.com/en/invokers/heroes/{slug}',
+        f'https://www.ggnoluck.com/en/invokers/guides/heroes/{slug}/build',
+    ]
+    last=None
+    for url in urls:
+        try:
+            req=urllib.request.Request(url,headers={'User-Agent':'Mozilla/5.0 SmishiesLab-AoE/1.0','Accept-Language':'en'})
+            with urllib.request.urlopen(req,timeout=8) as r:
+                raw=r.read().decode('utf-8','replace')
+            if len(raw)>1000:return url,raw
+        except Exception as e:last=e
+    raise RuntimeError(str(last or 'page GGNoLuck introuvable'))
+
+def _gg_target_count_from_text(text):
+    t=' '.join(unescape(str(text or '')).split())
+    # Primary wording on GGNoLuck: "Selects 1 enemy ... Attacks N enemies ... around the target".
+    # In this construction N means surrounding enemies; total = selected target + N.
+    m=re.search(r'Selects\s+1\s+enemy.*?Attacks\s+(?:the\s+)?(\d+)\s+enemies.*?around\s+the\s+target',t,re.I)
+    if m:return min(11,int(m.group(1))+1),'selected+around'
+    # Other AoE wording counts total enemies directly.
+    m=re.search(r'Attacks\s+(?:the\s+)?(\d+)\s+enemies\b',t,re.I)
+    if m:return min(11,int(m.group(1))),'direct'
+    m=re.search(r'Attacks\s+1\s+enemy\b',t,re.I)
+    if m:return 1,'single'
+    return None,None
+
+def _gg_extract_aoe_for_hero(name):
+    url,html=_gg_fetch_hero_page(name)
+    p=_GGSkillHTMLParser(); p.feed(html); p.close()
+    sections=p.sections
+    out={}; evidence={}; unresolved=[]
+    aliases={'Active 1':'Skill 1','Active 2':'Skill 2','Active 3':'Skill 3','Ultimate':'Ultimate'}
+    for suffix,action in aliases.items():
+        matches=[(h,b) for h,b in sections if str(h).strip().lower().endswith(suffix.lower())]
+        if not matches:
+            unresolved.append(action); continue
+        h,b=matches[0]
+        n,kind=_gg_target_count_from_text(b)
+        if n is None: unresolved.append(action); continue
+        out[action]=n; evidence[action]={'heading':h,'kind':kind,'excerpt':' '.join(b.split())[:260]}
+    combos=[(h,b) for h,b in sections if str(h).strip().lower()=='combo' or str(h).strip().lower().endswith(' combo')]
+    if combos:
+        body=' '.join(combos[0][1].split())
+        hitpos=[]
+        for m in re.finditer(r'\b([1-9])\.\s*Hit\s+\1\b',body,re.I):
+            hitpos.append((int(m.group(1)),m.start(),m.end()))
+        # Website hit 1 is Opening; hits 2..6 are our exact five autos.
+        byhit={}
+        for j,(hn,s,e) in enumerate(hitpos):
+            end=hitpos[j+1][1] if j+1<len(hitpos) else len(body)
+            seg=body[e:end]
+            n,kind=_gg_target_count_from_text(seg)
+            if n is not None:byhit[hn]=(n,kind,seg[:260])
+        if all(h in byhit for h in range(2,7)):
+            for h in range(2,7):
+                action=f'Auto {h-1}'; n,kind,seg=byhit[h]
+                out[action]=n; evidence[action]={'heading':f'Combo Hit {h}','kind':kind,'excerpt':' '.join(seg.split())[:260]}
+        else:
+            unresolved.extend([f'Auto {i}' for i in range(1,6)])
+    else:
+        unresolved.extend([f'Auto {i}' for i in range(1,6)])
+    return {'hero':name,'url':url,'targets':out,'evidence':evidence,'unresolved':sorted(set(unresolved))}
+
+def import_ggnoluck_aoe_all():
+    ensure_aoe_table()
+    heroes=[r['name'] for r in q('SELECT name FROM heroes WHERE name IS NOT NULL ORDER BY name')]
+    done=[]; failed=[]; saved=0
+    for name in heroes:
+        try:
+            d=_gg_extract_aoe_for_hero(name)
+            if d.get('targets'):
+                saved+=save_aoe_targets(name,d['targets'],'ggnoluck')
+            done.append({'hero':name,'targets':d.get('targets') or {},'unresolved':d.get('unresolved') or [],'url':d.get('url')})
+        except Exception as e:
+            failed.append({'hero':name,'error':str(e)})
+    return {'ok':True,'heroes_total':len(heroes),'heroes_read':len(done),'failed_count':len(failed),
+            'saved_actions':saved,'done':done,'failed':failed[:100]}
+
 AOE_KNOWN_TARGETS={
     # Confirmed mechanics validated against current public skill descriptions.
     # Moros: Auto 5, S2, S3 and Ultimate are described as hitting up to 10 enemies.
@@ -3850,7 +3970,7 @@ HTML = r'''<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name
 <div class=control><label>Durée</label><input id=aoeDur type=number min=5 value=60></div>
 <div class=control><label>Boss (DEF / RÉS / élément)</label><select id=aoeBoss></select></div>
 <button id=aoeBtn>Simuler</button></div>
-<h4>Cibles touchées par action</h4><div id=aoeTargets class=controls></div><div class=controls><button id=aoeSaveTargets>Enregistrer ces portées</button><button id=aoeProbeStatic>Analyser static.data</button></div><div id=aoeTargetStatus class=note></div><div id=aoeProbeStatus class=note></div>
+<h4>Cibles touchées par action</h4><div id=aoeTargets class=controls></div><div class=controls><button id=aoeSaveTargets>Enregistrer ces portées</button><button id=aoeProbeStatic>Analyser static.data</button><button id=aoeImportAll>Importer AoE des 222 héros</button></div><div id=aoeTargetStatus class=note></div><div id=aoeProbeStatus class=note></div>
 <div id=aoeSummary class=grid></div><div id=aoeStatus class=note></div>
 <h4>Détail AoE</h4><div id=aoeTable class=scroll></div>
 <h3>Classement AoE</h3>
@@ -4053,12 +4173,13 @@ const aoeActionIds=[['Auto 1','a1'],['Auto 2','a2'],['Auto 3','a3'],['Auto 4','a
 function renderAoeTargetInputs(defaults={}){aoeTargets.innerHTML=aoeActionIds.map(([lab,id])=>`<div class=control><label>${lab}</label><input id=aoeT_${id} type=number min=1 max=200 value="${defaults[lab]||1}"></div>`).join('')}
 function aoeTargetQuery(){return aoeActionIds.map(([lab,id])=>`&t_${id}=${Math.max(1,+document.getElementById('aoeT_'+id).value||1)}`).join('')}
 async function loadAoeDefaults(){let d=await api(`/api/aoe-defaults?name=${encodeURIComponent(aoeHero.value)}&enemies=${aoeEnemies.value}`);renderAoeTargetInputs(d.targets||{});let parts=aoeActionIds.map(([lab])=>`${lab}: ${d.targets?.[lab]||1} [${d.sources?.[lab]||'unknown'}]`);aoeTargetStatus.textContent=parts.join(' · ')}
+async function importAllAoe(){aoeImportAll.disabled=true;aoeImportAll.textContent='Import en cours…';aoeProbeStatus.textContent='Lecture des fiches GGNoLuck pour tous les héros…';try{let r=await fetch('/api/aoe-import-all',{method:'POST'});let d=await r.json();if(!r.ok||!d.ok)throw Error(d.error||'Import impossible');aoeProbeStatus.textContent=`Import AoE terminé : ${d.heroes_read}/${d.heroes_total} héros lus · ${d.saved_actions} actions enregistrées · ${d.failed_count} échec(s).`;await loadAoeDefaults();await aoeCombatRun();await aoeRankRun()}catch(e){aoeProbeStatus.textContent='Erreur import AoE : '+e.message}finally{aoeImportAll.disabled=false;aoeImportAll.textContent='Importer AoE des 222 héros'}}
 async function probeAoeStatic(){aoeProbeStatic.disabled=true;aoeProbeStatus.textContent='Analyse locale de static.data…';try{let d=await api(`/api/aoe-static-probe?name=${encodeURIComponent(aoeHero.value)}`);if(!d.ok){aoeProbeStatus.textContent='Probe: '+(d.error||'indisponible');return}let rows=(d.candidates||[]).slice(0,12).map(x=>`cat ${x.category} · id ${x.id} · ${(x.reasons||[]).join('+')} · ${x.uncompressed_size||x.size} o`);aoeProbeStatus.textContent=`static.data: ${d.candidate_count} chunk(s) candidat(s) pour ${d.hero} (${d.code}, GDID ${d.gdid}). `+(rows.length?rows.join(' | '):'Aucun match direct.') }finally{aoeProbeStatic.disabled=false}}
 async function saveAoeTargets(){let targets={};for(let [lab,id] of aoeActionIds)targets[lab]=Math.max(1,+document.getElementById('aoeT_'+id).value||1);let r=await fetch('/api/aoe-targets',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:aoeHero.value,targets})});if(!r.ok)throw Error(await r.text());aoeTargetStatus.textContent='✓ Portées enregistrées pour '+aoeHero.value;await aoeCombatRun()}
 async function aoeRankRun(){aoeRankBtn.disabled=true;aoeRankBtn.textContent='Calcul…';aoeRankStatus.textContent='Classement AoE en cours…';try{let b=bosses[aoeBoss.value];let d=await api(`/api/aoe-rank?preset=${encodeURIComponent(aoePreset.value)}&duration=${aoeDur.value}&enemies=${aoeEnemies.value}&defense=${b.defense}&resistance=${b.resistance}&element=${encodeURIComponent(b.element)}`);aoeRankStatus.textContent=`${d.length} héros simulés — ${aoeEnemies.value} ennemis — boss ${aoeBoss.value}.`;aoeRankTable.innerHTML='<table><tr><th>#</th><th>Héros</th><th>Élément</th><th>Rareté</th><th>Rôle</th><th>DPS AoE</th><th>DPS mono</th><th>Dégâts AoE</th><th>Actions AoE connues</th></tr>'+d.map((x,i)=>`<tr><td>${i+1}</td><td>${x.name}</td><td>${x.element||'Neutre'}</td><td>${x.rarity||''}</td><td>${x.role||''}</td><td><b>${F1(x.dps)}</b></td><td>${F1(x.single_target_dps)}</td><td>${F(x.total_damage)}</td><td>${(x.mapped_aoe_actions||[]).join(', ')||'—'}</td></tr>`).join('')+'</table>'}finally{aoeRankBtn.disabled=false;aoeRankBtn.textContent='Calculer le classement AoE'}}
 async function aoeCombatRun(){aoeBtn.disabled=true;aoeBtn.textContent='Simulation…';try{let b=bosses[aoeBoss.value];let d=await api(`/api/aoe-combat?name=${encodeURIComponent(aoeHero.value)}&preset=${encodeURIComponent(aoePreset.value)}&duration=${aoeDur.value}&enemies=${aoeEnemies.value}&defense=${b.defense}&resistance=${b.resistance}&element=${encodeURIComponent(b.element)}${aoeTargetQuery()}`);aoeSummary.innerHTML=cards({'Héros':d.hero,'Preset':d.preset_label,'Ennemis':d.enemies,'DPS AoE total':F1(d.dps),'DPS mono de référence':F1(d.single_target_dps),'Dégâts AoE':F(d.total_damage)});aoeStatus.textContent=d.note+(d.mapped_aoe_actions?.length?' AoE renseignées : '+d.mapped_aoe_actions.join(', ')+'.':' Aucune action AoE >1 cible renseignée.');aoeTable.innerHTML='<table><tr><th>Action</th><th>Cibles</th><th>Casts</th><th>Dégâts mono</th><th>Dégâts AoE</th></tr>'+d.rows.map(x=>`<tr><td>${x.action}</td><td>${x.targets}</td><td>${x.casts}</td><td>${F(x.single_target_damage)}</td><td><b>${F(x.aoe_damage)}</b></td></tr>`).join('')+'</table>'}finally{aoeBtn.disabled=false;aoeBtn.textContent='Simuler'}}
 let rankRun=0; async function rank(){const run=++rankRun;let b=bosses[rankBoss.value],mode=rankMode.value,supportMode=rankSupportMode.value;let rankElem=(rankElement.value==='Auto'?b.element:rankElement.value);let sups=[rankSupport1.value,rankSupport2.value,rankSupport3.value,rankSupport4.value];rankBtn.disabled=true;rankBtn.textContent='Calcul en cours…';rankStatus.textContent='Simulation en cours…';let supq=`&support1=${encodeURIComponent(sups[0])}&support2=${encodeURIComponent(sups[1])}&support3=${encodeURIComponent(sups[2])}&support4=${encodeURIComponent(sups[3])}`;try{let d=await api(`/api/rank?mode=${mode}&support_mode=${encodeURIComponent(supportMode)}&rarity=${encodeURIComponent(rarity.value)}&role=${encodeURIComponent(role.value)}&duration=${rankDur.value}&boss=${b.defense}&boss_res=${b.resistance}&boss_hp=${b.hp}&boss_atk=${b.attack}&element=${encodeURIComponent(rankElem)}${supq}`);if(run!==rankRun)return;let active=[...new Set(sups.filter(x=>x&&x!=='Aucun'))];let modeLabel=mode==='box'?'Ma box':mode==='early'?'Early game':mode==='mid'?'Mid game':'Late game';let supportModeLabel=supportMode==='box'?'Ma box':supportMode==='early'?'Early game':supportMode==='mid'?'Mid game':'Late game';rankStatus.textContent=`${d.length} héros simulés — preset héros : ${modeLabel} — preset supports : ${supportModeLabel} — élément boss : ${rankElem}${active.length?' — supports : '+active.join(' + '):' — sans support'}.`;rankTable.innerHTML='<table><tr><th>#</th><th>Héros</th><th>Élément</th><th>Rareté</th><th>Rôle</th><th>DPS simulé</th><th>Dégâts</th><th>ATK</th><th>Crit</th><th>Crit DMG</th><th>PRE</th><th>Combo</th><th>Skill Speed</th><th>Recovery</th></tr>'+d.map((x,i)=>`<tr><td>${i+1}</td><td>${x.name}</td><td>${x.element||'Neutre'}</td><td>${x.rarity||''}</td><td>${x.role||''}</td><td>${F1(x.dps)}</td><td>${F(x.total_damage)}</td><td>${F(x.final_stats.atk)}</td><td>${P(x.final_stats.crit_rate)}</td><td>${P(x.final_stats.crit_dmg)}</td><td>${F(x.final_stats.accuracy)}</td><td>${P(x.final_stats.combo_speed)}</td><td>${P(x.final_stats.skill_speed)}</td><td>${P(x.final_stats.skill_recovery)}</td></tr>`).join('')+'</table>'}catch(e){if(run===rankRun)rankStatus.textContent='Erreur classement : '+e.message;throw e}finally{if(run===rankRun){rankBtn.disabled=false;rankBtn.textContent='Calculer'}}}
-(async()=>{heroes=await api('/api/heroes');let n=heroes.map(x=>x.name);let ownedHeroNames=await api('/api/box-hero-names');relicProtectedHeroes.innerHTML=ownedHeroNames.map(x=>`<option value="${x}">${x}</option>`).join('');[heroSel,combatHero,aSel,bSel,optHero].forEach((e,i)=>opts(e,n,i===3?'Sildrea':'Senhachi'));opts(aoeHero,n,'Moros');renderAoeTargetInputs({});for(let e of [support1,support2,support3,support4,rankSupport1,rankSupport2,rankSupport3,rankSupport4])opts(e,['Aucun',...n],'Aucun');[support1,support2,support3,support4].forEach(e=>e.onchange=combat);[rankSupport1,rankSupport2,rankSupport3,rankSupport4].forEach(e=>e.onchange=rank);rankSupportMode.onchange=rank;rankElement.onchange=rank;addsMode.onchange=combat;bosses=await api('/api/boss-setups');titans=await api('/api/titans');[simBoss,optBoss,rankBoss,aoeBoss].forEach(e=>{Object.keys(bosses).forEach(x=>e.add(new Option(x,x)));e.value='Ulgorim 16'});optBoss.onchange=async()=>{await critAnalysis();await recAnalysis();await relicPotential()};rankBoss.onchange=rank;simBossCards.innerHTML=bossCards(bosses[simBoss.value]);simBoss.onchange=()=>{simBossCards.innerHTML=bossCards(bosses[simBoss.value]);simElement.value='Auto';combat();compare()};simElement.onchange=()=>{combat();compare()};build(heroBuild,'hero');levels(heroLevels,'heroLvl');levels(optLevels,'opt');heroSel.onchange=hero;combatHero.onchange=combat;combatPreset.onchange=()=>{let notes={box:'Ma box : stats et niveaux réellement importés.',early:'Early : skills 1 · ATQ +30% · Crit 20% · Dég crit 50% · PRE +80 · Combo/Skill/Recovery/Mana +5%.',mid:'Mid : skills 5 · ATQ +80% · Crit 50% · Dég crit 75% · PRE +220 · Combo/Skill/Recovery/Mana +15%.',late:'Late : skills max · ATQ +150% · Crit 100% · Dég crit 120% · PRE +400 · Combo/Skill/Recovery/Mana +30%.'};combatPresetNote.textContent=notes[combatPreset.value]||'';combat();compare()};aSel.onchange=compare;bSel.onchange=compare;recFields(recCurrentStats,'recCur');recTestFields(recTestStats,'recTest');optHero.onchange=async()=>{await loadRecStats();await critAnalysis();await recAnalysis();await relicPotential()};[...new Set(heroes.map(x=>x.rarity).filter(Boolean))].sort().forEach(x=>rarity.add(new Option(x,x)));[...new Set(heroes.map(x=>x.role).filter(Boolean))].sort().forEach(x=>role.add(new Option(x,x)));rankMode.onchange=()=>{let notes={box:'Ma box : classement avec les builds réellement importés.',early:'Early : skills 1 · ATQ +30% · Crit 20% · Dég crit 50% · PRE +80 · Combo/Skill/Recovery/Mana +5%.',mid:'Mid : skills 5 · ATQ +80% · Crit 50% · Dég crit 75% · PRE +220 · Combo/Skill/Recovery/Mana +15%.',late:'Late : skills max · ATQ +150% · Crit 100% · Dég crit 120% · PRE +400 · Combo/Skill/Recovery/Mana +30%.'};rankModeNote.textContent=notes[rankMode.value]||'';rank()};combatBtn.onclick=combat;bestSupportMode.onchange=()=>{let notes={real:'Ma box : uniquement les héros que tu possèdes, avec leur vraie fiche importée.',base:'Stats de base : stats natives du héros et tous les skills niveau 1.',max:'Max support : stats natives, skills max, PRE 1000, Combo/Skill Speed/Recovery/Mana +30%.'};bestSupportModeNote.textContent=notes[bestSupportMode.value]||''};bestSupportBtn.onclick=bestSupports;cmpBtn.onclick=compare;critBtn.onclick=critAnalysis;recBtn.onclick=recAnalysis;recBalanceBtn.onclick=recBalance;relicOptBtn.onclick=relicOptimize;setOptBtn.onclick=setOptimize;potentialBtn.onclick=relicPotential;rankBtn.onclick=rank;aoeHero.onchange=async()=>{await loadAoeDefaults();await aoeCombatRun()};aoePreset.onchange=()=>{aoeCombatRun();aoeRankRun()};aoeEnemies.onchange=async()=>{await loadAoeDefaults();await aoeCombatRun();await aoeRankRun()};aoeBoss.onchange=()=>{aoeCombatRun();aoeRankRun()};aoeBtn.onclick=aoeCombatRun;aoeRankBtn.onclick=aoeRankRun;aoeSaveTargets.onclick=saveAoeTargets;aoeProbeStatic.onclick=probeAoeStatic;importBoxBtn.onclick=importBoxOneClick;relicRefresh.onclick=loadRelics;[relicSlot,relicSet,relicEquipped,relicStat].forEach(e=>e.onchange=loadRelics);await loadRelics();await hero();await loadRecStats();await combat();await compare();await critAnalysis();await recAnalysis();await relicPotential();await loadAoeDefaults();await aoeCombatRun();await aoeRankRun();await rank()})().catch(e=>document.body.insertAdjacentHTML('beforeend',`<pre>${e.stack}</pre>`));
+(async()=>{heroes=await api('/api/heroes');let n=heroes.map(x=>x.name);let ownedHeroNames=await api('/api/box-hero-names');relicProtectedHeroes.innerHTML=ownedHeroNames.map(x=>`<option value="${x}">${x}</option>`).join('');[heroSel,combatHero,aSel,bSel,optHero].forEach((e,i)=>opts(e,n,i===3?'Sildrea':'Senhachi'));opts(aoeHero,n,'Moros');renderAoeTargetInputs({});for(let e of [support1,support2,support3,support4,rankSupport1,rankSupport2,rankSupport3,rankSupport4])opts(e,['Aucun',...n],'Aucun');[support1,support2,support3,support4].forEach(e=>e.onchange=combat);[rankSupport1,rankSupport2,rankSupport3,rankSupport4].forEach(e=>e.onchange=rank);rankSupportMode.onchange=rank;rankElement.onchange=rank;addsMode.onchange=combat;bosses=await api('/api/boss-setups');titans=await api('/api/titans');[simBoss,optBoss,rankBoss,aoeBoss].forEach(e=>{Object.keys(bosses).forEach(x=>e.add(new Option(x,x)));e.value='Ulgorim 16'});optBoss.onchange=async()=>{await critAnalysis();await recAnalysis();await relicPotential()};rankBoss.onchange=rank;simBossCards.innerHTML=bossCards(bosses[simBoss.value]);simBoss.onchange=()=>{simBossCards.innerHTML=bossCards(bosses[simBoss.value]);simElement.value='Auto';combat();compare()};simElement.onchange=()=>{combat();compare()};build(heroBuild,'hero');levels(heroLevels,'heroLvl');levels(optLevels,'opt');heroSel.onchange=hero;combatHero.onchange=combat;combatPreset.onchange=()=>{let notes={box:'Ma box : stats et niveaux réellement importés.',early:'Early : skills 1 · ATQ +30% · Crit 20% · Dég crit 50% · PRE +80 · Combo/Skill/Recovery/Mana +5%.',mid:'Mid : skills 5 · ATQ +80% · Crit 50% · Dég crit 75% · PRE +220 · Combo/Skill/Recovery/Mana +15%.',late:'Late : skills max · ATQ +150% · Crit 100% · Dég crit 120% · PRE +400 · Combo/Skill/Recovery/Mana +30%.'};combatPresetNote.textContent=notes[combatPreset.value]||'';combat();compare()};aSel.onchange=compare;bSel.onchange=compare;recFields(recCurrentStats,'recCur');recTestFields(recTestStats,'recTest');optHero.onchange=async()=>{await loadRecStats();await critAnalysis();await recAnalysis();await relicPotential()};[...new Set(heroes.map(x=>x.rarity).filter(Boolean))].sort().forEach(x=>rarity.add(new Option(x,x)));[...new Set(heroes.map(x=>x.role).filter(Boolean))].sort().forEach(x=>role.add(new Option(x,x)));rankMode.onchange=()=>{let notes={box:'Ma box : classement avec les builds réellement importés.',early:'Early : skills 1 · ATQ +30% · Crit 20% · Dég crit 50% · PRE +80 · Combo/Skill/Recovery/Mana +5%.',mid:'Mid : skills 5 · ATQ +80% · Crit 50% · Dég crit 75% · PRE +220 · Combo/Skill/Recovery/Mana +15%.',late:'Late : skills max · ATQ +150% · Crit 100% · Dég crit 120% · PRE +400 · Combo/Skill/Recovery/Mana +30%.'};rankModeNote.textContent=notes[rankMode.value]||'';rank()};combatBtn.onclick=combat;bestSupportMode.onchange=()=>{let notes={real:'Ma box : uniquement les héros que tu possèdes, avec leur vraie fiche importée.',base:'Stats de base : stats natives du héros et tous les skills niveau 1.',max:'Max support : stats natives, skills max, PRE 1000, Combo/Skill Speed/Recovery/Mana +30%.'};bestSupportModeNote.textContent=notes[bestSupportMode.value]||''};bestSupportBtn.onclick=bestSupports;cmpBtn.onclick=compare;critBtn.onclick=critAnalysis;recBtn.onclick=recAnalysis;recBalanceBtn.onclick=recBalance;relicOptBtn.onclick=relicOptimize;setOptBtn.onclick=setOptimize;potentialBtn.onclick=relicPotential;rankBtn.onclick=rank;aoeHero.onchange=async()=>{await loadAoeDefaults();await aoeCombatRun()};aoePreset.onchange=()=>{aoeCombatRun();aoeRankRun()};aoeEnemies.onchange=async()=>{await loadAoeDefaults();await aoeCombatRun();await aoeRankRun()};aoeBoss.onchange=()=>{aoeCombatRun();aoeRankRun()};aoeBtn.onclick=aoeCombatRun;aoeRankBtn.onclick=aoeRankRun;aoeSaveTargets.onclick=saveAoeTargets;aoeProbeStatic.onclick=probeAoeStatic;aoeImportAll.onclick=importAllAoe;importBoxBtn.onclick=importBoxOneClick;relicRefresh.onclick=loadRelics;[relicSlot,relicSet,relicEquipped,relicStat].forEach(e=>e.onchange=loadRelics);await loadRelics();await hero();await loadRecStats();await combat();await compare();await critAnalysis();await recAnalysis();await relicPotential();await loadAoeDefaults();await aoeCombatRun();await aoeRankRun();await rank()})().catch(e=>document.body.insertAdjacentHTML('beforeend',`<pre>${e.stack}</pre>`));
 </script></body></html>'''
 
 COMBAT_PRESETS={
@@ -4376,6 +4497,8 @@ class H(BaseHTTPRequestHandler):
                 name=str(data.get('name') or '').strip()
                 r=apply_box_profile(name)
                 self.sendj(r,200 if r.get('ok') else 400); return
+            if p.path=='/api/aoe-import-all':
+                self.sendj(import_ggnoluck_aoe_all()); return
             if p.path=='/api/aoe-targets':
                 nbytes=int(self.headers.get('Content-Length','0') or 0); data=json.loads(self.rfile.read(nbytes).decode('utf-8') or '{}')
                 name=str(data.get('name') or '').strip()
