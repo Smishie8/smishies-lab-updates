@@ -1619,6 +1619,10 @@ SELF_ONLY_SUPPORT_EFFECTS={
     ('volkam','Ultimate','Crit DMG Up'),
 }
 
+# Héros qui n'apportent aucun buff/debuff utile aux alliés dans le contexte
+# "Meilleur support". Leurs effets utiles sont personnels.
+NON_SUPPORT_HEROES={'klissa'}
+
 def team_buff_targets_allies(effect, source=None, action=None):
     cond=str(effect.get('condition') or '').lower()
     # Les buffs explicitement Self ne sont pas propagés à l'équipe.
@@ -1636,6 +1640,8 @@ def support_buff_schedule(name, duration=120, adds_mode='none', boss_element='Ne
     et extraction des buffs qui peuvent toucher les alliés. Les dégâts du support
     ne sont pas ajoutés au DPS du carry."""
     if not name or name=='Aucun': return {'name':'Aucun','events':[],'actions':0,'stats':{},'levels':{}}
+    if str(name).strip().lower() in NON_SUPPORT_HEROES:
+        return {'name':name,'events':[],'actions':0,'stats':{},'levels':{},'excluded_from_support':True}
     h=hero_row(name); pr=profile_for(name); lv=profile_levels(pr); st=profile_stats(name,pr); mr=mana_row(name)
     sm=str(support_mode or 'real').lower()
 
@@ -3883,6 +3889,7 @@ class H(BaseHTTPRequestHandler):
                 for c in candidates:
                     sn=c['name']
                     if sn==name: continue
+                    if str(sn).strip().lower() in NON_SUPPORT_HEROES: continue
                     if owned_names is not None and str(sn).strip().lower() not in owned_names: continue
                     events,info=prepare_team_buffs([sn],dur,'none',br,elem,support_mode)
                     if not events: continue
