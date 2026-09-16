@@ -1,11 +1,11 @@
 {
-  "version": "11.05",
+  "version": "11.06",
   "channel": "stable",
   "files": [
     {
       "path": "server.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.05",
-      "git_sha1": "d58359fc058be564ee5011e99926e69aa6ff57de"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.06",
+      "git_sha1": "823dc7585e22a7cca36220238ee357c22f9b76a0"
     },
     {
       "path": "awake_nodes.json",
@@ -48,5 +48,5 @@
       "git_sha1": "a8038f48a9f31f76c36d0126141c08e3bce37ac8"
     }
   ],
-  "notes": "v11.05 : migration StaticArenaData. Les courbes HallBonuses ne sont plus codées dans server.py : elles sont chargées depuis arena_static_data.json, source dédiée à StaticArenaData.HallBonuses. Cela prépare le remplacement direct par le décodage live de static.data sans modifier le moteur de calcul. Le correctif Eau reste temporairement actif tant que l'extraction live de StaticArenaData n'est pas branchée."
+  "notes": "v11.06 : ajout d'un inspecteur live read-only du static.data ChunkPack du jeu. Il lit le tag/version, ConfigVersion/SharedVersion, décompresse le ChunkPackHeader via Brotli si disponible, décode PackChunkKey/PackChunk/ChunkHashes et sonde le chunk principal category=0,id=0. Endpoint diagnostic : /api/game-import/static-pack. Aucun calcul de stats n'est modifié dans cette étape."
 }
