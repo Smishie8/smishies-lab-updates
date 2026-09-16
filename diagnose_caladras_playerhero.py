@@ -1,68 +1,36 @@
 import json, os, struct
+import server as app
 
 CFG=17193373869346061
 IIDS={908,3941,11782}
 
-def root():
-    up=os.environ.get("USERPROFILE")
-    if up:
-        p=os.path.join(up,"AppData","LocalLow","Hit_Zone","Invokers","aggregate_snapshots","PlayerHeroesModel.dat")
-        if os.path.isfile(p): return p
-    la=os.environ.get("LOCALAPPDATA")
-    if la:
-        p=os.path.join(os.path.dirname(la),"LocalLow","Hit_Zone","Invokers","aggregate_snapshots","PlayerHeroesModel.dat")
-        if os.path.isfile(p): return p
-    return None
-
-def mp_vt(data,p):
-    mc=data[p]; p+=1
-    if mc==255:
-        mc=struct.unpack_from("<i",data,p)[0]; p+=4
-    lens=[]
-    for _ in range(mc):
-        b=data[p]; p+=1
-        if b==255:
-            ln=struct.unpack_from("<i",data,p)[0]; p+=4
-        else: ln=b
-        lens.append(ln)
-    spans=[]
-    q=p
-    for ln in lens:
-        spans.append((q,q+ln)); q+=ln
-    return mc,lens,spans,q
-
-def i32(data,sp):
-    a,b=sp
-    return struct.unpack_from("<i",data,a)[0] if b-a>=4 else None
-def i64(data,sp):
-    a,b=sp
-    return struct.unpack_from("<q",data,a)[0] if b-a>=8 else None
-
-def decode_i32_list(raw):
-    if len(raw)<4:return None
-    n=struct.unpack_from("<i",raw,0)[0]
-    if n<0 or n>100 or 4+4*n>len(raw): return None
-    return [struct.unpack_from("<i",raw,4+4*i)[0] for i in range(n)]
-
-def decode_pairs(raw):
-    if len(raw)<4:return None
-    n=struct.unpack_from("<i",raw,0)[0]
-    if n<0 or n>32 or 4+8*n>len(raw): return None
-    vals=[]
-    for i in range(n):
-        a,b=struct.unpack_from("<ii",raw,4+8*i)
-        vals.append([a,b])
-    return vals
-
-def analyze(raw):
-    out={"size":len(raw),"hex":raw.hex()}
+def analyze_member(data, span):
+    a,b=span
+    raw=data[a:b]
+    out={"start":a,"end":b,"size":b-a,"hex":raw.hex()}
+    if len(raw)>=1:
+        out["u8"]=raw[0]
     if len(raw)>=4:
-        out["first_i32"]=struct.unpack_from("<i",raw,0)[0]
-    li=decode_i32_list(raw)
-    if li is not None: out["i32_list"]=li
-    pr=decode_pairs(raw)
-    if pr is not None: out["i32_pairs"]=pr
-    # sliding aligned i32s for small/interesting values
+        try: out["i32"]=struct.unpack_from("<i",raw,0)[0]
+        except Exception: pass
+    if len(raw)>=8:
+        try: out["i64"]=struct.unpack_from("<q",raw,0)[0]
+        except Exception: pass
+    try:
+        d=app._mp_dict_i32_i32(data,span)
+        if d: out["dict_i32_i32"]=d
+    except Exception:
+        pass
+    try:
+        li=app._mp_list_i32(data,span)
+        if li: out["list_i32"]=li
+    except Exception:
+        pass
+    try:
+        sk=app._mp_upgradeable_skills(data,span)
+        if sk: out["upgradeable_skills"]=sk
+    except Exception:
+        pass
     vals=[]
     for off in range(0,len(raw)-3,4):
         v=struct.unpack_from("<i",raw,off)[0]
@@ -72,34 +40,72 @@ def analyze(raw):
     return out
 
 def main():
-    fp=root()
+    fp=app._find_aggregate_snapshot("PlayerHeroesModel.dat")
     if not fp:
-        print(json.dumps({"ok":False,"error":"PlayerHeroesModel.dat introuvable"},ensure_ascii=False,indent=2)); return
-    data=open(fp,"rb").read()
-    mc,lens,spans,end=mp_vt(data,25)
-    s,e=spans[1]
+        print(json.dumps({"ok":False,"error":"PlayerHeroesModel.dat introuvable"},ensure_ascii=False,indent=2))
+        return
+
+    with app._game_ro_open(fp,"rb") as f:
+        data=f.read()
+
+    mc,lens,root,end=app._mp_vt(data,25)
+    if len(root)<2:
+        raise RuntimeError("PlayerHeroesModel incomplet")
+
+    s,e=root[1]
     count=struct.unpack_from("<i",data,s)[0]
     p=s+4
     hits=[]
+
     for _ in range(count):
-        dict_id=struct.unpack_from("<i",data,p)[0]; p+=4
-        hmc,hlens,hsp,hend=mp_vt(data,p)
-        iid=i32(data,hsp[0]) if len(hsp)>0 else None
-        cfg=i64(data,hsp[1]) if len(hsp)>1 else None
+        dict_id=struct.unpack_from("<i",data,p)[0]
+        p+=4
+        hmc,hlens,hv,hend=app._mp_vt(data,p)
+        iid=app._mp_i32(data,hv[0]) if len(hv)>0 else None
+        cfg=app._mp_i64(data,hv[1]) if len(hv)>1 else None
+
         if cfg==CFG or iid in IIDS:
             members=[]
-            for idx,sp in enumerate(hsp):
-                a,b=sp
-                members.append({"index":idx,**analyze(data[a:b])})
-            hits.append({"dictionary_id":dict_id,"inventory_id":iid,"config_id":cfg,
-                         "member_count":hmc,"member_lengths":hlens,"members":members})
+            for idx,span in enumerate(hv):
+                m={"index":idx,**analyze_member(data,span)}
+                if idx==10:
+                    m["expected_role"]="SkillLevels"
+                elif idx==11:
+                    m["expected_role"]="RelicsBySlot"
+                elif idx==12:
+                    m["expected_role"]="AccessoriesBySlot"
+                elif idx==15:
+                    m["expected_role"]="AwakeLevel"
+                elif idx==16:
+                    m["expected_role"]="AwakeNodeIds"
+                members.append(m)
+            hits.append({
+                "dictionary_id":dict_id,
+                "inventory_id":iid,
+                "config_id":cfg,
+                "member_count":hmc,
+                "member_lengths":hlens,
+                "members":members
+            })
         p=hend
-    out={"ok":True,"file":fp,"hero":"Caladras","config_id":CFG,"matches":hits,
-         "read_only":True,"writes_to_game_files":False,
-         "note":"Dump autonome de tous les membres PlayerHero; aucun fichier du jeu n'est modifié."}
+
+    out={
+        "ok":True,
+        "file":fp,
+        "hero":"Caladras",
+        "config_id":CFG,
+        "matches":hits,
+        "read_only":True,
+        "writes_to_game_files":False,
+        "note":"Diagnostic utilisant exactement le parseur MemoryPack de server.py."
+    }
+
     outp=os.path.abspath("caladras_playerhero_members.json")
-    open(outp,"w",encoding="utf-8").write(json.dumps(out,ensure_ascii=False,indent=2))
+    with open(outp,"w",encoding="utf-8") as f:
+        json.dump(out,f,ensure_ascii=False,indent=2)
+
     print(json.dumps(out,ensure_ascii=False,indent=2))
     print("\nRapport écrit dans:",outp)
 
-if __name__=="__main__": main()
+if __name__=="__main__":
+    main()
