@@ -1035,9 +1035,12 @@ def box_build_for_instance(name,hero_instance):
             except Exception: node_ids=[]
             for node_id in node_ids:
                 n=(cfg.get('nodes') or {}).get(int(node_id)) or {}
-                naked['health']+=num(base.get('health'))*10*num(n.get('health_pct'))
-                naked['atk']+=num(base.get('atk'))*num(n.get('atk_pct'))
-                naked['defense']+=num(base.get('defense'))*num(n.get('def_pct'))
+                # Les bonus % des noeuds s'appliquent aux stats de base déjà mises à l'échelle
+                # par le niveau/rang. Sans *mult, les héros haut niveau perdent une grosse partie
+                # de leurs PV/ATQ/DEF d'éveil (ex. Ruthos).
+                naked['health']+=num(base.get('health'))*10*mult*num(n.get('health_pct'))
+                naked['atk']+=num(base.get('atk'))*mult*num(n.get('atk_pct'))
+                naked['defense']+=num(base.get('defense'))*mult*num(n.get('def_pct'))
                 naked['run_speed']+=num(n.get('run_speed')); naked['crit_rate']+=num(n.get('crit_rate'))
                 naked['crit_dmg']+=num(n.get('crit_dmg')); naked['accuracy']+=num(n.get('accuracy'))
                 naked['resistance']+=num(n.get('resistance')); naked['instinct']+=num(n.get('instinct'))
