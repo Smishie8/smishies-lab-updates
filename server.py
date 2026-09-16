@@ -1928,7 +1928,10 @@ def simulate_combat(name, levels=None, duration=120, boss_def=1320, boss_res=0, 
         if nm in BOSS_CC_IMMUNE_EFFECTS:
             st['condition']=(e.get('condition') or nm)+' → Boss immunisé au contrôle de foule'
             return False
-        needs_acc=(nm in DEBUFF_NAMES or 'Down' in nm or nm in ('Weakness','Cooldown Increase') or 'accuracy required' in cond)
+        # Brandis target Burns explicitly require Accuracy. His self-Burn does not
+        # test the boss's RES.
+        brandis_target_burn=(name=='Brandis' and nm=='Burn' and 'self' not in cond)
+        needs_acc=(nm in DEBUFF_NAMES or 'Down' in nm or nm in ('Weakness','Cooldown Increase') or 'accuracy required' in cond or brandis_target_burn)
         chance=(pass_chance_snapshot if pass_chance_snapshot is not None else debuff_pass_chance(now)) if needs_acc else 1.0
         if needs_acc:
             st['acc_tests']+=1
