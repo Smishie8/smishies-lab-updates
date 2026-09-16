@@ -4,8 +4,22 @@ from html.parser import HTMLParser
 from html import unescape
 from urllib.parse import urlparse, parse_qs
 
+try:
+    from support_eval.support_evaluator_v2 import (
+        load_support_profiles_from_db as _load_support_eval_profiles,
+        coverage_summary as _support_coverage_summary,
+        percentile_scores as _support_percentile_scores,
+        boss_mechanic_notes as _support_boss_mechanic_notes,
+    )
+except Exception:
+    _load_support_eval_profiles=None
+    _support_coverage_summary=None
+    _support_percentile_scores=None
+    _support_boss_mechanic_notes=None
+
 BASE=os.path.dirname(os.path.abspath(__file__))
 DB=os.path.join(BASE,'invokers.db')
+SUPPORT_EVAL_OVERRIDES=os.path.join(BASE,'support_eval','support_effect_overrides.json')
 CONFIG_MAP_CSV=os.path.join(BASE,'configid_hero_map.csv')
 PROFILE_HOME=os.path.join(os.environ.get('LOCALAPPDATA') or os.environ.get('APPDATA') or os.path.expanduser('~'), 'SmishiesLab')
 PROFILE_JSON=os.path.join(PROFILE_HOME,'hero_profiles.json')
@@ -1990,6 +2004,41 @@ def summarize_team_buffs(events,duration):
                 uptime+=b-a; weighted+=win['value']*(b-a); sources.add(win['source'])
         out.append({'effect':eff,'sources':', '.join(sorted(sources)),'applications':len(ee),'uptime_s':round(uptime,2),'uptime':uptime/duration if duration else 0,'avg_active_value':weighted/uptime if uptime else 0,'max_value':max((e['value'] for e in ee),default=0)})
     return out
+
+def support_eval_profiles():
+    """Charge une fois par analyse les profils Support pour enrichir /api/best-supports.
+    Lecture seule de invokers.db. Retourne {} si le module optionnel est absent.
+    """
+    if _load_support_eval_profiles is None:
+        return {}
+    try:
+        return _load_support_eval_profiles(DB,SUPPORT_EVAL_OVERRIDES)
+    except Exception:
+        return {}
+
+def support_eval_payload(profile,boss_name=''):
+    if profile is None:
+        return None
+    coverage=_support_coverage_summary(profile) if _support_coverage_summary else {}
+    advanced=[]
+    for e in getattr(profile,'advanced_effects',[]) or []:
+        advanced.append({'skill':e.skill,'type':e.type,'params':dict(e.params or {}),'validation':e.validation})
+    payload={
+        'coverage':coverage,
+        'categories':profile.categories() if hasattr(profile,'categories') else {},
+        'advanced_effects':advanced,
+        # Les scores général/boss ne sont volontairement PAS inventés avant
+        # branchement du modèle de dégâts entrants / survie.
+        'score_general_100':None,
+        'score_boss_100':None,
+        'survival_model_ready':bool(coverage.get('ready_for_precise_survival_scoring')),
+    }
+    if boss_name and 'ulgorim' in str(boss_name).lower() and _support_boss_mechanic_notes:
+        try: payload['boss_notes']=_support_boss_mechanic_notes(profile)
+        except Exception: payload['boss_notes']=[]
+    else:
+        payload['boss_notes']=[]
+    return payload
 
 def simulate_combat(name, levels=None, duration=120, boss_def=1320, boss_res=0, boss_hp=0, boss_atk=0, boss_element='Neutre', atk_pct=1.5, cr_add=.7, cd_add=1.4, combo_add=.25, skill_speed_add=.2, recovery_add=.2, mana_add=.2, acc_add=340, accuracy_final=None, resistance_final=None, comparison_mode=False, disabled_effects=None, analyze_effect_gains=False, team_supports=None, disabled_team_buffs=None, adds_mode='none', prepared_team=None):
     disabled_effects=set(disabled_effects or [])
@@ -4702,10 +4751,10 @@ async function applyGame(){applyGameBtn.disabled=true;applyGameBtn.textContent='
 async function bestSupports(){
  let b=bosses[simBoss.value],elem=(simElement.value==='Auto'?b.element:simElement.value); bestSupportBtn.disabled=true; bestSupportBtn.textContent='Analyse en cours…'; bestSupportStatus.textContent='Recherche des buffers/debuffers utiles dans tous les rôles…'; bestSupportTop.innerHTML=''; bestSupportTrio.innerHTML='';
  try{
-  let d=await api(`/api/best-supports?name=${encodeURIComponent(combatHero.value)}&duration=${simDur.value}&boss=${b.defense}&boss_res=${b.resistance}&boss_hp=${b.hp}&boss_atk=${b.attack}&element=${encodeURIComponent(elem)}&support_mode=${encodeURIComponent(bestSupportMode.value)}`);
+  let d=await api(`/api/best-supports?name=${encodeURIComponent(combatHero.value)}&duration=${simDur.value}&boss=${b.defense}&boss_res=${b.resistance}&boss_hp=${b.hp}&boss_atk=${b.attack}&element=${encodeURIComponent(elem)}&support_mode=${encodeURIComponent(bestSupportMode.value)}&boss_name=${encodeURIComponent(simBoss.value)}`);
   bestSupportStatus.textContent=`${d.tested||0} buffers/debuffers utiles testés pour ${d.hero} contre ${simBoss.value}. Profil : ${d.support_mode==='max'?'Max support':d.support_mode==='base'?'Stats de base':'Ma box'}. DPS seul : ${F1(d.base_dps)}.`;
-  let rows=(d.top3||[]).map((x,i)=>`<tr><td>${i+1}</td><td><b>${x.name}</b></td><td>${x.role||''}</td><td>${F1(x.dps)}</td><td class=good>+${F1(x.gain_dps)} (${P(x.gain_pct)})</td><td>${x.buff_gain_dps>=0?'+':''}${F1(x.buff_gain_dps)}</td><td>${x.debuff_gain_dps>=0?'+':''}${F1(x.debuff_gain_dps)}</td><td>${x.interaction_gain_dps>=0?'+':''}${F1(x.interaction_gain_dps)}</td><td><b>${x.profile_label||''}</b><br><span class=muted>PRE ${F(x.support_stats?.accuracy||0)} · Recovery ${P(x.support_stats?.skill_recovery||0)} · Skill Speed ${P(x.support_stats?.skill_speed||0)}<br>Auto/S1/S2/S3/Ult : ${['auto','s1','s2','s3','ult'].map(k=>(x.support_levels?.[k]===11?'♛':(x.support_levels?.[k]??'—'))).join(' / ')}</span></td><td>${(x.buffs||[]).map(e=>`${e.effect} (${P(e.uptime)})`).join(' · ')||'—'}</td><td>${(x.debuffs||[]).map(e=>`${e.effect} (${P(e.uptime)})`).join(' · ')||'—'}</td></tr>`).join('');
-  bestSupportTop.innerHTML='<table><tr><th>#</th><th>Support</th><th>Rôle</th><th>DPS carry</th><th>Gain total</th><th>Buffs seuls</th><th>Debuffs seuls</th><th>Interaction</th><th>Profil utilisé</th><th>Buffs actifs</th><th>Debuffs actifs</th></tr>'+rows+'</table>';
+  let rows=(d.top3||[]).map((x,i)=>`<tr><td>${i+1}</td><td><b>${x.name}</b></td><td>${x.role||''}</td><td>${x.score_offensif_100==null?'—':F1(x.score_offensif_100)+'/100'}</td><td>${x.support_eval?.score_general_100==null?'⏳':F1(x.support_eval.score_general_100)+'/100'}</td><td>${F1(x.dps)}</td><td class=good>+${F1(x.gain_dps)} (${P(x.gain_pct)})</td><td>${x.buff_gain_dps>=0?'+':''}${F1(x.buff_gain_dps)}</td><td>${x.debuff_gain_dps>=0?'+':''}${F1(x.debuff_gain_dps)}</td><td>${x.interaction_gain_dps>=0?'+':''}${F1(x.interaction_gain_dps)}</td><td><b>${x.profile_label||''}</b><br><span class=muted>PRE ${F(x.support_stats?.accuracy||0)} · Recovery ${P(x.support_stats?.skill_recovery||0)} · Skill Speed ${P(x.support_stats?.skill_speed||0)}<br>Auto/S1/S2/S3/Ult : ${['auto','s1','s2','s3','ult'].map(k=>(x.support_levels?.[k]===11?'♛':(x.support_levels?.[k]??'—'))).join(' / ')}</span></td><td>${(x.buffs||[]).map(e=>`${e.effect} (${P(e.uptime)})`).join(' · ')||'—'}</td><td>${(x.debuffs||[]).map(e=>`${e.effect} (${P(e.uptime)})`).join(' · ')||'—'}</td><td>${Object.entries(x.support_eval?.categories||{}).map(([k,v])=>`${k}:${v}`).join(' · ')||'—'}${(x.support_eval?.advanced_effects||[]).length?'<br><span class=muted>'+x.support_eval.advanced_effects.map(e=>e.skill+' '+e.type+' ['+e.validation+']').join(' · ')+'</span>':''}${(x.support_eval?.boss_notes||[]).length?'<br><span class=muted>'+x.support_eval.boss_notes.join(' · ')+'</span>':''}</td></tr>`).join('');
+  bestSupportTop.innerHTML='<table><tr><th>#</th><th>Support</th><th>Rôle</th><th>Score offensif</th><th>Score global</th><th>DPS carry</th><th>Gain total</th><th>Buffs seuls</th><th>Debuffs seuls</th><th>Interaction</th><th>Profil utilisé</th><th>Buffs actifs</th><th>Debuffs actifs</th><th>Couverture support</th></tr>'+rows+'</table>';
   let t=d.best_trio;
   if(t){
     let marg=(t.marginal_contributions||[]).map(x=>`<tr><td><b>${x.name}</b></td><td class=good>+${F1(x.gain_dps)}</td><td>${P(x.gain_pct)}</td><td>${F1(x.dps_without)}</td></tr>`).join('');
@@ -4942,7 +4991,7 @@ class H(BaseHTTPRequestHandler):
                 self.sendj(r or {'error':'données manquantes'},200 if r else 400); return
             if p.path=='/api/best-supports':
                 from itertools import combinations
-                name=qs.get('name',[''])[0]; bld,st,pr=saved_build_for(name); lv=profile_levels(pr); dur=f('duration',120); bd=f('boss',1320); br=f('boss_res',0); bhp=f('boss_hp',0); batk=f('boss_atk',0); elem=qs.get('element',['Neutre'])[0]; support_mode=qs.get('support_mode',['real'])[0]
+                name=qs.get('name',[''])[0]; bld,st,pr=saved_build_for(name); lv=profile_levels(pr); dur=f('duration',120); bd=f('boss',1320); br=f('boss_res',0); bhp=f('boss_hp',0); batk=f('boss_atk',0); elem=qs.get('element',['Neutre'])[0]; support_mode=qs.get('support_mode',['real'])[0]; boss_name=qs.get('boss_name',[''])[0]; eval_profiles=support_eval_profiles()
                 base=simulate_combat(name,lv,dur,bd,br,bhp,batk,elem,**bld)
                 if not base: self.sendj({'error':'données manquantes'},400); return
                 base_dps=base['dps']; results=[]
@@ -4973,6 +5022,16 @@ class H(BaseHTTPRequestHandler):
                     else: debuff_gain=0.0
                     gain=round(full['dps']-base_dps,2)
                     si=(info[0] if info else {}); results.append({'name':sn,'role':c.get('role'),'profile_label':('Max support' if support_mode in ('best','max','normalized') else 'Stats de base' if support_mode in ('base','base_stats','native') else 'Ma box'),'support_stats':si.get('stats',{}),'support_levels':si.get('levels',{}),'dps':full['dps'],'gain_dps':gain,'gain_pct':gain/base_dps if base_dps else 0,'buff_gain_dps':buff_gain,'debuff_gain_dps':debuff_gain,'interaction_gain_dps':round(gain-buff_gain-debuff_gain,2),'buffs':summarize_team_buffs(buff_events,dur),'debuffs':summarize_team_buffs(debuff_events,dur)})
+                # Score offensif = percentile du gain DPS réellement mesuré par le simulateur
+                # sur cette situation précise. Ce n'est PAS encore le score support global :
+                # heal/shield/rez attendent le modèle de survie.
+                if results and _support_percentile_scores:
+                    _off_scores=_support_percentile_scores({x['name']:num(x.get('gain_pct')) for x in results})
+                else:
+                    _off_scores={}
+                for x in results:
+                    x['score_offensif_100']=_off_scores.get(x['name'])
+                    x['support_eval']=support_eval_payload(eval_profiles.get(x['name']),boss_name)
                 results.sort(key=lambda x:x['gain_dps'],reverse=True)
                 positive=[x for x in results if x['gain_dps']>0]
                 trio_candidates=positive[:8]
@@ -5003,7 +5062,7 @@ class H(BaseHTTPRequestHandler):
                     # n'est pas nécessairement le meilleur trio.
                     excluded=next((x for x in positive if x['name'] not in best_trio['names']),None)
                     best_trio['best_excluded_individual']={'name':excluded['name'],'gain_dps':excluded['gain_dps'],'gain_pct':excluded['gain_pct']} if excluded else None
-                self.sendj({'hero':name,'base_dps':base_dps,'tested':len(results),'support_mode':support_mode,'top3':results[:3],'best_trio':best_trio,'second_trio':second_trio,'trio_pool':len(trio_candidates)}); return
+                self.sendj({'hero':name,'base_dps':base_dps,'tested':len(results),'support_mode':support_mode,'boss_name':boss_name,'top3':results[:3],'best_trio':best_trio,'second_trio':second_trio,'trio_pool':len(trio_candidates),'score_status':'offense_measured_survival_pending'}); return
             if p.path=='/api/compare':
                 common=(f('duration',120),f('boss',1320),f('boss_res',0),f('boss_hp',0),f('boss_atk',0),qs.get('element',['Neutre'])[0]); an=qs.get('a',[''])[0]; bn=qs.get('b',[''])[0]; preset=qs.get('preset',['box'])[0]
                 ab,ast,alv,alabel,_=combat_preset_for(an,preset); bb,bst,blv,blabel,_=combat_preset_for(bn,preset)
