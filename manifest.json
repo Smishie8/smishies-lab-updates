@@ -1,10 +1,10 @@
 {
-  "version": "10.87",
+  "version": "10.88",
   "channel": "stable",
   "files": [
     {
       "path": "server.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=10.80"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=10.88"
     },
     {
       "path": "awake_nodes.json",
@@ -26,5 +26,5 @@
       "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/updater.py?v=10.80"
     }
   ],
-  "notes": "v10.87 : Sarienne Recovery corrigé à partir de la valeur réelle du jeu (+4 points via relique, sans +12 awake erroné) et 'Mettre à jour ma box' réactualise désormais les profils sauvegardés, ce qui permet à Mana Gen d'intégrer le Hall (18 points = 9%)."
+  "notes": "v10.88 : correction du calcul des bonus de nœuds d’éveil : les % PV/ATQ/DEF sont maintenant appliqués aux stats mises à l’échelle par le niveau/rang. Corrige notamment les PV sous-évalués de Ruthos."
 }
