@@ -1969,7 +1969,9 @@ def simulate_combat(name, levels=None, duration=120, boss_def=1320, boss_res=0, 
             cap_mult=brandis_burn_cap_mult(action,level)
             atk_now,_,_,_,skillsp_now,_,_,_=current_multipliers(now)
             interval=2.0/max(.05,skillsp_now)
-            reps=3 if (action=='Ultimate' and self_burn_until>now) else 1
+            # Brandis: S2 and Ultimate repeat the target Burn 3 times when
+            # Brandis is already affected by her self-Burn at cast time.
+            reps=3 if (action in ('Skill 2','Ultimate') and self_burn_until>now) else 1
             for ri in range(reps):
                 burns.append({'start':now,'end':min(duration,now+e['duration']),'pct':max(0,e['value']),'atk_cap':max(0,atk_now*cap_mult),'interval':interval,'next_tick':now+interval,'damage':0.0,'ticks':0,'source':action})
                 st['applications']+=1
