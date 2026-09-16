@@ -466,6 +466,27 @@ def _load_arena_static_source():
     return vals
 
 ARENA_HALL_VALUES=_load_arena_static_source()
+
+def _load_arena_hall_prices():
+    """Load Great Hall upgrade prices and medal conversions extracted from StaticArenaData."""
+    try:
+        with open(ARENA_STATIC_FILE,'r',encoding='utf-8') as f:
+            d=json.load(f) or {}
+        out={}
+        for row in (d.get('hall_prices') or []):
+            lv=int(row.get('target_level') or 0)
+            if not (1<=lv<=15): continue
+            out[lv]={
+                'resource_id':int(row.get('resource_id') or 0),
+                'amount':float(row.get('amount') or 0),
+                'gold_equivalent':float(row.get('gold_equivalent') or 0),
+                'resource_label':str(row.get('resource_label') or '')
+            }
+        return out
+    except Exception:
+        return {}
+
+ARENA_HALL_PRICES=_load_arena_hall_prices()
 ARENA_HALL_SOURCE='arena_static_data.json fallback'
 
 def inspect_playerarena_hall_raw():
@@ -664,10 +685,15 @@ def optimize_trophy_hall(element, hero_names=None, duration=120, boss_def=1320, 
         return {'error':f'Aucun héros {element} sélectionné dans la box.'}
 
     parsed_costs=[]
+    manual_costs=False
     for x in (costs or []):
-        try: parsed_costs.append(max(0.0,float(x)))
+        try:
+            v=max(0.0,float(x)); parsed_costs.append(v)
+            if v>0: manual_costs=True
         except: parsed_costs.append(0.0)
     while len(parsed_costs)<15: parsed_costs.append(0.0)
+    if not manual_costs:
+        parsed_costs=[float((ARENA_HALL_PRICES.get(lv) or {}).get('gold_equivalent') or 0.0) for lv in range(1,16)]
 
     baselines={}
     usable=[]
@@ -694,7 +720,11 @@ def optimize_trophy_hall(element, hero_names=None, duration=120, boss_def=1320, 
         cur=_arena_hall_level(element,sid)
         if cur>=15: continue
         nxt=cur+1
+        price_info=ARENA_HALL_PRICES.get(nxt) or {}
         cost=parsed_costs[nxt-1] if nxt-1<len(parsed_costs) else 0.0
+        raw_cost=float(price_info.get('amount') or 0.0) if not manual_costs else 0.0
+        raw_resource_id=int(price_info.get('resource_id') or 0) if not manual_costs else 0
+        raw_resource_label=str(price_info.get('resource_label') or '') if not manual_costs else ''
         hero_rows=[]; total_after=0.0; pct_gains=[]
         delta_value=None; next_value=None
         for name in usable:
@@ -716,6 +746,8 @@ def optimize_trophy_hall(element, hero_names=None, duration=120, boss_def=1320, 
         rows.append({'stat_id':sid,'stat':label,'current_level':cur,'next_level':nxt,
                      'current_value':float((ARENA_HALL_VALUES.get(sid) or [0])[cur-1]) if cur>=1 else 0.0,
                      'next_value':next_value,'delta_value':delta_value,'cost':cost,
+                     'cost_gold_equivalent':cost,'cost_raw':raw_cost,'cost_resource_id':raw_resource_id,
+                     'cost_resource_label':raw_resource_label,'cost_source':'manual' if manual_costs else 'StaticArenaData.HallPrices',
                      'base_total_dps':round(base_total,2),'after_total_dps':round(total_after,2),
                      'gain_total_dps':round(gain_total,2),'gain_avg_pct':avg_pct,
                      'dps_per_medal':round(ratio,6) if ratio is not None else None,
@@ -727,7 +759,9 @@ def optimize_trophy_hall(element, hero_names=None, duration=120, boss_def=1320, 
     else:
         rows.sort(key=lambda r:r['gain_total_dps'],reverse=True); metric='gain_total_dps'
     return {'ok':True,'element':element,'heroes':usable,'hero_count':len(usable),'duration':duration,
-            'base_total_dps':round(base_total,2),'metric':metric,'costs':parsed_costs,'rows':rows}
+            'base_total_dps':round(base_total,2),'metric':metric,'costs':parsed_costs,
+            'cost_source':'manual' if manual_costs else 'StaticArenaData.HallPrices',
+            'hall_prices':ARENA_HALL_PRICES,'rows':rows}
 
 def persist_decoded_box(decoded):
     ensure_box_tables(); rows=decoded.get('instances') or decoded.get('rows') or []; imported=0; mapped=0; relic_imported=0
@@ -4453,14 +4487,9 @@ HTML = r'''<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name
   <button id=trophyClear>Tout décocher</button>
 </div>
 <div class=note>Le boss et la durée sont ceux sélectionnés en haut de l'onglet Optimisation. La PRÉ est évaluée via les vrais tests PRÉ/RÉS et l'uptime réel des debuffs.</div>
-<h3>Coût des niveaux</h3>
-<div class=note>Entre le coût en médailles pour acheter chaque niveau 1→15, séparé par des virgules. Tant que cette table n'est pas renseignée, l'outil classe par gain DPS brut et n'invente aucun coût.</div>
-<div class=controls><div class=control style="min-width:650px"><label>Coûts niveaux 1→15</label><input id=trophyCosts placeholder="ex. coût niv1, niv2, ... niv15"></div><button id=trophyCostScanBtn>Chercher les coûts dans static.data</button><button id=trophyBtn>Optimiser la Salle</button></div>
-<div id=trophyCostScanStatus class=note></div><div id=trophyCostCandidates class=scroll></div>
-<h3>Capture du coût affiché par le jeu</h3>
-<div class=note>Si static.data ne contient pas directement les coûts : 1) clique <b>Démarrer capture</b>, 2) dans Invokers ouvre la Salle des trophées et touche une amélioration pour afficher son coût <b>sans l'acheter</b>, 3) reviens ici et clique <b>Analyser capture</b>.</div>
-<div class=controls><button id=trophyCaptureStart>Démarrer capture</button><button id=trophyCaptureAnalyze>Analyser capture</button></div>
-<div id=trophyCaptureStatus class=note></div><div id=trophyCaptureReport class=scroll></div>
+<h3>Coûts des niveaux</h3>
+<div class=note><b>Coûts automatiques :</b> Smishie's Lab utilise maintenant directement <b>StaticArenaData.HallPrices</b>. Le rendement est normalisé en équivalent médaille d'or pour comparer correctement Bronze, Argent et Or. Aucun coût manuel n'est nécessaire.</div>
+<div class=controls><button id=trophyBtn>Optimiser la Salle</button></div>
 <div id=trophyStatus class=note></div>
 <div id=trophySummary class=grid></div>
 <h3>Priorité des prochains niveaux</h3><div id=trophyTable class=scroll></div>
@@ -4552,13 +4581,12 @@ async function trophyRun(){
       +'&resistance='+encodeURIComponent(b.resistance||0)
       +'&hp='+encodeURIComponent(b.hp||0)
       +'&attack='+encodeURIComponent(b.attack||0)
-      +'&boss_element='+encodeURIComponent(b.element||'Neutre')
-      +'&costs='+encodeURIComponent(trophyCosts.value||'');
+      +'&boss_element='+encodeURIComponent(b.element||'Neutre');
     let d=await api(u);
     if(d.error)throw Error(d.error);
-    trophySummary.innerHTML=cards({'Élément':d.element,'Héros simulés':d.hero_count,'DPS total actuel':F(d.base_total_dps),'Classement':d.metric==='dps_per_medal'?'DPS / médaille':'Gain DPS brut'});
-    trophyTable.innerHTML='<table><tr><th>#</th><th>Stat</th><th>Niveau</th><th>Gain stat</th><th>Coût</th><th>Gain DPS total</th><th>Gain moyen</th><th>DPS / médaille</th><th>Principal bénéficiaire</th><th>Audit rotation</th></tr>'
-      +d.rows.map((r,i)=>{let top=(r.heroes||[])[0];let audit='—';if(top){let a=top.before_audit||{},z=top.after_audit||{},ac=a.casts||{},zc=z.casts||{};audit=`S1 ${ac['Skill 1']||0}→${zc['Skill 1']||0} · S2 ${ac['Skill 2']||0}→${zc['Skill 2']||0} · S3 ${ac['Skill 3']||0}→${zc['Skill 3']||0} · Ult ${ac['Ultimate']||0}→${zc['Ultimate']||0}`;if(top.hero==='Brandis')audit+=` · Ult×3 ${a.brandis_ult_x3||0}→${z.brandis_ult_x3||0}`;}return `<tr data-trophy-row="${i}"><td>${i+1}</td><td><b>${r.stat}</b></td><td>${r.current_level}→${r.next_level}</td><td>${r.delta_value==null?'—':([4,7,8].includes(+r.stat_id)?('+'+F1(r.delta_value*100)+' %'):('+'+F1(r.delta_value)))}</td><td>${r.cost>0?F(r.cost):'—'}</td><td class=good>+${F1(r.gain_total_dps)}</td><td>${P(r.gain_avg_pct)}</td><td class=good>${r.dps_per_medal==null?'—':F1(r.dps_per_medal)}</td><td>${top?top.hero+' (+'+F1(top.gain_dps)+')':'—'}</td><td>${audit}</td></tr>`}).join('')+'</table>';
+    trophySummary.innerHTML=cards({'Élément':d.element,'Héros simulés':d.hero_count,'DPS total actuel':F(d.base_total_dps),'Classement':d.metric==='dps_per_medal'?'DPS / médaille or équiv.':'Gain DPS brut','Coûts':d.cost_source||'—'});
+    trophyTable.innerHTML='<table><tr><th>#</th><th>Stat</th><th>Niveau</th><th>Gain stat</th><th>Coût jeu</th><th>Équiv. or</th><th>Gain DPS total</th><th>Gain moyen</th><th>DPS / médaille or</th><th>Principal bénéficiaire</th><th>Audit rotation</th></tr>'
+      +d.rows.map((r,i)=>{let top=(r.heroes||[])[0];let audit='—';if(top){let a=top.before_audit||{},z=top.after_audit||{},ac=a.casts||{},zc=z.casts||{};audit=`S1 ${ac['Skill 1']||0}→${zc['Skill 1']||0} · S2 ${ac['Skill 2']||0}→${zc['Skill 2']||0} · S3 ${ac['Skill 3']||0}→${zc['Skill 3']||0} · Ult ${ac['Ultimate']||0}→${zc['Ultimate']||0}`;if(top.hero==='Brandis')audit+=` · Ult×3 ${a.brandis_ult_x3||0}→${z.brandis_ult_x3||0}`;}return `<tr data-trophy-row="${i}"><td>${i+1}</td><td><b>${r.stat}</b></td><td>${r.current_level}→${r.next_level}</td><td>${r.delta_value==null?'—':([4,7,8].includes(+r.stat_id)?('+'+F1(r.delta_value*100)+' %'):('+'+F1(r.delta_value)))}</td><td>${r.cost_raw>0?(F1(r.cost_raw)+' '+(r.cost_resource_label||('ID '+r.cost_resource_id))):'—'}</td><td>${r.cost_gold_equivalent>0?F1(r.cost_gold_equivalent):'—'}</td><td class=good>+${F1(r.gain_total_dps)}</td><td>${P(r.gain_avg_pct)}</td><td class=good>${r.dps_per_medal==null?'—':F1(r.dps_per_medal)}</td><td>${top?top.hero+' (+'+F1(top.gain_dps)+')':'—'}</td><td>${audit}</td></tr>`}).join('')+'</table>';
     let renderDetail=(idx)=>{let r=d.rows[idx];if(!r)return;trophyHeroDetail.innerHTML='<h4>'+r.stat+' '+r.current_level+'→'+r.next_level+'</h4><table><tr><th>Héros</th><th>DPS avant</th><th>DPS après</th><th>Gain DPS</th><th>Gain %</th><th>PRÉ</th><th>Recovery</th><th>S1</th><th>S2</th><th>S3</th><th>Ult</th><th>Brandis Ult ×3</th><th>DoT S2</th><th>Ticks S2</th><th>DoT S3</th><th>Ticks S3</th><th>DoT Ult</th><th>Ticks Ult</th></tr>'+(r.heroes||[]).map(x=>{let a=x.before_audit||{},z=x.after_audit||{},ac=a.casts||{},zc=z.casts||{};let tri=(x.hero==='Brandis')?((a.brandis_ult_x3||0)+'→'+(z.brandis_ult_x3||0)):'—';return `<tr><td>${x.hero}</td><td>${F1(x.before_dps)}</td><td>${F1(x.after_dps)}</td><td class=good>+${F1(x.gain_dps)}</td><td>${P(x.gain_pct)}</td><td>${F1((x.before_stats||{}).accuracy)}→${F1((x.after_stats||{}).accuracy)}</td><td>${P((x.before_stats||{}).skill_recovery)}→${P((x.after_stats||{}).skill_recovery)}</td><td>${ac['Skill 1']||0}→${zc['Skill 1']||0}</td><td>${ac['Skill 2']||0}→${zc['Skill 2']||0}</td><td>${ac['Skill 3']||0}→${zc['Skill 3']||0}</td><td>${ac['Ultimate']||0}→${zc['Ultimate']||0}</td><td>${tri}</td><td>${x.hero==='Brandis'?F1(((a.dot_tick_details||{})['Skill 2']||{}).damage||0)+'→'+F1(((z.dot_tick_details||{})['Skill 2']||{}).damage||0):'—'}</td><td>${x.hero==='Brandis'?((((a.dot_tick_details||{})['Skill 2']||{}).ticks||0)+'→'+(((z.dot_tick_details||{})['Skill 2']||{}).ticks||0)):'—'}</td><td>${x.hero==='Brandis'?F1(((a.dot_tick_details||{})['Skill 3']||{}).damage||0)+'→'+F1(((z.dot_tick_details||{})['Skill 3']||{}).damage||0):'—'}</td><td>${x.hero==='Brandis'?((((a.dot_tick_details||{})['Skill 3']||{}).ticks||0)+'→'+(((z.dot_tick_details||{})['Skill 3']||{}).ticks||0)):'—'}</td><td>${x.hero==='Brandis'?F1(((a.dot_tick_details||{})['Ultimate']||{}).damage||0)+'→'+F1(((z.dot_tick_details||{})['Ultimate']||{}).damage||0):'—'}</td><td>${x.hero==='Brandis'?((((a.dot_tick_details||{})['Ultimate']||{}).ticks||0)+'→'+(((z.dot_tick_details||{})['Ultimate']||{}).ticks||0)):'—'}</td></tr>`}).join('')+'</table>'};
     renderDetail(0);
     trophyTable.querySelectorAll('[data-trophy-row]').forEach(tr=>tr.onclick=()=>{renderDetail(+tr.dataset.trophyRow);trophyHeroDetail.scrollIntoView({behavior:'smooth',block:'start'})});
@@ -4744,9 +4772,6 @@ let rankRun=0; async function rank(){const run=++rankRun;let b=bosses[rankBoss.v
 (async()=>{heroes=await api('/api/heroes');let n=heroes.map(x=>x.name);let ownedHeroNames=await api('/api/box-hero-names');relicProtectedHeroes.innerHTML=ownedHeroNames.map(x=>`<option value="${x}">${x}</option>`).join('');[heroSel,combatHero,aSel,bSel,optHero].forEach((e,i)=>opts(e,n,i===3?'Sildrea':'Senhachi'));opts(aoeHero,n,'Moros');renderAoeTargetInputs({});for(let e of [support1,support2,support3,support4,rankSupport1,rankSupport2,rankSupport3,rankSupport4])opts(e,['Aucun',...n],'Aucun');[support1,support2,support3,support4].forEach(e=>e.onchange=combat);[rankSupport1,rankSupport2,rankSupport3,rankSupport4].forEach(e=>e.onchange=rank);rankSupportMode.onchange=rank;rankElement.onchange=rank;addsMode.onchange=combat;bosses=await api('/api/boss-setups');titans=await api('/api/titans');[simBoss,optBoss,rankBoss,aoeBoss].forEach(e=>{Object.keys(bosses).forEach(x=>e.add(new Option(x,x)));e.value='Ulgorim 16'});optBoss.onchange=async()=>{await critAnalysis();await recAnalysis();await relicPotential()};rankBoss.onchange=rank;simBossCards.innerHTML=bossCards(bosses[simBoss.value]);simBoss.onchange=()=>{simBossCards.innerHTML=bossCards(bosses[simBoss.value]);simElement.value='Auto';combat();compare()};simElement.onchange=()=>{combat();compare()};build(heroBuild,'hero');levels(heroLevels,'heroLvl');levels(optLevels,'opt');trophyElement.onchange=renderTrophyHeroes;
 trophySelectAll.onclick=()=>[...trophyHeroes.options].forEach(o=>o.selected=true);
 trophyClear.onclick=()=>[...trophyHeroes.options].forEach(o=>o.selected=false);
-trophyCaptureStart.onclick=trophyCaptureStartRun;
-trophyCaptureAnalyze.onclick=trophyCaptureAnalyzeRun;
-trophyCostScanBtn.onclick=trophyCostScan;
 trophyBtn.onclick=trophyRun;
 heroSel.onchange=hero;combatHero.onchange=combat;combatPreset.onchange=()=>{let notes={box:'Ma box : stats et niveaux réellement importés.',early:'Early : skills 1 · ATQ +30% · Crit 20% · Dég crit 50% · PRE +80 · Combo/Skill/Recovery/Mana +5%.',mid:'Mid : skills 5 · ATQ +80% · Crit 50% · Dég crit 75% · PRE +220 · Combo/Skill/Recovery/Mana +15%.',late:'Late : skills max · ATQ +150% · Crit 100% · Dég crit 120% · PRE +400 · Combo/Skill/Recovery/Mana +30%.'};combatPresetNote.textContent=notes[combatPreset.value]||'';combat();compare()};aSel.onchange=compare;bSel.onchange=compare;recFields(recCurrentStats,'recCur');recTestFields(recTestStats,'recTest');optHero.onchange=async()=>{await loadRecStats();await critAnalysis();await recAnalysis();await relicPotential()};[...new Set(heroes.map(x=>x.rarity).filter(Boolean))].sort().forEach(x=>rarity.add(new Option(x,x)));[...new Set(heroes.map(x=>x.role).filter(Boolean))].sort().forEach(x=>role.add(new Option(x,x)));rankMode.onchange=()=>{let notes={box:'Ma box : classement avec les builds réellement importés.',early:'Early : skills 1 · ATQ +30% · Crit 20% · Dég crit 50% · PRE +80 · Combo/Skill/Recovery/Mana +5%.',mid:'Mid : skills 5 · ATQ +80% · Crit 50% · Dég crit 75% · PRE +220 · Combo/Skill/Recovery/Mana +15%.',late:'Late : skills max · ATQ +150% · Crit 100% · Dég crit 120% · PRE +400 · Combo/Skill/Recovery/Mana +30%.'};rankModeNote.textContent=notes[rankMode.value]||'';rank()};combatBtn.onclick=combat;bestSupportMode.onchange=()=>{let notes={real:'Ma box : uniquement les héros que tu possèdes, avec leur vraie fiche importée.',base:'Stats de base : stats natives du héros et tous les skills niveau 1.',max:'Max support : stats natives, skills max, PRE 1000, Combo/Skill Speed/Recovery/Mana +30%.'};bestSupportModeNote.textContent=notes[bestSupportMode.value]||''};bestSupportBtn.onclick=bestSupports;cmpBtn.onclick=compare;critBtn.onclick=critAnalysis;recBtn.onclick=recAnalysis;recBalanceBtn.onclick=recBalance;relicOptBtn.onclick=relicOptimize;setOptBtn.onclick=setOptimize;potentialBtn.onclick=relicPotential;rankBtn.onclick=rank;aoeHero.onchange=async()=>{await loadAoeDefaults();await aoeCombatRun()};aoePreset.onchange=()=>{aoeCombatRun();aoeRankRun()};aoeEnemies.onchange=async()=>{await loadAoeDefaults();await aoeCombatRun();await aoeRankRun()};aoeBoss.onchange=()=>{aoeCombatRun();aoeRankRun()};aoeBtn.onclick=aoeCombatRun;aoeRankBtn.onclick=aoeRankRun;aoeSaveTargets.onclick=saveAoeTargets;aoeProbeStatic.onclick=probeAoeStatic;aoeImportAll.onclick=importAllAoe;importBoxBtn.onclick=importBoxOneClick;relicRefresh.onclick=loadRelics;[relicSlot,relicSet,relicEquipped,relicStat].forEach(e=>e.onchange=loadRelics);await loadRelics();await hero();await loadRecStats();await loadTrophyHeroes();await combat();await compare();await critAnalysis();await recAnalysis();await relicPotential();await loadAoeDefaults();await aoeCombatRun();await aoeRankRun();await rank()})().catch(e=>document.body.insertAdjacentHTML('beforeend',`<pre>${e.stack}</pre>`));
 </script></body></html>'''
