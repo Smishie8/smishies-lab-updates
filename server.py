@@ -3696,6 +3696,88 @@ def _extract_live_arena_hall_values():
         'source':'StaticArenaData.HallBonuses live'
     }
 
+def scan_static_hall_cost_tier_candidates():
+    """Search all StaticData chunks for Trophy Room costs stored as 3 tiers of 5 levels.
+
+    Official rules split levels 1-5 / 6-10 / 11-15 into Bronze / Silver / Gold,
+    so a 5-value tier representation is more plausible than one 15-value array.
+    Read-only diagnostic.
+    """
+    try:
+        fp=_find_static_data_file()
+        if not fp:return {'ok':False,'error':'static.data introuvable'}
+        with _game_ro_open(fp,'rb') as fh:data=fh.read()
+        pos=0
+        tag,version=struct.unpack_from('<II',data,pos); pos+=8
+        if tag!=0x50435A48:return {'ok':False,'error':'static.data invalide'}
+        config_version,pos=_read_dotnet_string(data,pos)
+        shared_version,pos=_read_dotnet_string(data,pos)
+        if pos+8>len(data):return {'ok':False,'error':'Header incomplet'}
+        header_size,header_result_size=struct.unpack_from('<ii',data,pos); pos+=8
+        header_blob,_=_brotli_decompress_bytes(data[pos:pos+header_size]); pos+=header_size
+        hdr=_parse_chunkpack_header_blob(header_blob)
+
+        candidates=[]
+        for idx,(key,ch) in enumerate(zip(hdr['keys'],hdr['chunks'])):
+            s=pos+int(ch['offset']); e=s+int(ch['size'])
+            if not (0<=s<=e<=len(data)):continue
+            packed=data[s:e]
+            try:
+                raw,_=_brotli_decompress_bytes(packed) if ch.get('compressed') else (packed,None)
+            except Exception:
+                continue
+            marker=struct.pack('<i',5)
+            arrays=[]; off=0
+            while True:
+                p=raw.find(marker,off)
+                if p<0:break
+                q0=p+4
+                if q0+20<=len(raw):
+                    vals=list(struct.unpack_from('<5i',raw,q0))
+                    if all(0<v<=1000000 for v in vals) and all(vals[i]>=vals[i-1] for i in range(1,5)) and len(set(vals))>=3:
+                        rounded=sum(1 for v in vals if v%5==0 or v%10==0 or v%25==0 or v%50==0)
+                        arrays.append({'offset':p,'values':vals,'rounded':rounded})
+                off=p+1
+            if not arrays:continue
+            # Look for three plausible 5-level curves located reasonably close.
+            arrays.sort(key=lambda x:x['offset'])
+            for i,a in enumerate(arrays):
+                near=[x for x in arrays[i+1:] if 0 < x['offset']-a['offset'] <= 8192]
+                for j,b in enumerate(near[:30]):
+                    for d in near[j+1:j+31]:
+                        if d['offset']<=b['offset']:continue
+                        # Costs usually rise within each tier. Prefer similarly-shaped curves
+                        # and values that look like human-authored economy numbers.
+                        shape=0
+                        for x in (a,b,d):
+                            inc=[x['values'][k]-x['values'][k-1] for k in range(1,5)]
+                            if len(set(inc))<=2:shape+=2
+                            shape+=x['rounded']
+                        # Penalize wildly huge jumps between adjacent currency tiers.
+                        firsts=[a['values'][0],b['values'][0],d['values'][0]]
+                        lasts=[a['values'][-1],b['values'][-1],d['values'][-1]]
+                        score=shape
+                        if all(x<=5000 for x in firsts+lasts):score+=10
+                        if all(x<=500 for x in firsts):score+=8
+                        candidates.append({
+                            'chunk_index':idx,'category':key.get('category'),'id':key.get('id'),
+                            'offsets':[a['offset'],b['offset'],d['offset']],
+                            'bronze':a['values'],'silver':b['values'],'gold':d['values'],
+                            'combined':a['values']+b['values']+d['values'],
+                            'span':d['offset']-a['offset'],'score':score
+                        })
+        # De-duplicate exact curves and rank.
+        seen=set(); ranked=[]
+        for row in sorted(candidates,key=lambda x:(x['score'],-x['span']),reverse=True):
+            key=(tuple(row['bronze']),tuple(row['silver']),tuple(row['gold']))
+            if key in seen:continue
+            seen.add(key); ranked.append(row)
+            if len(ranked)>=80:break
+        return {'ok':True,'file':fp,'config_version':config_version,
+                'candidate_count':len(ranked),'candidates':ranked,**_game_readonly_status()}
+    except Exception as e:
+        return {'ok':False,'error':str(e),**_game_readonly_status()}
+
 def scan_static_hall_cost_candidates():
     """Read-only search for Trophy Hall medal costs in StaticArenaData.
 
@@ -4410,16 +4492,16 @@ async function trophyCostScan(){
   trophyCostScanStatus.textContent='Recherche des tableaux de coûts autour de StaticArenaData.HallBonuses…';
   trophyCostCandidates.innerHTML='';
   try{
-    let d=await api('/api/game-import/static-hall-cost-scan');
+    let d=await api('/api/game-import/static-hall-cost-tier-scan');
     if(!d.ok)throw Error(d.error||'Scan impossible');
     trophyCostScanStatus.textContent=d.candidate_count+' candidat(s) trouvés dans static.data '+(d.config_version||'')+'.';
     let rows=(d.candidates||[]).slice(0,30);
-    trophyCostCandidates.innerHTML='<table><tr><th>#</th><th>Offset</th><th>Distance Hall</th><th>Encodage</th><th>Valeurs 1→15</th><th></th></tr>'+
-      rows.map((x,i)=>`<tr><td>${i+1}</td><td>${x.offset}</td><td>${x.distance_to_hall}</td><td>${x.encoding}</td><td>${x.values.join(', ')}</td><td><button data-cost-pick="${i}">Utiliser</button></td></tr>`).join('')+'</table>';
+    trophyCostCandidates.innerHTML='<table><tr><th>#</th><th>Chunk</th><th>Bronze 1→5</th><th>Argent 6→10</th><th>Or 11→15</th><th>Span</th><th></th></tr>'+
+      rows.map((x,i)=>`<tr><td>${i+1}</td><td>${x.category}:${x.id}</td><td>${x.bronze.join(', ')}</td><td>${x.silver.join(', ')}</td><td>${x.gold.join(', ')}</td><td>${x.span}</td><td><button data-cost-pick="${i}">Utiliser</button></td></tr>`).join('')+'</table>';
     trophyCostCandidates.querySelectorAll('[data-cost-pick]').forEach(btn=>btn.onclick=()=>{
       let x=rows[+btn.dataset.costPick]; if(!x)return;
-      trophyCosts.value=x.values.join(',');
-      trophyCostScanStatus.textContent='Candidat '+(+btn.dataset.costPick+1)+' chargé. Vérifie les coûts avant de lancer l’optimisation.';
+      trophyCosts.value=x.combined.join(',');
+      trophyCostScanStatus.textContent='Candidat '+(+btn.dataset.costPick+1)+' chargé : Bronze / Argent / Or. Vérifie les valeurs avant de lancer l’optimisation.';
     });
   }catch(e){trophyCostScanStatus.textContent='Erreur : '+e.message}
   finally{trophyCostScanBtn.disabled=false}
@@ -4709,6 +4791,7 @@ class H(BaseHTTPRequestHandler):
             if p.path=='/api/game-import/static-cache': self.sendj(scan_static_data_cache()); return
             if p.path=='/api/game-import/static-pack': self.sendj(inspect_static_chunkpack()); return
             if p.path=='/api/game-import/static-hall-scan': self.sendj(scan_static_hall_f64_arrays()); return
+            if p.path=='/api/game-import/static-hall-cost-tier-scan': self.sendj(scan_static_hall_cost_tier_candidates()); return
             if p.path=='/api/game-import/static-hall-cost-scan': self.sendj(scan_static_hall_cost_candidates()); return
             if p.path=='/api/game-import/static-hall-live': self.sendj({'ok':bool(_LIVE_ARENA_HALL_INFO),'source':ARENA_HALL_SOURCE,'live':_LIVE_ARENA_HALL_INFO,'values':ARENA_HALL_VALUES,**_game_readonly_status()}); return
             if p.path=='/api/game-import/player-arena-hall-raw': self.sendj(inspect_playerarena_hall_raw()); return
