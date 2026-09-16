@@ -1,11 +1,11 @@
 {
-  "version": "11.02",
+  "version": "11.03",
   "channel": "stable",
   "files": [
     {
       "path": "server.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.02",
-      "git_sha1": "e7b50ec2875f376b58e220813210506582c4e48a"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.03",
+      "git_sha1": "b34501e23b0adb702870a4c576042d62ba2bba0b"
     },
     {
       "path": "awake_nodes.json",
@@ -26,7 +26,17 @@
       "path": "updater.py",
       "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/updater.py?v=10.96",
       "git_sha1": "e59089a46a250e16182266a8618f03c0c6dcd554"
+    },
+    {
+      "path": "ascension_multipliers.json",
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/ascension_multipliers.json?v=11.03",
+      "git_sha1": "c3240ba62e13930920b8afb55b0aa5f4906b9e26"
+    },
+    {
+      "path": "character_static_1302.json",
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/character_static_1302.json?v=11.03",
+      "git_sha1": "49d130f0729665285788ae18b805b165a93873c0"
     }
   ],
-  "notes": "v11.02 : correction ciblée et sécurisée de la Salle des trophées Eau, validée sur Ardell, Gralmund et Fulrik. Si la signature erronée du snapshot est détectée (Crit +6%, Dég crit +6%, PRE +30, RES +20, Recovery 0, Mana +24), elle est corrigée en Crit +5%, Dég crit 0%, PRE +40, RES +20, Recovery +20, Mana +20. Le correctif PRE/RÉS d'éveil de base de v11.01 est conservé."
+  "notes": "v11.03 : début de la migration vers les données du jeu comme source de vérité. Les 6 courbes d'ascension ne sont plus codées dans server.py : elles sont chargées depuis ascension_multipliers.json extrait de StaticCharacterData.AscensionMultipliersByRank. Le catalogue statique des 222 héros est déplacé dans character_static_1302.json issu de StaticCharacterData/CharacterConfig. Les formules exactes Combo/Skill Speed et Skill Recovery sont également intégrées. Prochaine étape : StaticRelicData, StaticArenaData et SkillConfig."
 }
