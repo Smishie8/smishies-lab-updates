@@ -1602,7 +1602,8 @@ def parse_seconds(v,default=999.0):
     return float(m.group(0).replace(',','.')) if m else default
 
 def dmult(defense):
-    d=max(0.0,float(defense)); return 1/(1+0.0001696*d+0.00000001245*d*d)
+    # Formule DEF validée en jeu : coefficient quadratique 1.245e-7.
+    d=max(0.0,float(defense)); return 1/(1+0.0001696*d+0.0000001245*d*d)
 
 ELEMENT_ALIASES={
     'fire':'Feu','feu':'Feu','water':'Eau','eau':'Eau','wind':'Vent','vent':'Vent',
@@ -1947,7 +1948,7 @@ def support_buff_schedule(name, duration=120, adds_mode='none', boss_element='Ne
         elif key in ('s1','s2','s3'): ready[key]=start+cd; mana+=mg*mana_mult; auto_idx=1
         else: mana+=mg*mana_mult; auto_idx=1 if auto_idx==5 else auto_idx+1
         mana=min(ult_cost,mana); t+=cast
-    return {'name':name,'events':events,'actions':seq,'stats':st,'levels':lv,'element':hero_element(name),'element_matchup':elem}
+    return {'name':name,'events':events,'casts':casts,'actions':seq,'stats':st,'levels':lv,'element':hero_element(name),'element_matchup':elem}
 
 def support_buff_schedule_preset(name,duration=120,adds_mode='none',boss_element='Neutre',preset='box'):
     key=str(preset or 'box').strip().lower()
@@ -4994,6 +4995,10 @@ class H(BaseHTTPRequestHandler):
             if p.path=='/api/best-supports':
                 from itertools import combinations
                 name=qs.get('name',[''])[0]; bld,st,pr=saved_build_for(name); lv=profile_levels(pr); dur=f('duration',120); bd=f('boss',1320); br=f('boss_res',0); bhp=f('boss_hp',0); batk=f('boss_atk',0); elem=qs.get('element',['Neutre'])[0]; support_mode=qs.get('support_mode',['real'])[0]; boss_name=qs.get('boss_name',[''])[0]; eval_profiles=support_eval_profiles()
+                _carry_box=box_hero_for_name(name) or {}
+                _carry_box_stats=((_carry_box.get('box_build') or {}).get('final_stats') or {})
+                _carry_hp=num(_carry_box_stats.get('health'),num((hero_row(name) or {}).get('hp'),10000))
+                _carry_def=num(_carry_box_stats.get('defense'),num((hero_row(name) or {}).get('defense'),0))
                 base=simulate_combat(name,lv,dur,bd,br,bhp,batk,elem,**bld)
                 if not base: self.sendj({'error':'données manquantes'},400); return
                 base_dps=base['dps']; results=[]
@@ -5034,8 +5039,8 @@ class H(BaseHTTPRequestHandler):
                                 eval_profile,
                                 gain_pct*100.0,
                                 dur,
-                                num(st.get('hp'),num((hero_row(name) or {}).get('hp'),10000)),
-                                num(st.get('defense'),num((hero_row(name) or {}).get('defense'),0)),
+                                _carry_hp,
+                                _carry_def,
                                 events,
                                 si.get('casts',[]),
                                 boss_name,
