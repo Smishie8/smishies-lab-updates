@@ -489,9 +489,13 @@ def boss_mechanic_notes(
                 "d'Ulgorim."
             )
 
-        if "atk down" in n or "weaken" in n:
+        if "atk down" in n:
             notes.append(
                 f"{effect.skill} {effect.name}: peut réduire la pression entrante."
+            )
+        if "weaken" in n or "weakness" in n:
+            notes.append(
+                f"{effect.skill} {effect.name}: augmente les dégâts subis par le boss ; valeur offensive."
             )
 
     for effect in profile.advanced_effects:
