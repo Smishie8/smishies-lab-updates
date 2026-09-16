@@ -1,5 +1,5 @@
 {
-  "version": "10.80",
+  "version": "10.81",
   "channel": "stable",
   "files": [
     {
@@ -26,5 +26,5 @@
       "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/updater.py?v=10.80"
     }
   ],
-  "notes": "v10.80 : la mise à jour de box importe aussi PlayerArenaModel.dat (Salle des trophées / Great Hall) et applique automatiquement les bonus par élément aux stats reconstruites des héros. Mana Gen reste calculée en points avec la formule exacte du jeu."
+  "notes": "v10.81 : correction du mélange reliques + Salle des trophées : les bonus plats PV/DEF sont conservés, ce qui supprime l'erreur 'hp_flat' lors de la lecture de la box."
 }
