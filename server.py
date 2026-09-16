@@ -1273,8 +1273,14 @@ def save_profile(data):
 
 def _box_skill_levels(hero_instance, fallback=None):
     """Convert PlayerHero SkillLevels into the five profile levels used by the simulator.
-    Player snapshots encountered so far use either 0..4 or 1..5 as slot ids.
-    Missing/invalid entries keep the existing profile level.
+
+    PlayerHero v22 stores seven SkillKind entries: 1..5 are the five upgradeable
+    combat slots used by Smishie's Lab (Auto, S1, S2, S3, Ult); 7 and 8 are
+    additional/passive kinds and are deliberately ignored here.
+
+    The persisted value is a zero-based upgrade count (0..10), while the UI and
+    coefficient tables use displayed skill levels 1..11, hence +1.
+    Older snapshots using compact 0..4 or direct 1..5 levels remain supported.
     """
     fallback=fallback or {}
     raw=(hero_instance or {}).get('skill_levels_raw') or {}
@@ -1285,19 +1291,33 @@ def _box_skill_levels(hero_instance, fallback=None):
     for k,v in (raw or {}).items():
         try: vals[int(k)]=int(v)
         except Exception: pass
-    keys=set(vals)
-    if keys and keys.issubset({0,1,2,3,4}):
-        order=[0,1,2,3,4]
-    elif keys and keys.issubset({1,2,3,4,5}):
-        order=[1,2,3,4,5]
-    else:
-        order=[]
+
     names=['auto_level','s1_level','s2_level','s3_level','ult_level']
     out={n:int(num(fallback.get(n),7)) for n in names}
-    for n,k in zip(names,order):
-        lv=vals.get(k)
-        if lv is not None and 1<=lv<=11:
-            out[n]=lv
+    keys=set(vals)
+
+    # Current PlayerHero v22 format: SkillKind 1..5 plus passive/additional 7/8.
+    if {1,2,3,4,5}.issubset(keys):
+        for n,k in zip(names,[1,2,3,4,5]):
+            upgrade=vals.get(k)
+            if upgrade is not None and 0<=upgrade<=10:
+                out[n]=upgrade+1
+        return out
+
+    # Legacy format: zero-based slot ids with direct displayed levels.
+    if keys and keys.issubset({0,1,2,3,4}):
+        for n,k in zip(names,[0,1,2,3,4]):
+            lv=vals.get(k)
+            if lv is not None and 1<=lv<=11:
+                out[n]=lv
+        return out
+
+    # Legacy format: one-based slot ids with direct displayed levels.
+    if keys and keys.issubset({1,2,3,4,5}):
+        for n,k in zip(names,[1,2,3,4,5]):
+            lv=vals.get(k)
+            if lv is not None and 1<=lv<=11:
+                out[n]=lv
     return out
 
 def apply_box_profile(name):
