@@ -1,5 +1,5 @@
 {
-  "version": "10.81",
+  "version": "10.82",
   "channel": "stable",
   "files": [
     {
@@ -26,5 +26,5 @@
       "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/updater.py?v=10.80"
     }
   ],
-  "notes": "v10.81 : correction du mélange reliques + Salle des trophées : les bonus plats PV/DEF sont conservés, ce qui supprime l'erreur 'hp_flat' lors de la lecture de la box."
+  "notes": "v10.82 : sécurise le calcul PV/DEF après fusion reliques + Salle des trophées avec accès tolérant aux clés hp_flat/def_flat."
 }
