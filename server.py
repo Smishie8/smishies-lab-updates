@@ -1434,22 +1434,22 @@ def elemental_modifiers(attacker, target, pve=True, player_attacker=True):
     # Four-element wheel.
     if a in CORE_ELEMENTS and t in CORE_ELEMENTS:
         if ELEMENT_BEATS.get(a)==t:
-            out.update(relation='Avantage',damage_mult=1.30,debuff_delta=0.20)
+            out.update(relation='Avantage',damage_mult=1.30,debuff_delta=-0.20)
         elif ELEMENT_BEATS.get(t)==a:
-            out.update(relation='Désavantage',damage_mult=0.70,debuff_delta=-0.50,crit_delta=-0.50)
+            out.update(relation='Désavantage',damage_mult=0.70,debuff_delta=0.50,crit_delta=-0.50)
         return out
     # Light / Dark attacking the four normal elements.
     if a in ('Lumière','Ténèbres') and t in CORE_ELEMENTS:
-        out.update(relation='Bonus Lumière/Ténèbres',damage_mult=1.15,debuff_delta=0.10)
+        out.update(relation='Bonus Lumière/Ténèbres',damage_mult=1.15,debuff_delta=-0.10)
         return out
     # Four normal elements attacking Light / Dark.
     if a in CORE_ELEMENTS and t in ('Lumière','Ténèbres'):
-        out.update(relation='Malus vs Lumière/Ténèbres',damage_mult=0.85,debuff_delta=-0.25,crit_delta=-0.25)
+        out.update(relation='Malus vs Lumière/Ténèbres',damage_mult=0.85,debuff_delta=0.25,crit_delta=-0.25)
         return out
     # Light <-> Dark: player gets full advantage in PvE. In PvP both directions counter.
     if {a,t}=={'Lumière','Ténèbres'}:
         if (not pve) or player_attacker:
-            out.update(relation='Avantage',damage_mult=1.30,debuff_delta=0.20)
+            out.update(relation='Avantage',damage_mult=1.30,debuff_delta=-0.20)
         return out
     return out
 
@@ -1611,18 +1611,21 @@ def effect_pass_chance(acc,res):
     resist=max(0.0,min(1.0,initial_resist_chance(acc,res)))
     return 1.0-resist
 
-def final_debuff_pass_chance(acc,res,phase2_bonus=0.0,element_delta=0.0):
-    """Apply PRE/RES hard floor first, then secondary modifiers.
+def final_debuff_pass_chance(acc,res,resist_modifiers=0.0):
+    """Invokers 2-phase Resistance Check.
 
-    Elemental advantage must never resurrect a debuff when PRE is below the
-    absolute landing floor (RES - 120). Other explicit chance modifiers such
-    as ACC Up / RES Down may still move the result before the elemental step.
+    Phase 1: compute signed Initial Resist Chance (IRC) from RES-ACC.
+    Phase 2: add/subtract Resist Chance Modifiers directly to IRC.
+    Only after every modifier is applied do we normalize Final Resist Chance
+    to [0, 100%]. Land Chance is exactly 1 - Final Resist Chance.
+
+    resist_modifiers is expressed from the RESIST-CHANCE point of view:
+      + values increase Resist Chance (ACC Down, RES Up, target element advantage)
+      - values decrease Resist Chance (ACC Up, RES Down, target element disadvantage)
     """
-    base=effect_pass_chance(acc,res)
-    chance=max(0.0,min(1.0,base+num(phase2_bonus)))
-    if chance<=0.0:
-        return 0.0
-    return max(0.0,min(1.0,chance+num(element_delta)))
+    irc=initial_resist_chance(acc,res)
+    frc=max(0.0,min(1.0,irc+num(resist_modifiers)))
+    return 1.0-frc
 
 
 TEAM_BUFF_NAMES={'ATK Up','Crit Rate Up','Crit DMG Up','Combo SPD Up','Skill SPD Up','Skill Recovery Up','Mana Generation Up','ACC Up','RES Up','DEF Up','Move SPD Up'}
@@ -1750,7 +1753,8 @@ def prepare_team_buffs(supports,duration,adds_mode='none',boss_res=0,boss_elemen
         x=dict(e)
         if x.get('kind')=='debuff_attempt':
             active_res_down=max([r['value'] for r in resolved if r.get('kind')=='debuff' and r.get('effect')=='RES Down' and r['start']<=x['start']<r['end']] or [0.0])
-            chance=final_debuff_pass_chance(num(x.get('accuracy')),boss_res,active_res_down,num(x.get('element_debuff_delta')))
+            resist_mod=num(x.get('element_debuff_delta'))-active_res_down
+            chance=final_debuff_pass_chance(num(x.get('accuracy')),boss_res,resist_mod)
             x['pass_chance']=chance
             roll=deterministic_roll(f"supportdebuff|{x['source']}|{x['action']}|{x['effect']}|{x['start']:.6f}")
             x['success']=roll<chance
@@ -1834,12 +1838,11 @@ def simulate_combat(name, levels=None, duration=120, boss_def=1320, boss_res=0, 
     def mana_gen_factor(now):
         return max(0.0,base_mana_gen+effective_buff_value('Mana Generation Up',now))
     def debuff_pass_chance(now):
-        # RES Down in the Sheet lowers resistance chance by its percentage points.
-        # Therefore it increases the pass chance directly, rather than changing the
-        # displayed boss RES stat in points.
-        # Phase 2 uses percentage-point modifiers; ACC Up does NOT alter the
-        # numerical ACC stat. It directly lowers Resist Chance (= raises Land Chance).
-        return final_debuff_pass_chance(acc,boss_res,effective_buff_value('ACC Up',now)+effective_debuff_value('RES Down',now),elem_mod['debuff_delta'])
+        # Phase 2 operates on Resist Chance, not on the ACC/RES stats themselves.
+        # ACC Up and RES Down subtract percentage points from Resist Chance.
+        # Elemental matchup is also a Resist Chance modifier from the target's perspective.
+        resist_mod=elem_mod['debuff_delta']-effective_buff_value('ACC Up',now)-effective_debuff_value('RES Down',now)
+        return final_debuff_pass_chance(acc,boss_res,resist_mod)
     def register_interval(effect,start,end): intervals.setdefault(effect,[]).append((max(0,start),min(duration,end)))
     def brandis_burn_cap_mult(action, level):
         # GGNoLuck published limits for Brandis target Burns. Values are ×ATK per tick.
