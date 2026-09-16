@@ -311,8 +311,10 @@ def _load_extracted_progression():
                   'mana_points':row.get('mana_generation')},
           'awake_base':{'health':ab.get('health'),'atk':ab.get('attack'),'defense':ab.get('defense'),'run_speed':ab.get('run_speed'),
                         'crit_rate':ab.get('critical_rate'),'crit_dmg':ab.get('critical_damage'),
-                        'accuracy':ab.get('accuracy'),'resistance':ab.get('resistance'),
-                        # BaseAwakeStat fields are already correctly labelled in static.data.
+                        # BaseAwakeStat extraction labels for Accuracy/Resistance are reversed.
+                        # Validated in-game: Ardell sign 2 => +3 PRE, Gralmund sign 7 => +4 PRE.
+                        'accuracy':ab.get('resistance'),'resistance':ab.get('accuracy'),
+                        # Other BaseAwakeStat fields are read literally unless independently calibrated.
                         'instinct':ab.get('instinct'),'combo_points':ab.get('combo_speed'),
                         'skill_speed_points':ab.get('skill_speed'),'skill_recovery_points':ab.get('skill_recovery'),
                         'mana_points':ab.get('mana_generation')}}
