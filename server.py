@@ -2282,7 +2282,7 @@ def simulate_combat(name, levels=None, duration=120, boss_def=1320, boss_res=0, 
 AOE_KNOWN_TARGETS={
     # Confirmed mechanics validated against current public skill descriptions.
     # Moros: Auto 5, S2, S3 and Ultimate are described as hitting up to 10 enemies.
-    'Moros': {'Auto 1':1,'Auto 2':1,'Auto 3':1,'Auto 4':1,'Auto 5':11,'Skill 2':11,'Skill 3':11,'Ultimate':11},
+    'Moros': {'Auto 1':1,'Auto 2':1,'Auto 3':1,'Auto 4':1,'Auto 5':11,'Skill 1':1,'Skill 2':10,'Skill 3':11,'Ultimate':11},
 }
 
 def ensure_aoe_table():
