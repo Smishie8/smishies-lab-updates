@@ -64,20 +64,30 @@ def sha256(path):
         for chunk in iter(lambda:f.read(1024*1024),b''):h.update(chunk)
     return h.hexdigest().lower()
 
+def git_blob_sha1(path):
+    data=Path(path).read_bytes()
+    h=hashlib.sha1()
+    h.update(f'blob {len(data)}\\0'.encode('ascii'))
+    h.update(data)
+    return h.hexdigest().lower()
+
 def manifest_files_match(manifest):
     """Verify installed files, not only version.json.
     A stale server.py must trigger repair even if version.json already says current.
     """
     for item in manifest.get('files') or []:
         rel=str(item.get('path') or '').replace('\\','/').strip('/')
-        expected=str(item.get('sha256') or '').strip().lower()
-        if not rel or not expected:
+        expected256=str(item.get('sha256') or '').strip().lower()
+        expected_git=str(item.get('git_sha1') or '').strip().lower()
+        if not rel or not (expected256 or expected_git):
             continue
         p=APP_DIR/rel
         if not p.is_file():
             return False
         try:
-            if sha256(p)!=expected:
+            if expected256 and sha256(p)!=expected256:
+                return False
+            if expected_git and git_blob_sha1(p)!=expected_git:
                 return False
         except Exception:
             return False
