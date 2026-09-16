@@ -1285,9 +1285,8 @@ def save_profile(data):
 def _box_skill_levels(hero_instance, fallback=None):
     """Convert PlayerHero SkillLevels into the five profile levels used by the simulator.
 
-    PlayerHero v22 stores seven SkillKind entries: 1..5 are the five upgradeable
-    combat slots used by Smishie's Lab (Auto, S1, S2, S3, Ult); 7 and 8 are
-    additional/passive kinds and are deliberately ignored here.
+    PlayerHero v22 stores seven SkillKind entries. Mapping validated in-game:
+    1=Auto, 3=S1, 4=S2, 5=S3, 2=Ult; 7 and 8 are corruption tolerances.
 
     The persisted value is a zero-based upgrade count (0..10), while the UI and
     coefficient tables use displayed skill levels 1..11, hence +1.
@@ -1307,9 +1306,11 @@ def _box_skill_levels(hero_instance, fallback=None):
     out={n:int(num(fallback.get(n),7)) for n in names}
     keys=set(vals)
 
-    # Current PlayerHero v22 format: SkillKind 1..5 plus passive/additional 7/8.
+    # Current PlayerHero v22 format. Validated against Nirvelle in-game:
+    # SkillKind 1=Auto, 3=S1, 4=S2, 5=S3, 2=Ultimate.
+    # SkillKinds 7/8 are corruption tolerances and are handled separately.
     if {1,2,3,4,5}.issubset(keys):
-        for n,k in zip(names,[1,2,3,4,5]):
+        for n,k in zip(names,[1,3,4,5,2]):
             upgrade=vals.get(k)
             if upgrade is not None and 0<=upgrade<=10:
                 out[n]=upgrade+1
