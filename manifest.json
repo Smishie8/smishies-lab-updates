@@ -1,5 +1,5 @@
 {
-  "version": "10.86",
+  "version": "10.87",
   "channel": "stable",
   "files": [
     {
@@ -26,5 +26,5 @@
       "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/updater.py?v=10.80"
     }
   ],
-  "notes": "v10.86 : correction du mapping de la Salle des trophées : Terre = Element 2. Les bonus de Hall sont de nouveau intégrés une seule fois aux stats finales affichées. Sarienne doit ainsi recevoir +6% Crit, +15 PRE, +4 points Combo et +12 points Mana."
+  "notes": "v10.87 : Sarienne Recovery corrigé à partir de la valeur réelle du jeu (+4 points via relique, sans +12 awake erroné) et 'Mettre à jour ma box' réactualise désormais les profils sauvegardés, ce qui permet à Mana Gen d'intégrer le Hall (18 points = 9%)."
 }
