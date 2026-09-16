@@ -445,7 +445,7 @@ def save_config_mappings(mappings):
         con.commit()
     return saved
 
-ARENA_ELEMENT_ID_TO_NAME={1:'Feu',2:'Terre',3:'Eau',4:'Vent',5:'Lumière',6:'Ténèbres'}
+ARENA_ELEMENT_ID_TO_NAME={1:'Feu',2:'Terre',3:'Vent',4:'Eau',5:'Lumière',6:'Ténèbres'}
 ARENA_ELEMENT_NAME_TO_ID={v:k for k,v in ARENA_ELEMENT_ID_TO_NAME.items()}
 
 def _load_arena_static_source():
@@ -511,6 +511,7 @@ def inspect_playerarena_hall_raw():
 def _decode_playerarena_hall_file(fp):
     """Décodage read-only de PlayerArenaModel.dat.
     Le membre MemoryPack #8 est HallBonuses: Element, CharacterStatBonus, Level.
+    Mapping Element validé sur le Hall Eau: 1=Feu, 2=Terre, 3=Vent, 4=Eau, 5=Lumière, 6=Ténèbres.
     """
     if not fp or not os.path.isfile(fp): return []
     with _game_ro_open(fp,'rb') as f:data=f.read()
@@ -571,26 +572,6 @@ def _arena_hall_bonus_for_element(element):
              12:'combo_points',13:'skill_speed_points',14:'skill_recovery_points',15:'mana_points',16:'instinct'}.get(sid)
         if key:out[key]+=v
 
-    # v11.02 — calibration du snapshot Eau validée sur 3 héros différents
-    # (Ardell, Gralmund, Fulrik) + capture de la Salle des trophées Eau.
-    # Le décodeur MemoryPack actuel produit la signature erronée suivante :
-    # Crit +6%, CritDmg +6%, PRE +30, RES +20, Recovery +0, Mana +24.
-    # La Salle réelle affichée en jeu est :
-    # Crit +5%, CritDmg 0%, PRE +40, RES +20, Recovery +20, Mana +20.
-    # On n'applique la correction que si cette signature exacte est détectée,
-    # afin de ne pas masquer une future modification de la Salle ou un décodeur corrigé.
-    if eid==3:
-        bad=(abs(out['crit_rate']-.06)<1e-9 and abs(out['crit_dmg']-.06)<1e-9
-             and abs(out['accuracy']-30)<1e-9 and abs(out['resistance']-20)<1e-9
-             and abs(out['skill_recovery_points'])<1e-9 and abs(out['mana_points']-24)<1e-9)
-        if bad:
-            out['crit_rate']=.05
-            out['crit_dmg']=0.0
-            out['accuracy']=40.0
-            out['resistance']=20.0
-            out['skill_recovery_points']=20.0
-            out['mana_points']=20.0
-            out['unapplied']['water_hall_calibration']='v11.02 verified snapshot'
     return out
 
 def _arena_hall_bonus_for_hero(name):
