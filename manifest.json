@@ -1,5 +1,5 @@
 {
-  "version": "10.85",
+  "version": "10.86",
   "channel": "stable",
   "files": [
     {
@@ -26,5 +26,5 @@
       "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/updater.py?v=10.80"
     }
   ],
-  "notes": "v10.85 : les stats de fiche/box correspondent de nouveau aux nombres affichés en jeu. La Salle des trophées reste importée séparément et s'ajoute seulement aux stats effectives utilisées dans les simulations."
+  "notes": "v10.86 : correction du mapping de la Salle des trophées : Terre = Element 2. Les bonus de Hall sont de nouveau intégrés une seule fois aux stats finales affichées. Sarienne doit ainsi recevoir +6% Crit, +15 PRE, +4 points Combo et +12 points Mana."
 }
