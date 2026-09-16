@@ -431,14 +431,12 @@ def skill_pct_to_points(r):
     r=max(0,float(r)); return r/.002 if r<=.1 else 50*(2**(r/.1-1))
 
 def recovery_points_to_pct(p):
-    """Skill Recovery rating -> displayed fraction.
-    Verified in-game on Sarienne: 4 points = 1%.
+    """Skill Recovery uses the same rating curve as Skill Speed.
+    Sarienne's discrepancy came from mislabeled awakening sources, not a different global curve.
     """
-    p=max(0,float(p))
-    return p*.0025 if p<=40 else .10*(1+math.log(p/40,2))
+    return skill_points_to_pct(p)
 def recovery_pct_to_points(r):
-    r=max(0,float(r))
-    return r/.0025 if r<=.10 else 40*(2**(r/.10-1))
+    return skill_pct_to_points(r)
 
 def mana_points_to_pct(points):
     """Mana Generation Rating -> displayed fraction.
