@@ -1,5 +1,5 @@
 {
-  "version": "10.83",
+  "version": "10.84",
   "channel": "stable",
   "files": [
     {
@@ -26,5 +26,5 @@
       "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/updater.py?v=10.80"
     }
   ],
-  "notes": "v10.83 : les bonus de Salle des trophées ne gonflent plus les stats de fiche/box. Ils restent importés et sont appliqués uniquement aux stats effectives de combat, comme dans le jeu."
+  "notes": "v10.84 : les bonus de Salle des trophées sont intégrés aux stats finales affichées de la box et ne sont plus réappliqués une seconde fois pendant les simulations de combat."
 }
