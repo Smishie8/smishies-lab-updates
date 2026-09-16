@@ -1,10 +1,10 @@
 {
-  "version": "10.92",
+  "version": "10.93",
   "channel": "stable",
   "files": [
     {
       "path": "server.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=10.92"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=10.93"
     },
     {
       "path": "awake_nodes.json",
@@ -26,5 +26,5 @@
       "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/updater.py?v=10.80"
     }
   ],
-  "notes": "v10.92 : correction du surcalcul des stats d’éveil. Les bonus % PV/ATQ/DEF des nœuds ne sont plus remultipliés par la courbe de niveau/rang, ce qui corrige notamment les PV beaucoup trop élevés de Ruthos."
+  "notes": "v10.93 : correction globale PRE/RES de base (PRE 10 / RES 0) et restauration de la courbe correcte de récupération de compétence. Ardell sert de calibration pour les écarts restants Crit / Combo / Mana."
 }
