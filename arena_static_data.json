@@ -1,7 +1,7 @@
 {
-  "source": "StaticArenaData.HallBonuses",
-  "status": "validated_runtime_snapshot_pending_direct_static_decode",
-  "note": "Values externalized from server.py. The runtime loader is now ready to be replaced by direct decoding of StaticArenaData.HallBonuses without changing calculation code.",
+  "source": "StaticArenaData.HallBonuses + HallPrices + MedalToMedalExchangeRates",
+  "status": "validated_static_arena_tables",
+  "note": "Hall bonuses and Great Hall upgrade costs externalized from StaticArenaData. Gold-equivalent costs normalize Bronze/Argent/Or using MedalToMedalExchangeRates.",
   "character_stat_bonus_values": {
     "4": [
       0.02,
@@ -207,5 +207,122 @@
       56,
       60
     ]
-  }
+  },
+  "hall_prices": [
+    {
+      "target_level": 1,
+      "resource_id": 23,
+      "resource_label": "Bronze",
+      "amount": 20,
+      "gold_equivalent": 5
+    },
+    {
+      "target_level": 2,
+      "resource_id": 23,
+      "resource_label": "Bronze",
+      "amount": 40,
+      "gold_equivalent": 10
+    },
+    {
+      "target_level": 3,
+      "resource_id": 23,
+      "resource_label": "Bronze",
+      "amount": 60,
+      "gold_equivalent": 15
+    },
+    {
+      "target_level": 4,
+      "resource_id": 23,
+      "resource_label": "Bronze",
+      "amount": 90,
+      "gold_equivalent": 22.5
+    },
+    {
+      "target_level": 5,
+      "resource_id": 23,
+      "resource_label": "Bronze",
+      "amount": 120,
+      "gold_equivalent": 30
+    },
+    {
+      "target_level": 6,
+      "resource_id": 24,
+      "resource_label": "Argent",
+      "amount": 60,
+      "gold_equivalent": 30
+    },
+    {
+      "target_level": 7,
+      "resource_id": 24,
+      "resource_label": "Argent",
+      "amount": 100,
+      "gold_equivalent": 50
+    },
+    {
+      "target_level": 8,
+      "resource_id": 24,
+      "resource_label": "Argent",
+      "amount": 150,
+      "gold_equivalent": 75
+    },
+    {
+      "target_level": 9,
+      "resource_id": 24,
+      "resource_label": "Argent",
+      "amount": 250,
+      "gold_equivalent": 125
+    },
+    {
+      "target_level": 10,
+      "resource_id": 24,
+      "resource_label": "Argent",
+      "amount": 400,
+      "gold_equivalent": 200
+    },
+    {
+      "target_level": 11,
+      "resource_id": 25,
+      "resource_label": "Or",
+      "amount": 200,
+      "gold_equivalent": 200
+    },
+    {
+      "target_level": 12,
+      "resource_id": 25,
+      "resource_label": "Or",
+      "amount": 200,
+      "gold_equivalent": 200
+    },
+    {
+      "target_level": 13,
+      "resource_id": 25,
+      "resource_label": "Or",
+      "amount": 300,
+      "gold_equivalent": 300
+    },
+    {
+      "target_level": 14,
+      "resource_id": 25,
+      "resource_label": "Or",
+      "amount": 400,
+      "gold_equivalent": 400
+    },
+    {
+      "target_level": 15,
+      "resource_id": 25,
+      "resource_label": "Or",
+      "amount": 600,
+      "gold_equivalent": 600
+    }
+  ],
+  "medal_to_medal_exchange_rates": {
+    "24": {
+      "23": 2
+    },
+    "25": {
+      "23": 4,
+      "24": 2
+    }
+  },
+  "gold_medal_resource_id": 25
 }
