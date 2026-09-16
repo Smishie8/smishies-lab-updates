@@ -2282,7 +2282,7 @@ def simulate_combat(name, levels=None, duration=120, boss_def=1320, boss_res=0, 
 AOE_KNOWN_TARGETS={
     # Confirmed mechanics validated against current public skill descriptions.
     # Moros: Auto 5, S2, S3 and Ultimate are described as hitting up to 10 enemies.
-    'Moros': {'Auto 1':1,'Auto 2':1,'Auto 3':1,'Auto 4':1,'Auto 5':10,'Skill 2':10,'Skill 3':10,'Ultimate':10},
+    'Moros': {'Auto 1':1,'Auto 2':1,'Auto 3':1,'Auto 4':1,'Auto 5':11,'Skill 2':11,'Skill 3':11,'Ultimate':11},
 }
 
 def ensure_aoe_table():
@@ -2317,7 +2317,7 @@ def _aoe_text_blob_for_action(name,action):
             vals.append(s)
     return ' | '.join(vals)
 
-def infer_aoe_targets_from_text(name,enemies=10):
+def infer_aoe_targets_from_text(name,enemies=11):
     """Conservative text inference: only explicit target counts or 'all enemies'."""
     out={}
     evidence={}
@@ -2361,7 +2361,7 @@ def save_aoe_targets(name,targets,source='manual'):
         con.commit()
     return saved
 
-def aoe_default_targets(name,enemies=10):
+def aoe_default_targets(name,enemies=11):
     out={a:1 for a in _aoe_actions()}
     sources={a:'unknown' for a in _aoe_actions()}
     # Conservative automatic inference from any descriptive skill text available.
@@ -2374,7 +2374,7 @@ def aoe_default_targets(name,enemies=10):
         out[a]=int(meta['targets']); sources[a]=meta.get('source') or 'manual'
     return out,sources
 
-def simulate_aoe(name,preset='box',duration=60,enemies=10,defense=0,resistance=0,element='Neutre',target_overrides=None):
+def simulate_aoe(name,preset='box',duration=60,enemies=11,defense=0,resistance=0,element='Neutre',target_overrides=None):
     """AoE sandbox on effectively infinite-HP enemies.
 
     Rotation and single-target damage come from simulate_combat. Each direct action
@@ -2382,7 +2382,7 @@ def simulate_aoe(name,preset='box',duration=60,enemies=10,defense=0,resistance=0
     Unknown target counts remain 1 and are explicitly reported as such so the UI never
     pretends an unmapped skill is AoE.
     """
-    enemies=max(1,min(10,int(enemies or 10)))
+    enemies=max(1,min(11,int(enemies or 11)))
     bld,st,lv,label,key=combat_preset_for(name,preset)
     base=simulate_combat(name,lv,duration,defense,resistance,1e15,0,element,**bld)
     if not base:return None
@@ -3846,7 +3846,7 @@ HTML = r'''<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name
 <div class=controls>
 <div class=control><label>Héros</label><select id=aoeHero></select></div>
 <div class=control><label>Preset</label><select id=aoePreset><option value=box>Ma box</option><option value=early>Early game</option><option value=mid>Mid game</option><option value=late>Late game</option></select></div>
-<div class=control><label>Ennemis</label><input id=aoeEnemies type=number min=1 max=10 value=10></div>
+<div class=control><label>Ennemis</label><input id=aoeEnemies type=number min=1 max=11 value=11></div>
 <div class=control><label>Durée</label><input id=aoeDur type=number min=5 value=60></div>
 <div class=control><label>Boss (DEF / RÉS / élément)</label><select id=aoeBoss></select></div>
 <button id=aoeBtn>Simuler</button></div>
@@ -4165,9 +4165,9 @@ class H(BaseHTTPRequestHandler):
             if p.path=='/api/aoe-static-probe':
                 n=qs.get('name',[''])[0]; self.sendj(probe_static_for_hero(n)); return
             if p.path=='/api/aoe-defaults':
-                n=qs.get('name',[''])[0]; enemies=max(1,min(10,int(f('enemies',10)))); targets,sources=aoe_default_targets(n,enemies); inferred,evidence=infer_aoe_targets_from_text(n,enemies); self.sendj({'hero':n,'targets':targets,'sources':sources,'evidence':evidence}); return
+                n=qs.get('name',[''])[0]; enemies=max(1,min(11,int(f('enemies',11)))); targets,sources=aoe_default_targets(n,enemies); inferred,evidence=infer_aoe_targets_from_text(n,enemies); self.sendj({'hero':n,'targets':targets,'sources':sources,'evidence':evidence}); return
             if p.path=='/api/aoe-rank':
-                preset=qs.get('preset',['box'])[0]; duration=f('duration',60); enemies=max(1,min(10,int(f('enemies',10)))); defense=f('defense',0); resistance=f('resistance',0); element=qs.get('element',['Neutre'])[0]
+                preset=qs.get('preset',['box'])[0]; duration=f('duration',60); enemies=max(1,min(11,int(f('enemies',11)))); defense=f('defense',0); resistance=f('resistance',0); element=qs.get('element',['Neutre'])[0]
                 out=[]
                 for h in q('SELECT name,rarity,role,element FROM heroes WHERE name IS NOT NULL'):
                     if preset=='box' and not has_saved_profile(h['name']): continue
@@ -4182,7 +4182,7 @@ class H(BaseHTTPRequestHandler):
                 n=qs.get('name',[''])[0]; preset=qs.get('preset',['box'])[0]
                 keymap={'a1':'Auto 1','a2':'Auto 2','a3':'Auto 3','a4':'Auto 4','a5':'Auto 5','s1':'Skill 1','s2':'Skill 2','s3':'Skill 3','ult':'Ultimate'}
                 ov={label:max(1,int(f('t_'+short,1))) for short,label in keymap.items()}
-                r=simulate_aoe(n,preset,f('duration',60),f('enemies',10),f('defense',0),f('resistance',0),qs.get('element',['Neutre'])[0],ov)
+                r=simulate_aoe(n,preset,f('duration',60),f('enemies',11),f('defense',0),f('resistance',0),qs.get('element',['Neutre'])[0],ov)
                 self.sendj(r or {'error':'données manquantes'},200 if r else 400); return
             if p.path=='/api/combat':
                 name=qs.get('name',[''])[0]; preset=qs.get('preset',['box'])[0]; b,st,combat_lv,preset_label,preset_key=combat_preset_for(name,preset); supports=[qs.get(f'support{i}',['Aucun'])[0] for i in range(1,5)]; dur=f('duration',120); r=simulate_combat(name,combat_lv,dur,f('boss',1320),f('boss_res',0),f('boss_hp',0),f('boss_atk',0),qs.get('element',['Neutre'])[0],**b,analyze_effect_gains=True,team_supports=supports,adds_mode=qs.get('adds_mode',['none'])[0]);
