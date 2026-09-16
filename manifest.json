@@ -1,11 +1,11 @@
 {
-  "version": "11.03",
+  "version": "11.04",
   "channel": "stable",
   "files": [
     {
       "path": "server.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.03",
-      "git_sha1": "b34501e23b0adb702870a4c576042d62ba2bba0b"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.04",
+      "git_sha1": "eb9ec7866f9d9dd323767dc128491e92a55dda37"
     },
     {
       "path": "awake_nodes.json",
@@ -36,7 +36,12 @@
       "path": "character_static_1302.json",
       "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/character_static_1302.json?v=11.03",
       "git_sha1": "49d130f0729665285788ae18b805b165a93873c0"
+    },
+    {
+      "path": "relic_static_data.json",
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/relic_static_data.json?v=11.04",
+      "git_sha1": "804f2e4e156106f4d0a843c8c48374567037782c"
     }
   ],
-  "notes": "v11.03 : début de la migration vers les données du jeu comme source de vérité. Les 6 courbes d'ascension ne sont plus codées dans server.py : elles sont chargées depuis ascension_multipliers.json extrait de StaticCharacterData.AscensionMultipliersByRank. Le catalogue statique des 222 héros est déplacé dans character_static_1302.json issu de StaticCharacterData/CharacterConfig. Les formules exactes Combo/Skill Speed et Skill Recovery sont également intégrées. Prochaine étape : StaticRelicData, StaticArenaData et SkillConfig."
+  "notes": "v11.04 : migration StaticRelicData. Les définitions de sets, coefficients de substats 5★/6★, forces de rolls et nombre initial de substats ne sont plus codés dans server.py. Ils sont chargés depuis relic_static_data.json, préparant le remplacement direct par un décodeur live de static.data. Les données héros/ascension restent externalisées depuis v11.03."
 }
