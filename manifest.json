@@ -1,11 +1,11 @@
 {
-  "version": "11.09",
+  "version": "11.10",
   "channel": "stable",
   "files": [
     {
       "path": "server.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.09",
-      "git_sha1": "0e8dfa146b6be9c5814e77083f0b0d244cfe10db"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.10",
+      "git_sha1": "98c11fccf6da506f4875f389cd6064395b0ab72f"
     },
     {
       "path": "awake_nodes.json",
@@ -48,5 +48,5 @@
       "git_sha1": "a8038f48a9f31f76c36d0126141c08e3bce37ac8"
     }
   ],
-  "notes": "v11.09 : StaticArenaData.HallBonuses est désormais extrait directement du static.data live au démarrage. Le moteur localise le chunk principal, décompresse Brotli, détecte le bloc compact des 12 CharacterStatBonus et charge leurs 15 valeurs F64 Q32. arena_static_data.json devient un fallback. Le correctif Eau reste temporairement actif car le problème restant concerne le décodage des niveaux dans PlayerArenaModel, pas les courbes Hall."
+  "notes": "v11.10 : ajout d'un inspecteur read-only du PlayerArenaModel.HallBonuses brut. Endpoint /api/game-import/player-arena-hall-raw : retourne tous les membres MemoryPack de chaque entrée sans supposer l'ordre Element/Stat/Level. Aucun calcul Hall n'est modifié ; le correctif Eau reste actif jusqu'à validation de l'ordre réel."
 }
