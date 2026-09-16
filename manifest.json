@@ -1,10 +1,10 @@
 {
-  "version": "10.90",
+  "version": "10.91",
   "channel": "stable",
   "files": [
     {
       "path": "server.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=10.90"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=10.91"
     },
     {
       "path": "awake_nodes.json",
@@ -26,5 +26,5 @@
       "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/updater.py?v=10.80"
     }
   ],
-  "notes": "v10.90 : interface d’import simplifiée avec un seul bouton « Importer ma box ». L’import lit et met à jour automatiquement héros, reliques, Salle des trophées, stats reconstruites et niveaux de skills Auto/S1/S2/S3/Ult."
+  "notes": "v10.91 : correction Sarienne. La récupération de compétence utilise la conversion vérifiée 4 points = 1%. Les faux bonus Recovery de ses nœuds d’éveil ne sont plus appliqués, tandis que ses vrais bonus de génération de mana (ex. +12) sont désormais pris en compte."
 }
