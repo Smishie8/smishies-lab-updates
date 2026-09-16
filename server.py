@@ -3170,8 +3170,10 @@ def inspect_box_hero_skilllevels(name):
             if cfg==target:
                 item={'dictionary_id':dict_id,'inventory_id':_mp_i32(data,hv[0]),
                       'config_id':cfg,'member_count':hmc,'member_lengths':hlens}
-                if len(hv)>10:
-                    a,b=hv[10]; raw=data[a:b]
+                skill_idx=21 if len(hv)>21 else (10 if len(hv)>10 else None)
+                if skill_idx is not None:
+                    a,b=hv[skill_idx]; raw=data[a:b]
+                    item['skill_member_index']=skill_idx
                     item['skill_span']={'start':a,'end':b,'size':b-a,'hex':raw.hex()}
                     if b-a>=4:
                         n=struct.unpack_from('<i',data,a)[0]
@@ -3202,7 +3204,7 @@ def inspect_box_hero_skilllevels(name):
                                 except Exception as ex:
                                     objs.append({'index':i,'error':str(ex),'start':q}); break
                         item['vt_objects']=objs
-                    item['decoded_current']=_mp_upgradeable_skills(data,hv[10])
+                    item['decoded_current']=_mp_upgradeable_skills(data,hv[skill_idx])
                 rows.append(item)
             p=hend
         return {'ok':True,'hero':name,'target_config_id':target,'file':fp,'matches':rows,
@@ -3224,8 +3226,13 @@ def _decode_playerheroes_file(fp):
         if len(hv)<13:raise ValueError('PlayerHero incomplet')
         relics=_mp_dict_i32_i32(data,hv[11])
         accessories=_mp_dict_i32_i32(data,hv[12])
-        # PlayerHero member 10 is SkillLevels (List<UpgradeableSkill>).
-        skills=_mp_upgradeable_skills(data,hv[10]) if len(hv)>10 else {}
+        # PlayerHero v22 (0.60.1302): skill upgrade progression is stored in member 21.
+        # Older snapshots used member 10, so keep it as a compatibility fallback.
+        skills={}
+        if len(hv)>21:
+            skills=_mp_upgradeable_skills(data,hv[21])
+        if not skills and len(hv)>10:
+            skills=_mp_upgradeable_skills(data,hv[10])
         heroes.append({
             'dictionary_id':dict_id,'inventory_id':_mp_i32(data,hv[0]),'config_id':_mp_i64(data,hv[1]),
             'rank':_mp_i32(data,hv[2]),'level':_mp_i32(data,hv[3]),'experience':_mp_i32(data,hv[4]),
