@@ -371,8 +371,9 @@ def ensure_box_tables():
             rank INTEGER, level INTEGER, copies INTEGER DEFAULT 1, total_experience INTEGER,
             awake_level INTEGER DEFAULT 0, awake_node_count INTEGER DEFAULT 0,
             awake_node_ids TEXT,
-            locked INTEGER, in_storage INTEGER, skill_levels_raw TEXT, relics_by_slot TEXT,
-            equipped_relic_count INTEGER, imported_at TEXT DEFAULT CURRENT_TIMESTAMP
+            locked INTEGER, in_storage INTEGER, skill_levels_raw TEXT,
+            corruption_tolerance_1 INTEGER DEFAULT 0, corruption_tolerance_2 INTEGER DEFAULT 0,
+            relics_by_slot TEXT, equipped_relic_count INTEGER, imported_at TEXT DEFAULT CURRENT_TIMESTAMP
         )""")
         bh_cols={r[1] for r in con.execute('PRAGMA table_info(box_heroes)')}
         if 'awake_level' not in bh_cols:
@@ -381,6 +382,10 @@ def ensure_box_tables():
             con.execute('ALTER TABLE box_heroes ADD COLUMN awake_node_count INTEGER DEFAULT 0')
         if 'awake_node_ids' not in bh_cols:
             con.execute('ALTER TABLE box_heroes ADD COLUMN awake_node_ids TEXT')
+        if 'corruption_tolerance_1' not in bh_cols:
+            con.execute('ALTER TABLE box_heroes ADD COLUMN corruption_tolerance_1 INTEGER DEFAULT 0')
+        if 'corruption_tolerance_2' not in bh_cols:
+            con.execute('ALTER TABLE box_heroes ADD COLUMN corruption_tolerance_2 INTEGER DEFAULT 0')
         con.execute('CREATE INDEX IF NOT EXISTS idx_box_heroes_config ON box_heroes(config_id)')
         con.execute('CREATE INDEX IF NOT EXISTS idx_box_heroes_name ON box_heroes(hero_name)')
         con.execute("""CREATE TABLE IF NOT EXISTS box_relics (
@@ -608,12 +613,18 @@ def persist_decoded_box(decoded):
             iid=x.get('inventory_id')
             if not cfg or iid is None: continue
             name=x.get('name_candidate') or x.get('hero_name')
+            _skills=x.get('skill_levels_raw') or {}
+            try:
+                _skills={int(k):int(v) for k,v in _skills.items()}
+            except Exception:
+                _skills={}
             con.execute("""INSERT OR REPLACE INTO box_heroes
-                (inventory_id,config_id,hero_name,rank,level,copies,total_experience,awake_level,awake_node_count,awake_node_ids,locked,in_storage,skill_levels_raw,relics_by_slot,equipped_relic_count,imported_at)
-                VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)""",
+                (inventory_id,config_id,hero_name,rank,level,copies,total_experience,awake_level,awake_node_count,awake_node_ids,locked,in_storage,skill_levels_raw,corruption_tolerance_1,corruption_tolerance_2,relics_by_slot,equipped_relic_count,imported_at)
+                VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)""",
                 (iid,cfg,name,x.get('rank'),x.get('level'),1,x.get('total_experience'),x.get('awake_level') or 0,x.get('awake_node_count') or 0,
                  json.dumps(x.get('awake_node_ids') or []),
                  1 if x.get('locked') else 0,1 if x.get('in_storage') else 0,json.dumps(x.get('skill_levels_raw') or {},ensure_ascii=False),
+                 int(_skills.get(7,0)),int(_skills.get(8,0)),
                  json.dumps(x.get('relics_by_slot') or {},ensure_ascii=False),x.get('equipped_relic_count') or 0))
             # Les reliques ont déjà été importées globalement ci-dessus.
             # On fiabilise seulement le lien vers le héros à partir de RelicsBySlot.
@@ -3262,7 +3273,10 @@ def _decode_playerheroes_file(fp):
             'awake_level':(_mp_i32(data,hv[15]) if len(hv)>15 and (_mp_i32(data,hv[15]) or 0) in range(0,7) else 0),
             'awake_node_count':(len(_mp_list_i32(data,hv[16])) if len(hv)>16 else 0),
             'awake_node_ids':(_mp_list_i32(data,hv[16]) if len(hv)>16 else []),
-            'skill_levels_raw':skills,'member_count':hmc
+            'skill_levels_raw':skills,
+            'corruption_tolerance_1':int(skills.get(7,0)) if isinstance(skills,dict) else 0,
+            'corruption_tolerance_2':int(skills.get(8,0)) if isinstance(skills,dict) else 0,
+            'member_count':hmc
         })
         p=hend
     return heroes
@@ -3417,7 +3431,10 @@ def decode_local_box():
                           'awake_level':h.get('awake_level') or 0,'awake_node_count':h.get('awake_node_count') or 0,
                           'awake_node_ids':h.get('awake_node_ids') or [],
                           'total_experience':h.get('total_experience'),'locked':h.get('locked'),'in_storage':h.get('in_storage'),
-                          'skill_levels_raw':h.get('skill_levels_raw') or {},'relics_by_slot':h.get('relics_by_slot') or {},
+                          'skill_levels_raw':h.get('skill_levels_raw') or {},
+                          'corruption_tolerance_1':h.get('corruption_tolerance_1') or 0,
+                          'corruption_tolerance_2':h.get('corruption_tolerance_2') or 0,
+                          'relics_by_slot':h.get('relics_by_slot') or {},
                           'equipped_relic_count':len(details),'equipped_relics':details})
     rows=[]
     for cfg,item in sorted(bycfg.items(),key=lambda kv:(-(kv[1]['best'].get('rank') or 0),-(kv[1]['best'].get('level') or 0),kv[0])):
