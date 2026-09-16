@@ -551,7 +551,7 @@ def ensure_box_tables():
         con.execute('CREATE INDEX IF NOT EXISTS idx_box_relics_hero ON box_relics(equipped_hero_id)')
         con.execute('CREATE INDEX IF NOT EXISTS idx_box_relics_slot ON box_relics(slot)')
         con.execute('CREATE INDEX IF NOT EXISTS idx_box_relics_set ON box_relics(set_id)')
-        # V10.83: niveaux personnels de la Salle des trophées (Great Hall), importés depuis PlayerArenaModel.dat.
+        # V10.84: niveaux personnels de la Salle des trophées (Great Hall), importés depuis PlayerArenaModel.dat.
         con.execute("""CREATE TABLE IF NOT EXISTS arena_hall_levels (
             element_id INTEGER NOT NULL, stat_id INTEGER NOT NULL, level INTEGER NOT NULL,
             imported_at TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -995,9 +995,9 @@ def box_build_for_instance(name,hero_instance):
     if not hero_instance:return None
     h=hero_row(name) or {}; relics=_box_relic_rows(hero_instance.get('inventory_id')); relic_b=_relic_total_bonus(relics)
     hall_b=_arena_hall_bonus_for_hero(name)
-    # V10.83: la Salle des trophées est un bonus de COMBAT (BattleBonuses.AddArenaBonus).
-    # Elle ne doit pas être ajoutée aux stats affichées sur la fiche héros/box.
-    b=relic_b
+    # V10.84: les bonus de Salle des trophées font partie des stats finales affichées en jeu.
+    # On les fusionne UNE fois ici avec les reliques; ils ne seront pas réappliqués en combat.
+    b=_bonus_add(relic_b,hall_b)
     cfg=HERO_PROGRESSION.get(str(hero_instance.get('config_id') or ''))
     if cfg:
         rank=int(hero_instance.get('rank') or 0); level=int(hero_instance.get('level') or 0); curve=ASCENSION_MULTIPLIERS.get(rank) or []
@@ -1030,7 +1030,7 @@ def box_build_for_instance(name,hero_instance):
                 naked['combo_speed']=combo_points_to_pct(combo_pct_to_points(naked['combo_speed'])+num(n.get('combo_points')))
                 naked['skill_speed']=skill_points_to_pct(skill_pct_to_points(naked['skill_speed'])+num(n.get('skill_speed_points')))
                 naked['skill_recovery']=skill_points_to_pct(skill_pct_to_points(naked['skill_recovery'])+num(n.get('skill_recovery_points')))
-                # V10.83: awake_nodes.json currently mislabels some node bonuses as ManaGeneration.
+                # V10.84: awake_nodes.json currently mislabels some node bonuses as ManaGeneration.
                 # Nyctra proves nodes 2103/2203 are not mana; ignore node mana until CharacterStatBonus mapping is corrected.
                 pass
             naked['health']=round(naked['health']); naked['atk']=round(naked['atk']); naked['defense']=round(naked['defense'])
@@ -1409,28 +1409,12 @@ def apply_box_profile(name):
 def profile_levels(p):
     return {'auto':int(p.get('auto_level') or 7),'s1':int(p.get('s1_level') or 7),'s2':int(p.get('s2_level') or 7),'s3':int(p.get('s3_level') or 7),'ult':int(p.get('ult_level') or 7)}
 
-def _apply_hall_to_combat_stats(name,st):
-    """Ajoute la Salle des trophées uniquement aux stats effectives de combat."""
-    out=dict(st); hb=_arena_hall_bonus_for_hero(name)
-    # Les % directs sont ajoutés comme bonus de combat.
-    out['atk']=num(out.get('atk'))*(1+num(hb.get('atk_pct')))
-    out['crit_rate']=num(out.get('crit_rate'))+num(hb.get('crit_rate'))
-    out['crit_dmg']=num(out.get('crit_dmg'))+num(hb.get('crit_dmg'))
-    out['accuracy']=num(out.get('accuracy'))+num(hb.get('accuracy'))
-    out['resistance']=num(out.get('resistance'))+num(hb.get('resistance'))
-    # Les vitesses / mana sont des ratings : revenir en points, ajouter le Hall, reconvertir.
-    out['combo_speed']=combo_points_to_pct(combo_pct_to_points(num(out.get('combo_speed')))+num(hb.get('combo_points')))
-    out['skill_speed']=skill_points_to_pct(skill_pct_to_points(num(out.get('skill_speed')))+num(hb.get('skill_speed_points')))
-    out['skill_recovery']=skill_points_to_pct(skill_pct_to_points(num(out.get('skill_recovery')))+num(hb.get('skill_recovery_points')))
-    out['mana_gen']=mana_points_to_pct(mana_pct_to_points(num(out.get('mana_gen')))+num(hb.get('mana_points')))
-    out['_hall_bonus']=hb
-    return out
-
 def profile_stats(name,p=None,include_hall=False):
     p=p or profile_for(name)
     st={'atk':num(p.get('atk')),'crit_rate':num(p.get('crit_rate')),'crit_dmg':num(p.get('crit_dmg')),'accuracy':num(p.get('accuracy')),'resistance':num(p.get('resistance')),'combo_speed':num(p.get('combo_speed')),'skill_speed':num(p.get('skill_speed')),'skill_recovery':num(p.get('skill_recovery')),'mana_gen':num(p.get('mana_gen'))}
-    st=apply_titan(name,st,p.get('titan') or 'Aucun',p.get('titan_stars') or 0,bool(p.get('titan_dungeon')))
-    return _apply_hall_to_combat_stats(name,st) if include_hall else st
+    # Les profils issus de la box contiennent déjà les bonus de Salle des trophées,
+    # exactement comme la fiche héros du jeu. Ne jamais les ajouter une seconde fois ici.
+    return apply_titan(name,st,p.get('titan') or 'Aucun',p.get('titan_stars') or 0,bool(p.get('titan_dungeon')))
 
 def num(v,default=0.0):
     try:
@@ -1676,7 +1660,7 @@ def support_buff_schedule(name, duration=120, adds_mode='none', boss_element='Ne
     et extraction des buffs qui peuvent toucher les alliés. Les dégâts du support
     ne sont pas ajoutés au DPS du carry."""
     if not name or name=='Aucun': return {'name':'Aucun','events':[],'actions':0,'stats':{},'levels':{}}
-    h=hero_row(name); pr=profile_for(name); lv=profile_levels(pr); st=profile_stats(name,pr,include_hall=True); mr=mana_row(name)
+    h=hero_row(name); pr=profile_for(name); lv=profile_levels(pr); st=profile_stats(name,pr); mr=mana_row(name)
     # Profil normalisé 'Best Support' : on conserve les autres statistiques de la fiche,
     # mais on force les paramètres demandés pour comparer le potentiel maximal de soutien.
     if str(support_mode).lower() in ('best','max','normalized'):
@@ -3124,7 +3108,7 @@ def apply_game_import(scan=None):
 # ---------- HTML ----------
 HTML = r'''<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Smishie's Lab</title><style>
 :root{--bg:#0b1020;--panel:#141b31;--p2:#1c2644;--text:#eef3ff;--muted:#9eacd0;--a:#7c9cff;--ok:#43d39e;--warn:#ffd166;--b:#2a365c}*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Arial;background:var(--bg);color:var(--text)}header{padding:22px 28px;border-bottom:1px solid var(--b)}h1{margin:0}.muted{color:var(--muted)}nav,.subnav{display:flex;gap:8px;flex-wrap:wrap;padding:14px 28px}.subnav{padding:0 0 16px}.tab,.subtab,button,select,input{background:var(--p2);color:var(--text);border:1px solid var(--b);border-radius:9px;padding:9px 12px}.active{background:var(--a)!important;color:#081020}.wrap{padding:0 28px 40px}.hidden{display:none}.controls,.levels{display:flex;gap:9px;flex-wrap:wrap;align-items:end;margin:10px 0 16px}.levels{padding:12px;background:#10182d;border:1px solid var(--b);border-radius:12px}.control{display:flex;flex-direction:column;gap:5px;min-width:120px}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.card{background:var(--panel);border:1px solid var(--b);border-radius:13px;padding:14px}.big{font-size:24px;font-weight:700}.note{padding:11px;border-left:3px solid var(--warn);background:#171b2b;margin:12px 0}.scroll{max-height:62vh;overflow:auto;border:1px solid var(--b);border-radius:12px}table{width:100%;border-collapse:collapse;background:var(--panel)}th,td{padding:8px 10px;border-bottom:1px solid var(--b);white-space:nowrap;text-align:left}th{position:sticky;top:0;background:#1a2340}.good{color:var(--ok);font-weight:700}.support-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.compare-edit{display:grid;grid-template-columns:1fr 1fr;gap:14px}.donut-wrap{display:flex;gap:18px;align-items:center;flex-wrap:wrap}.donut{width:190px;height:190px;border-radius:50%;position:relative;flex:0 0 auto}.donut:after{content:'';position:absolute;inset:36px;background:var(--panel);border-radius:50%}.legend{display:grid;gap:6px}.legend-row{display:flex;gap:8px;align-items:center}.sw{width:11px;height:11px;border-radius:3px;background:var(--a)}@media(max-width:1100px){.support-grid{grid-template-columns:1fr 1fr}}@media(max-width:850px){.grid{grid-template-columns:1fr 1fr}.compare-edit{grid-template-columns:1fr}}@media(max-width:560px){.grid,.support-grid{grid-template-columns:1fr}}
-</style></head><body><header><h1>🧪 Smishie's Lab</h1><div class=muted>V10.83 — Salle des trophées en combat seulement</div></header>
+</style></head><body><header><h1>🧪 Smishie's Lab</h1><div class=muted>V10.84 — Salle des trophées dans les stats finales</div></header>
 <nav><button class="tab active" data-main="hero">Fiche héros</button><button class=tab data-main="relics">Mes reliques</button><button class=tab data-main="sim">Simulation de combat</button><button class=tab data-main="opt">Optimisation</button><button class=tab data-main="rank">Classement</button></nav><div class=wrap>
 <section id=hero><div class=controls><div class=control><label>Héros</label><select id=heroSel></select></div><div class=control><label>Élément</label><select id=heroElement><option>Neutre</option><option>Feu</option><option>Eau</option><option>Vent</option><option>Terre</option><option>Lumière</option><option>Ténèbres</option></select></div><button id=saveProfileBtn>Enregistrer la fiche</button><button id=useBoxProfileBtn onclick="useBoxProfile().catch(e=>{heroSaveStatus.textContent='Erreur : '+e.message;console.error(e)})">Utiliser les stats de ma box</button></div><div class=note>Cette fiche est la source du build. Combat et Analyse effets la lisent automatiquement. Le Comparateur charge les deux fiches enregistrées et permet de les modifier puis de les sauvegarder.</div><div class=card><h3>Import depuis le jeu PC</h3><div class=note>🔒 LECTURE SEULE STRICTE : Smishie's Lab peut lire les dossiers Invokers connus, mais le module refuse toute ouverture en écriture. Aucun fichier du jeu n'est modifié, renommé, supprimé ou créé. Rien n'est envoyé sur Internet.</div><div class=good>🔒 Protection active : fichiers Invokers en lecture seule</div><div class=controls><button id=scanGameBtn>Scanner le jeu</button><button id=snapshotGameBtn>1. Instantané AVANT</button><button id=diffGameBtn>2. Comparer APRÈS</button><button id=analyzeDiffBtn>3. Analyser le contenu</button><button id=aggregateScanBtn>4. Scanner PlayerAggregate</button><button id=staticCacheBtn>5. Scanner cache StaticData</button><button id=decodeBoxBtn>6. Décoder ma box</button><button id=applyGameBtn disabled>Importer les stats détectées</button></div><div class=note><b>Diagnostic conseillé :</b> ferme/masque la collection dans Invokers, clique <b>Instantané AVANT</b>, ouvre ensuite ta box/collection dans le jeu et attends 2–3 secondes, puis clique <b>Comparer APRÈS</b>. Le tableau affichera uniquement les fichiers créés ou modifiés.</div><div id=gameImportStatus class=good></div><div id=gameImportReport class=scroll></div></div><h3>Fiche utilisée par les simulations</h3><div class=note>⚠ Tant que le calcul exact Niveau + Rang + Éveil/Nœuds n’est pas décodé, cette fiche reste une fiche manuelle/de référence. Les données réelles de ta box sont affichées séparément dans « Ma box » et ne sont pas mélangées avec la référence max.</div><div id=heroBuild class=levels></div><h3>Niveaux des compétences</h3><div id=heroLevels class=levels></div><div id=heroSaveStatus class=good></div><h3>Ma box</h3><div id=heroBoxInfo class=card></div><h3>Référence MAX du héros (niveau 60 / progression maximale)</h3><div id=heroStats class=grid></div><div id=heroCoeff class=scroll></div><h3>Timings autos extraits du jeu</h3><div class=note>Le simulateur utilise le temps de chaînage propre à chaque Auto 1→5 pour construire la timeline. La durée complète est conservée ici comme référence visuelle.</div><div id=heroAutoTimings class=scroll></div></section>
 <section id=relics class=hidden><h2>Mes reliques</h2><div class=note>Inventaire importé directement depuis <b>PlayerRelicsModel.dat</b>. Il comprend les reliques équipées <b>et non équipées</b>. Lecture seule du jeu.</div><div id=relicCounts class=grid></div><div class=controls><div class=control><label>Pièce</label><select id=relicSlot><option value=all>Toutes</option><option value=1>Arme</option><option value=2>Bouclier</option><option value=3>Casque</option><option value=4>Épaulières</option><option value=5>Gantelets</option><option value=6>Plastron</option><option value=7>Ceinture</option><option value=8>Bottes</option></select></div><div class=control><label>Set ID</label><select id=relicSet><option value=all>Tous</option></select></div><div class=control><label>Équipement</label><select id=relicEquipped><option value=all>Toutes</option><option value=yes>Équipées</option><option value=no>Non équipées</option></select></div><div class=control><label>Stat</label><select id=relicStat><option value=all>Toutes</option><option value=1>ATQ</option><option value=2>DEF</option><option value=3>PV</option><option value=4>ATQ %</option><option value=5>DEF %</option><option value=6>PV %</option><option value=7>Taux crit</option><option value=8>Dég crit</option><option value=9>PRÉ</option><option value=10>RÉS</option><option value=12>VIT combo</option><option value=13>VIT compétence</option><option value=14>RÉCUP compétence</option><option value=15>Gén mana</option></select></div><button id=relicRefresh>Actualiser</button></div><div id=relicTable class=scroll></div></section>
@@ -3311,7 +3295,7 @@ class H(BaseHTTPRequestHandler):
             st=apply_titan(name,stats_input(pre),qs.get(pre+'titan',['Aucun'])[0],f(pre+'titan_stars',0),bool(int(f(pre+'titan_dungeon',0))))
             return final_to_build(name,st),st
         def saved_build_for(name):
-            p=profile_for(name); st=profile_stats(name,p,include_hall=True); return final_to_build(name,st),st,p
+            p=profile_for(name); st=profile_stats(name,p); return final_to_build(name,st),st,p
         try:
             if p.path in ('/','/index.html'):
                 raw=HTML.encode(); self.send_response(200); self.send_header('Content-Type','text/html; charset=utf-8'); self.send_header('Content-Length',len(raw)); self.end_headers(); self.wfile.write(raw); return
@@ -3503,7 +3487,7 @@ class H(BaseHTTPRequestHandler):
         except Exception as e:self.sendj({'error':str(e)},500)
     def log_message(self,fmt,*args): pass
 if __name__=='__main__':
-    print("Smishie's Lab V10.83 — Salle des trophées en combat seulement — http://127.0.0.1:8501")
+    print("Smishie's Lab V10.84 — Salle des trophées dans les stats finales — http://127.0.0.1:8501")
     print('Garde cette fenêtre ouverte pendant utilisation.')
     threading.Timer(1.0,lambda:webbrowser.open(f'http://{HOST}:{PORT}')).start()
     try:ThreadingHTTPServer((HOST,PORT),H).serve_forever()
