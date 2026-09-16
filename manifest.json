@@ -1,11 +1,11 @@
 {
-  "version": "10.97",
+  "version": "10.98",
   "channel": "stable",
   "files": [
     {
       "path": "server.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=10.97",
-      "git_sha1": "584bb62f1b09d1f048407ec04bca059a87bb9ba9"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=10.98",
+      "git_sha1": "32b85073047ffbd35135c92b0c1daf2bab544f30"
     },
     {
       "path": "awake_nodes.json",
@@ -28,5 +28,5 @@
       "git_sha1": "e59089a46a250e16182266a8618f03c0c6dcd554"
     }
   ],
-  "notes": "v10.97 : correction globale des stats secondaires d’éveil. Réintégration des bonus base_awake correctement remappés, PRE/RES remis dans le bon sens, et Recovery corrigée avec 4 points = 1%. Sarienne doit maintenant retrouver PRE 78, RES 48, Skill Speed 1,4%, Recovery 1% et Mana Gen 9%."
+  "notes": "v10.98 : ajout d’un import séparé de la Salle des trophées. Le bouton lit uniquement PlayerArenaModel.dat et remplace uniquement arena_hall_levels, sans toucher aux héros, reliques ou profils."
 }
