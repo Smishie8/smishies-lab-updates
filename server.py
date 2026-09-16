@@ -551,6 +551,12 @@ def ensure_box_tables():
         con.execute('CREATE INDEX IF NOT EXISTS idx_box_relics_hero ON box_relics(equipped_hero_id)')
         con.execute('CREATE INDEX IF NOT EXISTS idx_box_relics_slot ON box_relics(slot)')
         con.execute('CREATE INDEX IF NOT EXISTS idx_box_relics_set ON box_relics(set_id)')
+        # V10.80: niveaux personnels de la Salle des trophées (Great Hall), importés depuis PlayerArenaModel.dat.
+        con.execute("""CREATE TABLE IF NOT EXISTS arena_hall_levels (
+            element_id INTEGER NOT NULL, stat_id INTEGER NOT NULL, level INTEGER NOT NULL,
+            imported_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY(element_id,stat_id)
+        )""")
         # V10.76: authoritative ConfigId -> hero map from StaticData 0.60.1302.
         # It overrides stale/manual mappings from older heuristic imports.
         valid={r[0].lower():r[0] for r in con.execute('SELECT name FROM heroes WHERE name IS NOT NULL')}
@@ -596,6 +602,67 @@ def save_config_mappings(mappings):
         con.commit()
     return saved
 
+ARENA_ELEMENT_ID_TO_NAME={1:'Feu',2:'Eau',3:'Terre',4:'Vent',5:'Lumière',6:'Ténèbres'}
+ARENA_ELEMENT_NAME_TO_ID={v:k for k,v in ARENA_ELEMENT_ID_TO_NAME.items()}
+
+ARENA_HALL_VALUES={
+    4:[.02,.04,.06,.08,.10,.12,.14,.16,.18,.20,.22,.24,.26,.28,.30],
+    5:[.02,.04,.06,.08,.10,.12,.14,.16,.18,.20,.22,.24,.26,.28,.30],
+    6:[.02,.04,.06,.08,.10,.12,.14,.16,.18,.20,.22,.24,.26,.28,.30],
+    7:[.01,.02,.03,.04,.05,.06,.07,.08,.09,.10,.11,.12,.13,.14,.15],
+    8:[.02,.04,.06,.08,.10,.13,.16,.19,.22,.25,.28,.31,.34,.37,.40],
+    9:[5,10,15,20,25,30,35,40,45,50,60,70,80,90,100],
+    10:[5,10,15,20,25,30,35,40,45,50,60,70,80,90,100],
+    12:[4,8,12,16,20,24,28,32,36,40,44,48,52,56,60],
+    13:[4,8,12,16,20,24,28,32,36,40,44,48,52,56,60],
+    14:[4,8,12,16,20,24,28,32,36,40,44,48,52,56,60],
+    15:[4,8,12,16,20,24,28,32,36,40,44,48,52,56,60],
+    16:[4,8,12,16,20,24,28,32,36,40,44,48,52,56,60],
+}
+
+def _decode_playerarena_hall_file(fp):
+    """Décodage read-only de PlayerArenaModel.dat.
+    Le membre MemoryPack #8 est HallBonuses: Element, CharacterStatBonus, Level.
+    """
+    if not fp or not os.path.isfile(fp): return []
+    with _game_ro_open(fp,'rb') as f:data=f.read()
+    mc,lens,root,end=_mp_vt(data,25)
+    if len(root)<=8:return []
+    s,e=root[8]
+    if e-s<4:return []
+    count=struct.unpack_from('<i',data,s)[0]
+    if count<0 or count>1000:return []
+    p=s+4; out=[]
+    for _ in range(count):
+        imc,ilens,iv,iend=_mp_vt(data,p)
+        if len(iv)<3:break
+        element=_mp_i32(data,iv[0]); stat=_mp_i32(data,iv[1]); level=_mp_i32(data,iv[2])
+        if element in ARENA_ELEMENT_ID_TO_NAME and stat in ARENA_HALL_VALUES and level and 1<=level<=15:
+            out.append({'element_id':element,'element':ARENA_ELEMENT_ID_TO_NAME[element],
+                        'stat_id':stat,'level':level})
+        p=iend
+    return out
+
+def _arena_hall_bonus_for_element(element):
+    eid=ARENA_ELEMENT_NAME_TO_ID.get(normalize_element(element))
+    out={'atk_flat':0.0,'atk_pct':0.0,'crit_rate':0.0,'crit_dmg':0.0,'accuracy':0.0,'resistance':0.0,
+         'combo_points':0.0,'skill_speed_points':0.0,'skill_recovery_points':0.0,'mana_points':0.0,
+         'hp_pct':0.0,'def_pct':0.0,'instinct':0.0,'unapplied':{}}
+    if not eid:return out
+    ensure_box_tables()
+    for r in q('SELECT stat_id,level FROM arena_hall_levels WHERE element_id=?',(eid,)):
+        sid=int(r.get('stat_id') or 0); lv=int(r.get('level') or 0)
+        vals=ARENA_HALL_VALUES.get(sid) or []
+        if not (1<=lv<=len(vals)):continue
+        v=vals[lv-1]
+        key={4:'atk_pct',5:'def_pct',6:'hp_pct',7:'crit_rate',8:'crit_dmg',9:'accuracy',10:'resistance',
+             12:'combo_points',13:'skill_speed_points',14:'skill_recovery_points',15:'mana_points',16:'instinct'}.get(sid)
+        if key:out[key]+=v
+    return out
+
+def _arena_hall_bonus_for_hero(name):
+    return _arena_hall_bonus_for_element(hero_element(name))
+
 def persist_decoded_box(decoded):
     ensure_box_tables(); rows=decoded.get('instances') or decoded.get('rows') or []; imported=0; mapped=0; relic_imported=0
     with sqlite3.connect(DB) as con:
@@ -603,6 +670,11 @@ def persist_decoded_box(decoded):
         # jamais les fichiers du jeu.
         con.execute('DELETE FROM box_heroes')
         con.execute('DELETE FROM box_relics')
+        con.execute('DELETE FROM arena_hall_levels')
+        for hb in decoded.get('hall_bonuses') or []:
+            con.execute("""INSERT OR REPLACE INTO arena_hall_levels(element_id,stat_id,level,imported_at)
+                           VALUES(?,?,?,CURRENT_TIMESTAMP)""",
+                        (int(hb.get('element_id')),int(hb.get('stat_id')),int(hb.get('level'))))
         # V10.51 : importe TOUTES les reliques du compte, y compris celles non équipées.
         # PlayerRelicsModel contient l'inventaire complet.
         all_relics=decoded.get('relics') or []
@@ -645,7 +717,8 @@ def persist_decoded_box(decoded):
     names=sorted(set((x.get('name_candidate') or x.get('hero_name')) for x in rows if (x.get('name_candidate') or x.get('hero_name'))))
     exact=sum(1 for x in rows if str(x.get('config_id') or '') in HERO_PROGRESSION)
     return {'imported':imported,'mapped':mapped,'relics_imported':relic_imported,'profiles_updated':profiles_updated,
-            'unique_heroes':len(names),'progression_stats_applied':bool(exact),'exact_progression_instances':exact}
+            'unique_heroes':len(names),'progression_stats_applied':bool(exact),'exact_progression_instances':exact,
+            'hall_bonuses_imported':len(decoded.get('hall_bonuses') or [])}
 
 RELIC_STAT_NAMES = {1:'ATQ',2:'DEF',3:'PV',4:'ATQ %',5:'DEF %',6:'PV %',7:'Taux crit',8:'Dég crit',9:'PRÉ',10:'RÉS',11:'VIT déplacement',12:'VIT combo',13:'VIT compétence',14:'RÉCUP compétence',15:'Gén mana',16:'Instinct'}
 
@@ -920,7 +993,9 @@ def _relic_bonus_summary(relics):
 
 def box_build_for_instance(name,hero_instance):
     if not hero_instance:return None
-    h=hero_row(name) or {}; relics=_box_relic_rows(hero_instance.get('inventory_id')); b=_relic_total_bonus(relics)
+    h=hero_row(name) or {}; relics=_box_relic_rows(hero_instance.get('inventory_id')); relic_b=_relic_total_bonus(relics)
+    hall_b=_arena_hall_bonus_for_hero(name)
+    b=_bonus_add(relic_b,hall_b)
     cfg=HERO_PROGRESSION.get(str(hero_instance.get('config_id') or ''))
     if cfg:
         rank=int(hero_instance.get('rank') or 0); level=int(hero_instance.get('level') or 0); curve=ASCENSION_MULTIPLIERS.get(rank) or []
@@ -953,7 +1028,7 @@ def box_build_for_instance(name,hero_instance):
                 naked['combo_speed']=combo_points_to_pct(combo_pct_to_points(naked['combo_speed'])+num(n.get('combo_points')))
                 naked['skill_speed']=skill_points_to_pct(skill_pct_to_points(naked['skill_speed'])+num(n.get('skill_speed_points')))
                 naked['skill_recovery']=skill_points_to_pct(skill_pct_to_points(naked['skill_recovery'])+num(n.get('skill_recovery_points')))
-                # V10.79: awake_nodes.json currently mislabels some node bonuses as ManaGeneration.
+                # V10.80: awake_nodes.json currently mislabels some node bonuses as ManaGeneration.
                 # Nyctra proves nodes 2103/2203 are not mana; ignore node mana until CharacterStatBonus mapping is corrected.
                 pass
             naked['health']=round(naked['health']); naked['atk']=round(naked['atk']); naked['defense']=round(naked['defense'])
@@ -961,7 +1036,7 @@ def box_build_for_instance(name,hero_instance):
             final.update({'health':round(naked['health']*(1+b['hp_pct'])+b['hp_flat']),
                           'defense':round(naked['defense']*(1+b['def_pct'])+b['def_flat']),
                           'run_speed':naked['run_speed'],'instinct':naked['instinct']+b['instinct']})
-            return {'pre_relic_stats':naked,'final_stats':final,'reference_stats_max':None,'relic_bonus':b,'relics':relics,
+            return {'pre_relic_stats':naked,'final_stats':final,'reference_stats_max':None,'relic_bonus':relic_b,'hall_bonus':hall_b,'combined_external_bonus':b,'relics':relics,
                     'relic_count':len(relics),'inventory_id':hero_instance.get('inventory_id'),'progression_exact':True,
                     'level_multiplier':mult,'awake_nodes_applied':len(node_ids)}
     base_atk=num(h.get('atk')); base_combo=num(h.get('combo_speed')); base_speed=num(h.get('skill_speed')); base_rec=num(h.get('skill_recovery'))
@@ -976,7 +1051,7 @@ def box_build_for_instance(name,hero_instance):
         'skill_recovery':skill_points_to_pct(skill_pct_to_points(base_rec)+b['skill_recovery_points']),
         'mana_gen':mana_points_to_pct(mana_pct_to_points(num(h.get('mana_gen')))+b['mana_points']),
     }
-    return {'final_stats':None,'reference_stats_max':final,'relic_bonus':b,'relics':relics,'relic_count':len(relics),
+    return {'final_stats':None,'reference_stats_max':final,'relic_bonus':relic_b,'hall_bonus':hall_b,'combined_external_bonus':b,'relics':relics,'relic_count':len(relics),
             'inventory_id':hero_instance.get('inventory_id'),'progression_exact':False}
 
 def box_hero_for_name(name):
@@ -1069,7 +1144,7 @@ def _stats_with_relic_bonus(naked,b):
         'combo_speed':combo_points_to_pct(max(0.0,combo_pct_to_points(num(naked.get('combo_speed')))+b['combo_points'])),
         'skill_speed':skill_points_to_pct(max(0.0,skill_pct_to_points(num(naked.get('skill_speed')))+b['skill_speed_points'])),
         'skill_recovery':skill_points_to_pct(max(0.0,skill_pct_to_points(num(naked.get('skill_recovery')))+b['skill_recovery_points'])),
-        'mana_gen':max(0.0,num(naked.get('mana_gen'))+b['mana_points']/100.0),
+        'mana_gen':mana_points_to_pct(max(0.0,mana_pct_to_points(num(naked.get('mana_gen')))+b['mana_points'])),
     }
 
 def _relic_proxy_score(st,boss_res=0):
@@ -2916,11 +2991,13 @@ def _static_cfg_name_candidates(static_fp,config_ids):
 def decode_local_box():
     hfp=_find_aggregate_snapshot('PlayerHeroesModel.dat')
     rfp=_find_aggregate_snapshot('PlayerRelicsModel.dat')
+    afp=_find_aggregate_snapshot('PlayerArenaModel.dat')
     sfp=_find_static_data_file()
     if not hfp:
         return {'ok':False,'error':'PlayerHeroesModel.dat introuvable','heroes_file':None,'relics_file':rfp,'static_data_file':sfp,**_game_readonly_status()}
     heroes=_decode_playerheroes_file(hfp)
     relics=_decode_playerrelics_file(rfp) if rfp else []
+    hall_bonuses=_decode_playerarena_hall_file(afp) if afp else []
     bycfg={}
     for h in heroes:
         cfg=h.get('config_id')
@@ -2972,9 +3049,10 @@ def decode_local_box():
                      'total_experience':best.get('total_experience'),'locked':best.get('locked'),'in_storage':best.get('in_storage'),
                      'skill_levels_raw':best.get('skill_levels_raw') or {},'relics_by_slot':best.get('relics_by_slot') or {},
                      'equipped_relic_count':len([rid for rid in (best.get('relics_by_slot') or {}).values() if rid in relic_by_id])})
-    return {'ok':True,'heroes_file':hfp,'relics_file':rfp,'static_data_file':sfp,'hero_entries':len(heroes),
+    return {'ok':True,'heroes_file':hfp,'relics_file':rfp,'arena_file':afp,'static_data_file':sfp,'hero_entries':len(heroes),
             'unique_config_ids':len(bycfg),'relic_entries':len(relics),'relics_with_stats':sum(1 for r in relics if r.get('stats')),
-            'mapped_names':mapped,'rows':rows,'instances':instances,'relics':relics,**_game_readonly_status()}
+            'mapped_names':mapped,'rows':rows,'instances':instances,'relics':relics,'hall_bonuses':hall_bonuses,
+            'hall_bonus_count':len(hall_bonuses),**_game_readonly_status()}
 
 def scan_game_import():
     roots=_candidate_game_roots()
@@ -3026,7 +3104,7 @@ def apply_game_import(scan=None):
 # ---------- HTML ----------
 HTML = r'''<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Smishie's Lab</title><style>
 :root{--bg:#0b1020;--panel:#141b31;--p2:#1c2644;--text:#eef3ff;--muted:#9eacd0;--a:#7c9cff;--ok:#43d39e;--warn:#ffd166;--b:#2a365c}*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Arial;background:var(--bg);color:var(--text)}header{padding:22px 28px;border-bottom:1px solid var(--b)}h1{margin:0}.muted{color:var(--muted)}nav,.subnav{display:flex;gap:8px;flex-wrap:wrap;padding:14px 28px}.subnav{padding:0 0 16px}.tab,.subtab,button,select,input{background:var(--p2);color:var(--text);border:1px solid var(--b);border-radius:9px;padding:9px 12px}.active{background:var(--a)!important;color:#081020}.wrap{padding:0 28px 40px}.hidden{display:none}.controls,.levels{display:flex;gap:9px;flex-wrap:wrap;align-items:end;margin:10px 0 16px}.levels{padding:12px;background:#10182d;border:1px solid var(--b);border-radius:12px}.control{display:flex;flex-direction:column;gap:5px;min-width:120px}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.card{background:var(--panel);border:1px solid var(--b);border-radius:13px;padding:14px}.big{font-size:24px;font-weight:700}.note{padding:11px;border-left:3px solid var(--warn);background:#171b2b;margin:12px 0}.scroll{max-height:62vh;overflow:auto;border:1px solid var(--b);border-radius:12px}table{width:100%;border-collapse:collapse;background:var(--panel)}th,td{padding:8px 10px;border-bottom:1px solid var(--b);white-space:nowrap;text-align:left}th{position:sticky;top:0;background:#1a2340}.good{color:var(--ok);font-weight:700}.support-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.compare-edit{display:grid;grid-template-columns:1fr 1fr;gap:14px}.donut-wrap{display:flex;gap:18px;align-items:center;flex-wrap:wrap}.donut{width:190px;height:190px;border-radius:50%;position:relative;flex:0 0 auto}.donut:after{content:'';position:absolute;inset:36px;background:var(--panel);border-radius:50%}.legend{display:grid;gap:6px}.legend-row{display:flex;gap:8px;align-items:center}.sw{width:11px;height:11px;border-radius:3px;background:var(--a)}@media(max-width:1100px){.support-grid{grid-template-columns:1fr 1fr}}@media(max-width:850px){.grid{grid-template-columns:1fr 1fr}.compare-edit{grid-template-columns:1fr}}@media(max-width:560px){.grid,.support-grid{grid-template-columns:1fr}}
-</style></head><body><header><h1>🧪 Smishie's Lab</h1><div class=muted>V10.79 — Mana Gen exacte</div></header>
+</style></head><body><header><h1>🧪 Smishie's Lab</h1><div class=muted>V10.80 — Salle des trophées auto</div></header>
 <nav><button class="tab active" data-main="hero">Fiche héros</button><button class=tab data-main="relics">Mes reliques</button><button class=tab data-main="sim">Simulation de combat</button><button class=tab data-main="opt">Optimisation</button><button class=tab data-main="rank">Classement</button></nav><div class=wrap>
 <section id=hero><div class=controls><div class=control><label>Héros</label><select id=heroSel></select></div><div class=control><label>Élément</label><select id=heroElement><option>Neutre</option><option>Feu</option><option>Eau</option><option>Vent</option><option>Terre</option><option>Lumière</option><option>Ténèbres</option></select></div><button id=saveProfileBtn>Enregistrer la fiche</button><button id=useBoxProfileBtn onclick="useBoxProfile().catch(e=>{heroSaveStatus.textContent='Erreur : '+e.message;console.error(e)})">Utiliser les stats de ma box</button></div><div class=note>Cette fiche est la source du build. Combat et Analyse effets la lisent automatiquement. Le Comparateur charge les deux fiches enregistrées et permet de les modifier puis de les sauvegarder.</div><div class=card><h3>Import depuis le jeu PC</h3><div class=note>🔒 LECTURE SEULE STRICTE : Smishie's Lab peut lire les dossiers Invokers connus, mais le module refuse toute ouverture en écriture. Aucun fichier du jeu n'est modifié, renommé, supprimé ou créé. Rien n'est envoyé sur Internet.</div><div class=good>🔒 Protection active : fichiers Invokers en lecture seule</div><div class=controls><button id=scanGameBtn>Scanner le jeu</button><button id=snapshotGameBtn>1. Instantané AVANT</button><button id=diffGameBtn>2. Comparer APRÈS</button><button id=analyzeDiffBtn>3. Analyser le contenu</button><button id=aggregateScanBtn>4. Scanner PlayerAggregate</button><button id=staticCacheBtn>5. Scanner cache StaticData</button><button id=decodeBoxBtn>6. Décoder ma box</button><button id=applyGameBtn disabled>Importer les stats détectées</button></div><div class=note><b>Diagnostic conseillé :</b> ferme/masque la collection dans Invokers, clique <b>Instantané AVANT</b>, ouvre ensuite ta box/collection dans le jeu et attends 2–3 secondes, puis clique <b>Comparer APRÈS</b>. Le tableau affichera uniquement les fichiers créés ou modifiés.</div><div id=gameImportStatus class=good></div><div id=gameImportReport class=scroll></div></div><h3>Fiche utilisée par les simulations</h3><div class=note>⚠ Tant que le calcul exact Niveau + Rang + Éveil/Nœuds n’est pas décodé, cette fiche reste une fiche manuelle/de référence. Les données réelles de ta box sont affichées séparément dans « Ma box » et ne sont pas mélangées avec la référence max.</div><div id=heroBuild class=levels></div><h3>Niveaux des compétences</h3><div id=heroLevels class=levels></div><div id=heroSaveStatus class=good></div><h3>Ma box</h3><div id=heroBoxInfo class=card></div><h3>Référence MAX du héros (niveau 60 / progression maximale)</h3><div id=heroStats class=grid></div><div id=heroCoeff class=scroll></div><h3>Timings autos extraits du jeu</h3><div class=note>Le simulateur utilise le temps de chaînage propre à chaque Auto 1→5 pour construire la timeline. La durée complète est conservée ici comme référence visuelle.</div><div id=heroAutoTimings class=scroll></div></section>
 <section id=relics class=hidden><h2>Mes reliques</h2><div class=note>Inventaire importé directement depuis <b>PlayerRelicsModel.dat</b>. Il comprend les reliques équipées <b>et non équipées</b>. Lecture seule du jeu.</div><div id=relicCounts class=grid></div><div class=controls><div class=control><label>Pièce</label><select id=relicSlot><option value=all>Toutes</option><option value=1>Arme</option><option value=2>Bouclier</option><option value=3>Casque</option><option value=4>Épaulières</option><option value=5>Gantelets</option><option value=6>Plastron</option><option value=7>Ceinture</option><option value=8>Bottes</option></select></div><div class=control><label>Set ID</label><select id=relicSet><option value=all>Tous</option></select></div><div class=control><label>Équipement</label><select id=relicEquipped><option value=all>Toutes</option><option value=yes>Équipées</option><option value=no>Non équipées</option></select></div><div class=control><label>Stat</label><select id=relicStat><option value=all>Toutes</option><option value=1>ATQ</option><option value=2>DEF</option><option value=3>PV</option><option value=4>ATQ %</option><option value=5>DEF %</option><option value=6>PV %</option><option value=7>Taux crit</option><option value=8>Dég crit</option><option value=9>PRÉ</option><option value=10>RÉS</option><option value=12>VIT combo</option><option value=13>VIT compétence</option><option value=14>RÉCUP compétence</option><option value=15>Gén mana</option></select></div><button id=relicRefresh>Actualiser</button></div><div id=relicTable class=scroll></div></section>
@@ -3405,7 +3483,7 @@ class H(BaseHTTPRequestHandler):
         except Exception as e:self.sendj({'error':str(e)},500)
     def log_message(self,fmt,*args): pass
 if __name__=='__main__':
-    print("Smishie's Lab V10.79 — Mana Gen exacte — http://127.0.0.1:8501")
+    print("Smishie's Lab V10.80 — Salle des trophées auto — http://127.0.0.1:8501")
     print('Garde cette fenêtre ouverte pendant utilisation.')
     threading.Timer(1.0,lambda:webbrowser.open(f'http://{HOST}:{PORT}')).start()
     try:ThreadingHTTPServer((HOST,PORT),H).serve_forever()
