@@ -1,11 +1,11 @@
 {
-  "version": "11.13",
+  "version": "11.14",
   "channel": "stable",
   "files": [
     {
       "path": "server.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.13",
-      "git_sha1": "301c4a245e35ce1dfc563980d6580c8635d450e6"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.14",
+      "git_sha1": "12e501b1bcd7b96ff73f3a85dbddb6a3e46a0941"
     },
     {
       "path": "awake_nodes.json",
@@ -44,9 +44,9 @@
     },
     {
       "path": "arena_static_data.json",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/arena_static_data.json?v=11.05",
-      "git_sha1": "a8038f48a9f31f76c36d0126141c08e3bce37ac8"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/arena_static_data.json?v=11.14",
+      "git_sha1": "4b0acfa8907655fe866821c492a6bb05e05671c6"
     }
   ],
-  "notes": "v11.13 : diagnostic read-only ciblé des niveaux de skills d'un héros importé. Endpoint /api/game-import/hero-skills-raw?name=Caladras : localise l'instance dans PlayerHeroesModel.dat, expose le membre PlayerHero.SkillLevels (#10) brut, son compteur, les paires i32 possibles, les objets MemoryPack version-tolerant et le décodage actuel. Aucun nouveau mapping de skills n'est appliqué tant que la structure réelle n'est pas validée."
+  "notes": "v11.14 : l'optimiseur Salle des trophées utilise automatiquement les coûts réels StaticArenaData.HallPrices et les taux MedalToMedalExchangeRates. Affichage du coût brut Bronze/Argent/Or, équivalent médaille d'or, gain DPS et DPS par médaille d'or. Plus besoin de saisir ou capturer les coûts manuellement."
 }
