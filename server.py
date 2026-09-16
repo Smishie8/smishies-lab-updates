@@ -416,35 +416,57 @@ TITANS={
  'Vollexos': {'stat':'ATK','unit':'%','mode':'Dual','normal':(.12,.24),'dungeon':(.21,.42)},
  'Wolrath': {'stat':'HP','unit':'%','mode':'Dual','normal':(.12,.24),'dungeon':(.21,.42)},
 }
-COMBO_POINTS=[0,24,30,37,40,44,59,67,76,78,91,102,166]
-COMBO_PCT=[0,.048,.060,.074,.080,.088,.115,.128,.140,.143,.158,.170,.218]
-def interp(x,xs,ys):
-    x=float(x)
-    if x<=xs[0]: return ys[0]
-    if x>=xs[-1]:
-        i=len(xs)-2
-    else:
-        i=0
-        while i+1<len(xs) and x>xs[i+1]: i+=1
-    x0,x1=xs[i],xs[i+1]; y0,y1=ys[i],ys[i+1]
-    return y0+(x-x0)*(y1-y0)/(x1-x0) if x1!=x0 else y0
-
-def combo_points_to_pct(p): return interp(max(0,p),COMBO_POINTS,COMBO_PCT)
-def combo_pct_to_points(r): return interp(max(0,r),COMBO_PCT,COMBO_POINTS)
-def skill_points_to_pct(p):
-    p=max(0,float(p)); return p*.002 if p<=50 else .1*(1+math.log(p/50,2))
-def skill_pct_to_points(r):
-    r=max(0,float(r)); return r/.002 if r<=.1 else 50*(2**(r/.1-1))
-
-def recovery_points_to_pct(p):
-    """Skill Recovery rating -> displayed fraction.
-    Verified in-game: 4 points = 1%.
+def _speed_points_to_pct(points):
+    """Combo Speed / Skill Speed exact game formula.
+    <= 50 pts: 0.2% per point.
+    > 50 pts: 10*ln(10*points)-52.3 percent, rounded to 0.1%.
     """
-    p=max(0,float(p))
-    return p*.0025 if p<=40 else .10*(1+math.log(p/40,2))
-def recovery_pct_to_points(r):
-    r=max(0,float(r))
-    return r/.0025 if r<=.10 else 40*(2**(r/.10-1))
+    p=max(0.0,float(points or 0))
+    if p<=50:
+        shown=.2*p
+    else:
+        shown=10.0*math.log(10.0*p)-52.3
+        shown=round(shown,1)
+    return shown/100.0
+
+def _speed_pct_to_points(rate):
+    """Inverse of the exact Combo/Skill Speed display formula."""
+    shown=max(0.0,float(rate or 0))*100.0
+    if shown<=10.0:
+        return shown/.2
+    return math.exp((shown+52.3)/10.0)/10.0
+
+def combo_points_to_pct(p):
+    return _speed_points_to_pct(p)
+
+def combo_pct_to_points(r):
+    return _speed_pct_to_points(r)
+
+def skill_points_to_pct(p):
+    return _speed_points_to_pct(p)
+
+def skill_pct_to_points(r):
+    return _speed_pct_to_points(r)
+
+def recovery_points_to_pct(points):
+    """Skill Recovery exact game formula.
+    <= 100 pts: 0.25% per point.
+    > 100 pts: 25*ln(10*(points+50))-157.87 percent, rounded to 0.1%.
+    """
+    p=max(0.0,float(points or 0))
+    if p<=100:
+        shown=.25*p
+    else:
+        shown=25.0*math.log(10.0*(p+50.0))-157.87
+        shown=round(shown,1)
+    return shown/100.0
+
+def recovery_pct_to_points(rate):
+    """Inverse of the exact Skill Recovery display formula."""
+    shown=max(0.0,float(rate or 0))*100.0
+    if shown<=25.0:
+        return shown/.25
+    return math.exp((shown+157.87)/25.0)/10.0-50.0
 
 def mana_points_to_pct(points):
     """Mana Generation Rating -> displayed fraction.
