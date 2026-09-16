@@ -1,11 +1,11 @@
 {
-  "version": "11.07",
+  "version": "11.08",
   "channel": "stable",
   "files": [
     {
       "path": "server.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.07",
-      "git_sha1": "e4900c8879168b2e8aab7474f71b431e1ad8a924"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.08",
+      "git_sha1": "3361d3a9cb5984457100421414ad8a4938d796bd"
     },
     {
       "path": "awake_nodes.json",
@@ -48,5 +48,5 @@
       "git_sha1": "a8038f48a9f31f76c36d0126141c08e3bce37ac8"
     }
   ],
-  "notes": "v11.07 : ajout du diagnostic read-only /api/game-import/static-hall-scan. Il ouvre le chunk principal StaticData déjà validé, recherche les tableaux MemoryPack de 15 F64 correspondant aux 15 niveaux potentiels de StaticArenaData.HallBonuses et retourne valeurs brutes + décodages candidats. Aucun calcul de stats n'est modifié."
+  "notes": "v11.08 : correctif de distribution après cache transitoire du manifeste. Le serveur affiche désormais la version installée lue depuis version.json dans la console. Le diagnostic StaticData Hall de v11.07 est conservé."
 }
