@@ -1,11 +1,11 @@
 {
-  "version": "10.99",
+  "version": "11.00",
   "channel": "stable",
   "files": [
     {
       "path": "server.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=10.99",
-      "git_sha1": "9c2b253e1f98f629d6f4f0e94978339bc8ca51b1"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.00",
+      "git_sha1": "310c68d47c6d0ea2ff9648589e06c69d1a6a389f"
     },
     {
       "path": "awake_nodes.json",
@@ -28,5 +28,5 @@
       "git_sha1": "e59089a46a250e16182266a8618f03c0c6dcd554"
     }
   ],
-  "notes": "v10.99 : correction globale de la base des stats importées. PRE/RES de base remis à PRE 0 / RES 10. Les champs base_awake_stats sont désormais lus littéralement : Skill Speed reste Skill Speed, Mana Generation reste Mana Generation, etc. Sarienne récupère ainsi ses +6 points de Mana de base d’éveil."
+  "notes": "v11.00 : diagnostic des stats PRE/RÉS dans la fiche héros. Ajout d'un tableau par source : base + éveil de base, nœuds d'éveil, reliques, Salle des trophées et total. Permet d'isoler précisément les écarts observés sur Ardell et Gralmund avant correction du mapping."
 }
