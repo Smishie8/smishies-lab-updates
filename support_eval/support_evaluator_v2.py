@@ -90,6 +90,7 @@ class AdvancedEffect:
 @dataclass
 class SupportProfile:
     name: str
+    role: str
     rarity: str
     faction: str
     element: str
@@ -315,7 +316,8 @@ def load_support_profiles_from_db(
     overrides_path: Optional[str | Path] = None,
 ) -> Dict[str, SupportProfile]:
     """
-    Charge directement les héros dont role='Support' depuis invokers.db.
+    Charge directement tous les héros depuis invokers.db.
+    L'outil « Meilleur support » teste volontairement les buffers/debuffers utiles de tous les rôles.
     Lecture seule : aucune modification de la DB.
     """
     db_path = Path(db_path)
@@ -333,7 +335,7 @@ def load_support_profiles_from_db(
                    combo_speed, skill_speed, skill_recovery, mana_gen,
                    cast_s1, cast_s2, cast_s3, cast_ult
             FROM heroes
-            WHERE lower(role)='support'
+            WHERE name IS NOT NULL
             ORDER BY name
             """
         )
@@ -391,6 +393,7 @@ def load_support_profiles_from_db(
 
         out[name] = SupportProfile(
             name=name,
+            role=h.get("role", ""),
             rarity=h.get("rarity", ""),
             faction=h.get("faction", ""),
             element=h.get("element", ""),
@@ -869,3 +872,102 @@ def evaluate_support_impacts(
         "general_scenarios": scenario_rows,
         "boss_survival": boss_row,
     }
+
+
+def support_category_breakdown(
+    profile: SupportProfile,
+    offensive_gain_pct: float,
+    survival_result: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """
+    Décomposition lisible de l'impact.
+
+    Ce n'est PAS une somme additive des scores : les catégories peuvent se chevaucher.
+    Elles servent à expliquer pourquoi un support obtient son impact.
+    """
+    cats = profile.categories()
+    surv = survival_result or {}
+
+    offense_effects = sum(
+        1 for x in profile.effects
+        if x.category in ("offense", "rotation", "anti_heal")
+    )
+    survival_effects = sum(
+        1 for x in profile.effects
+        if x.category == "survival"
+    ) + sum(
+        1 for x in profile.advanced_effects
+        if x.type in ("heal_pct_max_hp", "heal_flat", "revive", "shield", "unkillable")
+    )
+    control_effects = sum(1 for x in profile.effects if x.category == "control")
+
+    return {
+        "offense": {
+            "effect_count": offense_effects,
+            "measured_gain_pct": float(offensive_gain_pct or 0.0),
+        },
+        "survival": {
+            "effect_count": survival_effects,
+            "survival_gain_s": float(surv.get("survival_gain_s") or 0.0),
+            "survival_gain_pct": float(surv.get("survival_gain_pct") or 0.0),
+            "useful_heal": float(surv.get("useful_heal") or 0.0),
+            "overheal": float(surv.get("overheal") or 0.0),
+            "shield_absorbed": float(surv.get("shield_absorbed") or 0.0),
+            "damage_prevented": float(surv.get("damage_prevented") or 0.0),
+            "resurrection_count": int(surv.get("resurrection_count") or 0),
+            "resurrection_hp_restored": float(surv.get("resurrection_hp_restored") or 0.0),
+        },
+        "rotation": {
+            "effect_count": sum(1 for x in profile.effects if x.category == "rotation"),
+        },
+        "control": {
+            "effect_count": control_effects,
+        },
+        "anti_heal": {
+            "effect_count": sum(1 for x in profile.effects if x.category == "anti_heal"),
+            "boss_value_modelled": False,
+            "note": "Valeur boss non convertie en score tant que la timeline de soins du boss n'est pas suffisamment validée.",
+        },
+        "raw_categories": cats,
+    }
+
+
+def counterfactual_effect_plan(profile: SupportProfile) -> List[Dict[str, Any]]:
+    """
+    Liste des effets qu'il faudra désactiver un par un dans server.py pour mesurer
+    leur contribution marginale réelle. Le moteur de combat sait déjà désactiver
+    des familles de buffs ; cette liste normalise les clés à tester.
+    """
+    seen = set()
+    out = []
+    for e in profile.effects:
+        key = (e.skill, e.name)
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append({
+            "skill": e.skill,
+            "effect": e.name,
+            "category": e.category,
+            "source": e.source,
+            "validation": e.validation,
+        })
+    for e in profile.advanced_effects:
+        key = (e.skill, e.type)
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append({
+            "skill": e.skill,
+            "effect": e.type,
+            "category": {
+                "heal_pct_max_hp": "survival",
+                "heal_flat": "survival",
+                "revive": "survival",
+                "shield": "survival",
+                "unkillable": "survival",
+            }.get(e.type, "other"),
+            "source": "advanced_override",
+            "validation": e.validation,
+        })
+    return out
