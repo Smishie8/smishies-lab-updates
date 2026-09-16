@@ -2367,16 +2367,18 @@ def _gg_extract_aoe_for_hero(name):
         hitpos=[]
         for m in re.finditer(r'\b([1-9])\.\s*Hit\s+\1\b',body,re.I):
             hitpos.append((int(m.group(1)),m.start(),m.end()))
-        # Website hit 1 is Opening; hits 2..6 are our exact five autos.
+        # Smishie's Lab rule: there are exactly 5 auto-attacks, never 6.
+        # The public Combo section must therefore map only five attack hits to Auto 1..5.
         byhit={}
         for j,(hn,s,e) in enumerate(hitpos):
             end=hitpos[j+1][1] if j+1<len(hitpos) else len(body)
             seg=body[e:end]
             n,kind=_gg_target_count_from_text(seg)
             if n is not None:byhit[hn]=(n,kind,seg[:260])
-        if all(h in byhit for h in range(2,7)):
-            for h in range(2,7):
-                action=f'Auto {h-1}'; n,kind,seg=byhit[h]
+        combo_hits=sorted(h for h in byhit if h>=1)[:5]
+        if len(combo_hits)==5:
+            for auto_idx,h in enumerate(combo_hits,1):
+                action=f'Auto {auto_idx}'; n,kind,seg=byhit[h]
                 out[action]=n; evidence[action]={'heading':f'Combo Hit {h}','kind':kind,'excerpt':' '.join(seg.split())[:260]}
         else:
             unresolved.extend([f'Auto {i}' for i in range(1,6)])
