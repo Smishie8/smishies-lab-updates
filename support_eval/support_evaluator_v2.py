@@ -545,3 +545,323 @@ if __name__ == "__main__":
         print("Ulgorim 16:")
         for note in boss_mechanic_notes(nirvelle):
             print(" -", note)
+
+
+# ============================================================
+# Survival model V3
+# ============================================================
+
+GENERAL_SURVIVAL_SCENARIOS = {
+    # TTD de référence sans support, exprimé en multiple de la durée.
+    # Ces scénarios sont volontairement standardisés : ils servent à comparer
+    # les supports entre eux sans prétendre reproduire un boss particulier.
+    "low_pressure": 2.00,
+    "medium_pressure": 1.05,
+    "high_pressure": 0.60,
+    "debuff_boss": 0.90,
+    "disrupted_fight": 0.75,
+}
+
+GENERAL_SCENARIO_WEIGHTS = {
+    "low_pressure": 0.20,
+    "medium_pressure": 0.25,
+    "high_pressure": 0.25,
+    "debuff_boss": 0.15,
+    "disrupted_fight": 0.15,
+}
+
+BOSS_REFERENCE_TTD = {
+    # Calibré sur le rapport de combat réel fourni pour Ulgorim 16 :
+    # tentative terminée à 2:09 avec les cinq héros morts.
+    "ulgorim 16": 129.0,
+    "ulgorim": 129.0,
+}
+
+
+def _skill_action_name(skill: str) -> str:
+    s = str(skill or "").strip().lower()
+    return {
+        "s1": "Skill 1",
+        "skill 1": "Skill 1",
+        "s2": "Skill 2",
+        "skill 2": "Skill 2",
+        "s3": "Skill 3",
+        "skill 3": "Skill 3",
+        "ult": "Ultimate",
+        "ultimate": "Ultimate",
+        "auto 5": "Auto 5",
+    }.get(s, skill)
+
+
+def _event_value(events: List[Dict[str, Any]], effect: str, t: float, kind: Optional[str] = None) -> float:
+    vals = []
+    for e in events or []:
+        if str(e.get("effect") or "") != effect:
+            continue
+        if kind is not None and str(e.get("kind") or "") != kind:
+            continue
+        if float(e.get("start") or 0.0) <= t < float(e.get("end") or 0.0):
+            try:
+                vals.append(float(e.get("value") or 0.0))
+            except Exception:
+                pass
+    return max(vals) if vals else 0.0
+
+
+def _advanced_timeline(profile: SupportProfile, casts: List[Dict[str, Any]], duration: float) -> List[Dict[str, Any]]:
+    out: List[Dict[str, Any]] = []
+    by_action: Dict[str, List[float]] = {}
+    for c in casts or []:
+        action = str(c.get("action") or "")
+        by_action.setdefault(action, []).append(float(c.get("time") or 0.0))
+
+    for effect in profile.advanced_effects or []:
+        action = _skill_action_name(effect.skill)
+        for t in by_action.get(action, []):
+            if t > duration:
+                continue
+            row = {
+                "time": t,
+                "type": effect.type,
+                "skill": effect.skill,
+                "validation": effect.validation,
+                **dict(effect.params or {}),
+            }
+            out.append(row)
+    out.sort(key=lambda x: (x["time"], x["type"]))
+    return out
+
+
+def simulate_reference_survival(
+    profile: SupportProfile,
+    duration: float,
+    max_hp: float,
+    defense: float,
+    baseline_ttd: float,
+    support_events: Optional[List[Dict[str, Any]]] = None,
+    support_casts: Optional[List[Dict[str, Any]]] = None,
+    dt: float = 0.10,
+) -> Dict[str, Any]:
+    """
+    Modèle de survie de référence.
+
+    Il calibre la pression entrante afin que le héros SANS support meure au
+    baseline_ttd demandé. Cela évite d'inventer un coefficient de dégâts boss.
+
+    Puis il applique seulement les effets défensifs mesurables :
+    - ATK Down : réduit la pression pendant son uptime ;
+    - DEF Up : applique la formule DEF validée via un ratio de multiplicateurs ;
+    - heal avancé : uniquement le heal utile, jamais l'overheal ;
+    - Unkillable : empêche la mort pendant sa fenêtre ;
+    - Revive : ne vaut quelque chose que si le héros est mort au moment du cast.
+    """
+    duration = max(0.1, float(duration))
+    max_hp = max(1.0, float(max_hp or 1.0))
+    defense = max(0.0, float(defense or 0.0))
+    baseline_ttd = max(0.1, float(baseline_ttd))
+
+    baseline_alive = min(duration, baseline_ttd)
+    baseline_incoming_dps = max_hp / baseline_ttd
+
+    events = list(support_events or [])
+    advanced = _advanced_timeline(profile, list(support_casts or []), duration)
+
+    heals = [x for x in advanced if x.get("type") in ("heal_pct_max_hp", "heal_flat")]
+    revives = [x for x in advanced if x.get("type") == "revive"]
+    unkillables = [x for x in advanced if x.get("type") == "unkillable"]
+    shields = [x for x in advanced if x.get("type") == "shield"]
+
+    heal_idx = revive_idx = shield_idx = 0
+    hp = max_hp
+    alive = True
+    alive_time = 0.0
+    useful_heal_total = 0.0
+    overheal_total = 0.0
+    shield_pool = 0.0
+    shield_absorbed = 0.0
+    damage_prevented = 0.0
+    resurrection_count = 0
+    resurrection_hp_restored = 0.0
+
+    base_def_mult = damage_received_multiplier(defense)
+
+    t = 0.0
+    while t < duration - 1e-12:
+        step = min(dt, duration - t)
+        next_t = t + step
+
+        # Timed heals / shields / revives during this step.
+        while heal_idx < len(heals) and float(heals[heal_idx]["time"]) < next_t + 1e-12:
+            h = heals[heal_idx]
+            if alive and float(h.get("time") or 0.0) >= t - 1e-12:
+                if h.get("type") == "heal_pct_max_hp":
+                    raw = max_hp * max(0.0, float(h.get("value_pct") or 0.0)) / 100.0
+                else:
+                    raw = max(0.0, float(h.get("value") or 0.0))
+                useful = min(max_hp - hp, raw)
+                useful_heal_total += max(0.0, useful)
+                overheal_total += max(0.0, raw - useful)
+                hp = min(max_hp, hp + raw)
+            heal_idx += 1
+
+        while shield_idx < len(shields) and float(shields[shield_idx]["time"]) < next_t + 1e-12:
+            s = shields[shield_idx]
+            if alive and float(s.get("time") or 0.0) >= t - 1e-12:
+                if s.get("value_pct_max_hp") is not None:
+                    shield_pool += max_hp * max(0.0, float(s.get("value_pct_max_hp") or 0.0)) / 100.0
+                else:
+                    shield_pool += max(0.0, float(s.get("value") or 0.0))
+            shield_idx += 1
+
+        if not alive:
+            while revive_idx < len(revives) and float(revives[revive_idx]["time"]) < next_t + 1e-12:
+                rv = revives[revive_idx]
+                if float(rv.get("time") or 0.0) >= t - 1e-12:
+                    pct = max(0.0, float(rv.get("hp_restored_pct") or 0.0))
+                    hp = max_hp * pct / 100.0
+                    if hp > 0:
+                        alive = True
+                        resurrection_count += 1
+                        resurrection_hp_restored += hp
+                        revive_idx += 1
+                        break
+                revive_idx += 1
+        else:
+            # Un revive lancé alors que le héros est vivant est consommé/perdu.
+            while revive_idx < len(revives) and float(revives[revive_idx]["time"]) < next_t + 1e-12:
+                revive_idx += 1
+
+        if alive:
+            atk_down = max(0.0, min(0.95, _event_value(events, "ATK Down", t, "debuff")))
+            def_up = max(0.0, _event_value(events, "DEF Up", t, "buff"))
+
+            incoming = baseline_incoming_dps * (1.0 - atk_down)
+
+            if def_up > 0 and base_def_mult > 0:
+                boosted_def = defense * (1.0 + def_up)
+                incoming *= damage_received_multiplier(boosted_def) / base_def_mult
+
+            raw_damage = incoming * step
+            if shield_pool > 0:
+                absorbed = min(shield_pool, raw_damage)
+                shield_pool -= absorbed
+                raw_damage -= absorbed
+                shield_absorbed += absorbed
+
+            if atk_down > 0 or def_up > 0:
+                damage_prevented += max(0.0, baseline_incoming_dps * step - incoming * step)
+
+            hp -= raw_damage
+
+            unkillable_active = False
+            for u in unkillables:
+                start = float(u.get("time") or 0.0)
+                end = start + max(0.0, float(u.get("duration_s") or 0.0))
+                if start <= t < end:
+                    unkillable_active = True
+                    break
+
+            if hp <= 0:
+                if unkillable_active:
+                    hp = 1.0
+                else:
+                    hp = 0.0
+                    alive = False
+
+            if alive:
+                alive_time += step
+
+        t = next_t
+
+    return {
+        "baseline_ttd_s": baseline_ttd,
+        "baseline_alive_s": baseline_alive,
+        "with_support_alive_s": min(duration, alive_time),
+        "survival_gain_s": min(duration, alive_time) - baseline_alive,
+        "survival_gain_pct": (
+            (min(duration, alive_time) / baseline_alive - 1.0) * 100.0
+            if baseline_alive > 0 else 0.0
+        ),
+        "useful_heal": useful_heal_total,
+        "overheal": overheal_total,
+        "shield_absorbed": shield_absorbed,
+        "damage_prevented": damage_prevented,
+        "resurrection_count": resurrection_count,
+        "resurrection_hp_restored": resurrection_hp_restored,
+        "advanced_events": advanced,
+    }
+
+
+def evaluate_support_impacts(
+    profile: SupportProfile,
+    offensive_gain_pct: float,
+    duration: float,
+    max_hp: float,
+    defense: float,
+    support_events: Optional[List[Dict[str, Any]]] = None,
+    support_casts: Optional[List[Dict[str, Any]]] = None,
+    boss_name: str = "",
+) -> Dict[str, Any]:
+    """
+    Calcule deux impacts BRUTS (avant percentile /100) :
+      - general_impact_pct : moyenne pondérée des 5 scénarios standard ;
+      - boss_impact_pct : situation boss réelle si un TTD de référence existe.
+
+    offensive_gain_pct est le gain DPS réellement mesuré par server.py.
+    """
+    offense = float(offensive_gain_pct or 0.0)
+
+    scenario_rows = {}
+    weighted = 0.0
+    for key, ratio in GENERAL_SURVIVAL_SCENARIOS.items():
+        baseline_ttd = duration * ratio
+        surv = simulate_reference_survival(
+            profile=profile,
+            duration=duration,
+            max_hp=max_hp,
+            defense=defense,
+            baseline_ttd=baseline_ttd,
+            support_events=support_events,
+            support_casts=support_casts,
+        )
+        combined = hybrid_impact_pct(offense, surv["survival_gain_pct"])
+        scenario_rows[key] = {
+            **surv,
+            "offensive_gain_pct": offense,
+            "combined_impact_pct": combined,
+            "weight": GENERAL_SCENARIO_WEIGHTS[key],
+        }
+        weighted += combined * GENERAL_SCENARIO_WEIGHTS[key]
+
+    boss_key = str(boss_name or "").strip().lower()
+    boss_ttd = BOSS_REFERENCE_TTD.get(boss_key)
+    boss_row = None
+    boss_impact = offense
+
+    if boss_ttd is not None:
+        boss_row = simulate_reference_survival(
+            profile=profile,
+            duration=duration,
+            max_hp=max_hp,
+            defense=defense,
+            baseline_ttd=boss_ttd,
+            support_events=support_events,
+            support_casts=support_casts,
+        )
+        boss_impact = hybrid_impact_pct(offense, boss_row["survival_gain_pct"])
+        boss_row["offensive_gain_pct"] = offense
+        boss_row["combined_impact_pct"] = boss_impact
+        boss_row["reference_source"] = "Rapport réel Ulgorim 16 : wipe à 129 s"
+    else:
+        boss_row = {
+            "combined_impact_pct": boss_impact,
+            "offensive_gain_pct": offense,
+            "reference_source": "Aucun TTD boss calibré : composante survie non appliquée",
+        }
+
+    return {
+        "general_impact_pct": weighted,
+        "boss_impact_pct": boss_impact,
+        "general_scenarios": scenario_rows,
+        "boss_survival": boss_row,
+    }
