@@ -632,6 +632,23 @@ def _trophy_apply_next_level(name, stat_id, current_level, current_stats, box_bu
         return None
     return st,delta,new
 
+def _trophy_sim_audit(name, sim, levels):
+    log=(sim or {}).get('log') or []
+    casts={'Auto':0,'Skill 1':0,'Skill 2':0,'Skill 3':0,'Ultimate':0}
+    for x in log:
+        a=str(x.get('action') or '')
+        if a.startswith('Auto'): casts['Auto']+=1
+        elif a in casts: casts[a]+=1
+    out={'casts':casts,'damage_by':dict((sim or {}).get('damage_by') or {})}
+    if str(name).strip().lower()=='brandis':
+        ur=coeff_row(name,(levels or {}).get('ult',7)) or {}
+        nominal=max(1,int(num(ur.get('Ult Hits'),1)))
+        triples=sum(1 for x in log if x.get('action')=='Ultimate' and int(num(x.get('hits'),1))>=nominal*3)
+        out['brandis_ult_x3']=triples
+        out['brandis_ult_total']=casts.get('Ultimate',0)
+        out['brandis_nominal_ult_hits']=nominal
+    return out
+
 def optimize_trophy_hall(element, hero_names=None, duration=120, boss_def=1320, boss_res=0, boss_hp=0, boss_atk=0, boss_element='Neutre', costs=None):
     element=normalize_element(element)
     if element not in ARENA_ELEMENT_NAME_TO_ID:
@@ -662,7 +679,7 @@ def optimize_trophy_hall(element, hero_names=None, duration=120, boss_def=1320, 
         p=profile_for(name); lv=profile_levels(p)
         sim=simulate_combat(name,lv,duration,boss_def,boss_res,boss_hp,boss_atk,boss_element,comparison_mode=True,**final_to_build(name,st))
         if not sim: continue
-        baselines[name]={'dps':num(sim.get('dps')),'stats':st,'box_build':build,'levels':lv}
+        baselines[name]={'dps':num(sim.get('dps')),'stats':st,'box_build':build,'levels':lv,'audit':_trophy_sim_audit(name,sim,lv)}
         usable.append(name)
     if not usable:
         return {'error':'Aucun héros sélectionné ne peut être simulé avec les données actuelles.'}
@@ -685,7 +702,8 @@ def optimize_trophy_hall(element, hero_names=None, duration=120, boss_def=1320, 
             d2=num((sim2 or {}).get('dps'),b['dps'])
             gain=d2-b['dps']; pct=(gain/b['dps'] if b['dps']>0 else 0.0)
             total_after+=d2; pct_gains.append(pct)
-            hero_rows.append({'hero':name,'before_dps':round(b['dps'],2),'after_dps':round(d2,2),'gain_dps':round(gain,2),'gain_pct':pct})
+            hero_rows.append({'hero':name,'before_dps':round(b['dps'],2),'after_dps':round(d2,2),'gain_dps':round(gain,2),'gain_pct':pct,
+                              'before_audit':b.get('audit') or {},'after_audit':_trophy_sim_audit(name,sim2,b['levels'])})
         gain_total=total_after-base_total
         avg_pct=sum(pct_gains)/len(pct_gains) if pct_gains else 0.0
         ratio=(gain_total/cost) if cost>0 else None
@@ -4245,7 +4263,7 @@ async function trophyRun(){
     trophySummary.innerHTML=cards({'Élément':d.element,'Héros simulés':d.hero_count,'DPS total actuel':F(d.base_total_dps),'Classement':d.metric==='dps_per_medal'?'DPS / médaille':'Gain DPS brut'});
     trophyTable.innerHTML='<table><tr><th>#</th><th>Stat</th><th>Niveau</th><th>Gain stat</th><th>Coût</th><th>Gain DPS total</th><th>Gain moyen</th><th>DPS / médaille</th><th>Principal bénéficiaire</th></tr>'
       +d.rows.map((r,i)=>{let top=(r.heroes||[])[0];return `<tr data-trophy-row="${i}"><td>${i+1}</td><td><b>${r.stat}</b></td><td>${r.current_level}→${r.next_level}</td><td>${r.delta_value==null?'—':F1(r.delta_value)}</td><td>${r.cost>0?F(r.cost):'—'}</td><td class=good>+${F1(r.gain_total_dps)}</td><td>${P(r.gain_avg_pct)}</td><td class=good>${r.dps_per_medal==null?'—':F1(r.dps_per_medal)}</td><td>${top?top.hero+' (+'+F1(top.gain_dps)+')':'—'}</td></tr>`}).join('')+'</table>';
-    let renderDetail=(idx)=>{let r=d.rows[idx];if(!r)return;trophyHeroDetail.innerHTML='<h4>'+r.stat+' '+r.current_level+'→'+r.next_level+'</h4><table><tr><th>Héros</th><th>DPS avant</th><th>DPS après</th><th>Gain DPS</th><th>Gain %</th></tr>'+(r.heroes||[]).map(x=>`<tr><td>${x.hero}</td><td>${F1(x.before_dps)}</td><td>${F1(x.after_dps)}</td><td class=good>+${F1(x.gain_dps)}</td><td>${P(x.gain_pct)}</td></tr>`).join('')+'</table>'};
+    let renderDetail=(idx)=>{let r=d.rows[idx];if(!r)return;trophyHeroDetail.innerHTML='<h4>'+r.stat+' '+r.current_level+'→'+r.next_level+'</h4><table><tr><th>Héros</th><th>DPS avant</th><th>DPS après</th><th>Gain DPS</th><th>Gain %</th><th>S1</th><th>S2</th><th>S3</th><th>Ult</th><th>Brandis Ult ×3</th></tr>'+(r.heroes||[]).map(x=>{let a=x.before_audit||{},z=x.after_audit||{},ac=a.casts||{},zc=z.casts||{};let tri=(x.hero==='Brandis')?((a.brandis_ult_x3||0)+'→'+(z.brandis_ult_x3||0)):'—';return `<tr><td>${x.hero}</td><td>${F1(x.before_dps)}</td><td>${F1(x.after_dps)}</td><td class=good>+${F1(x.gain_dps)}</td><td>${P(x.gain_pct)}</td><td>${ac['Skill 1']||0}→${zc['Skill 1']||0}</td><td>${ac['Skill 2']||0}→${zc['Skill 2']||0}</td><td>${ac['Skill 3']||0}→${zc['Skill 3']||0}</td><td>${ac['Ultimate']||0}→${zc['Ultimate']||0}</td><td>${tri}</td></tr>`}).join('')+'</table>'};
     renderDetail(0);
     trophyTable.querySelectorAll('[data-trophy-row]').forEach(tr=>tr.onclick=()=>renderDetail(+tr.dataset.trophyRow));
     trophyStatus.textContent='Calcul terminé. Clique une ligne pour voir quels héros profitent réellement de l’amélioration.';
