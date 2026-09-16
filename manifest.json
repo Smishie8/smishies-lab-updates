@@ -1,11 +1,11 @@
 {
-  "version": "11.11",
+  "version": "11.12",
   "channel": "stable",
   "files": [
     {
       "path": "server.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.11",
-      "git_sha1": "1e37114097f005a8a86335db98545d6e25c5e455"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.12",
+      "git_sha1": "3ffa9c4acd89ec14206d34a3c245160131c3e689"
     },
     {
       "path": "awake_nodes.json",
@@ -48,5 +48,5 @@
       "git_sha1": "a8038f48a9f31f76c36d0126141c08e3bce37ac8"
     }
   ],
-  "notes": "v11.11 : correction définitive de la Salle des trophées. Le mapping Element du PlayerArenaModel est corrigé : 3=Vent et 4=Eau. Le champ Level est utilisé directement comme index 1-based des courbes StaticArenaData.HallBonuses, conformément à ArenaUtils.GetHallBonusValue. Le patch spécial Eau de v11.02 est supprimé. HallBonuses continue d'être lu live depuis static.data."
+  "notes": "v11.12 : correction de l'import des niveaux de skills depuis PlayerHeroesModel.dat. PlayerHero.SkillLevels est le membre MemoryPack #10 (et non #21). Ajout d'un décodeur List<UpgradeableSkill> lisant SkillKind/Level, avec support bloc compact 8 octets ou objet version-tolerant. Les niveaux importés alimentent ensuite les profils box au lieu de retomber à 7."
 }
