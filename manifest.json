@@ -1,11 +1,11 @@
 {
-  "version": "11.12",
+  "version": "11.13",
   "channel": "stable",
   "files": [
     {
       "path": "server.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.12",
-      "git_sha1": "3ffa9c4acd89ec14206d34a3c245160131c3e689"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.13",
+      "git_sha1": "301c4a245e35ce1dfc563980d6580c8635d450e6"
     },
     {
       "path": "awake_nodes.json",
@@ -48,5 +48,5 @@
       "git_sha1": "a8038f48a9f31f76c36d0126141c08e3bce37ac8"
     }
   ],
-  "notes": "v11.12 : correction de l'import des niveaux de skills depuis PlayerHeroesModel.dat. PlayerHero.SkillLevels est le membre MemoryPack #10 (et non #21). Ajout d'un décodeur List<UpgradeableSkill> lisant SkillKind/Level, avec support bloc compact 8 octets ou objet version-tolerant. Les niveaux importés alimentent ensuite les profils box au lieu de retomber à 7."
+  "notes": "v11.13 : diagnostic read-only ciblé des niveaux de skills d'un héros importé. Endpoint /api/game-import/hero-skills-raw?name=Caladras : localise l'instance dans PlayerHeroesModel.dat, expose le membre PlayerHero.SkillLevels (#10) brut, son compteur, les paires i32 possibles, les objets MemoryPack version-tolerant et le décodage actuel. Aucun nouveau mapping de skills n'est appliqué tant que la structure réelle n'est pas validée."
 }
