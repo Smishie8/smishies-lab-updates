@@ -1606,8 +1606,8 @@ def parse_seconds(v,default=999.0):
     return float(m.group(0).replace(',','.')) if m else default
 
 def dmult(defense):
-    # Formule DEF validée en jeu : coefficient quadratique 1.245e-7.
-    d=max(0.0,float(defense)); return 1/(1+0.0001696*d+0.0000001245*d*d)
+    # Formule DEF validée par tests en jeu : coefficient quadratique 1.245e-8.
+    d=max(0.0,float(defense)); return 1/(1+0.0001696*d+0.00000001245*d*d)
 
 ELEMENT_ALIASES={
     'fire':'Feu','feu':'Feu','water':'Eau','eau':'Eau','wind':'Vent','vent':'Vent',
