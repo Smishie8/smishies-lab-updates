@@ -3190,7 +3190,8 @@ def analyze_last_game_diff():
     hero_lows=[x.lower() for x in hero_names]
     keywords=('invoker','hero','heroes','collection','inventory','roster','character','unit','profile','account',
               'relic','equipment','equip','titan','skill','level','rank','awak','stat','attack','defense','accuracy',
-              'resistance','crit','speed','recovery','mana','loadout','api','graphql','grpc','http','socket','player')
+              'resistance','crit','speed','recovery','mana','loadout','api','graphql','grpc','http','socket','player',
+              'arena','trophy','trophies','hall','bronze','silver','gold','cost','price','upgrade','currency','reward')
     reports=[]
     for item in (LAST_GAME_DIFF or []):
         if item.get('status')=='supprimé':
@@ -4456,6 +4457,10 @@ HTML = r'''<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name
 <div class=note>Entre le coût en médailles pour acheter chaque niveau 1→15, séparé par des virgules. Tant que cette table n'est pas renseignée, l'outil classe par gain DPS brut et n'invente aucun coût.</div>
 <div class=controls><div class=control style="min-width:650px"><label>Coûts niveaux 1→15</label><input id=trophyCosts placeholder="ex. coût niv1, niv2, ... niv15"></div><button id=trophyCostScanBtn>Chercher les coûts dans static.data</button><button id=trophyBtn>Optimiser la Salle</button></div>
 <div id=trophyCostScanStatus class=note></div><div id=trophyCostCandidates class=scroll></div>
+<h3>Capture du coût affiché par le jeu</h3>
+<div class=note>Si static.data ne contient pas directement les coûts : 1) clique <b>Démarrer capture</b>, 2) dans Invokers ouvre la Salle des trophées et touche une amélioration pour afficher son coût <b>sans l'acheter</b>, 3) reviens ici et clique <b>Analyser capture</b>.</div>
+<div class=controls><button id=trophyCaptureStart>Démarrer capture</button><button id=trophyCaptureAnalyze>Analyser capture</button></div>
+<div id=trophyCaptureStatus class=note></div><div id=trophyCaptureReport class=scroll></div>
 <div id=trophyStatus class=note></div>
 <div id=trophySummary class=grid></div>
 <h3>Priorité des prochains niveaux</h3><div id=trophyTable class=scroll></div>
@@ -4487,6 +4492,35 @@ function renderTrophyHeroes(){
   trophyHeroes.innerHTML=hs.map(h=>`<option value="${h.name}" ${previous.size?(previous.has(h.name)?'selected':''):'selected'}>${h.name} — ${h.role||''}</option>`).join('');
 }
 function trophySelected(){return [...trophyHeroes.selectedOptions].map(o=>o.value)}
+async function trophyCaptureStartRun(){
+  trophyCaptureStart.disabled=true;trophyCaptureStatus.textContent='Snapshot en cours…';
+  try{
+    let r=await fetch('/api/game-import/snapshot',{method:'POST'});let d=await r.json();
+    if(!r.ok||!d.ok)throw Error(d.error||'Snapshot impossible');
+    trophyCaptureStatus.textContent='Capture démarrée ('+d.count+' fichiers suivis). Va dans le jeu, ouvre la Salle et affiche le coût d’une amélioration sans l’acheter, puis reviens cliquer Analyser capture.';
+    trophyCaptureReport.innerHTML='';
+  }catch(e){trophyCaptureStatus.textContent='Erreur : '+e.message}
+  finally{trophyCaptureStart.disabled=false}
+}
+async function trophyCaptureAnalyzeRun(){
+  trophyCaptureAnalyze.disabled=true;trophyCaptureStatus.textContent='Comparaison des fichiers modifiés…';
+  try{
+    let diff=await api('/api/game-import/diff');
+    let ana=await api('/api/game-import/analyze-diff');
+    let reports=ana.reports||[];
+    let terms=/arena|troph|hall|bronze|silver|gold|cost|price|upgrade|currency|reward/i;
+    let useful=[];
+    for(let r of reports){
+      let ex=(r.excerpts||[]).filter(x=>terms.test(x));
+      let urls=(r.urls||[]).filter(x=>terms.test(x));
+      if(ex.length||urls.length)useful.push({file:r.file,excerpts:ex,urls:urls});
+    }
+    trophyCaptureStatus.textContent=diff.changed_count+' fichier(s) modifié(s), '+useful.length+' avec indices Arena/Trophy/Cost.';
+    trophyCaptureReport.innerHTML=useful.map(r=>'<div class=card><h4>'+r.file+'</h4>'+(r.urls.length?'<b>URLs</b><pre>'+r.urls.join('\n')+'</pre>':'')+(r.excerpts.length?'<b>Extraits</b><pre>'+r.excerpts.join('\n---\n')+'</pre>':'')+'</div>').join('') ||
+      '<div class=note>Aucun texte Arena/Trophy/Cost trouvé. Les fichiers modifiés existent peut-être en binaire ; copie-moi simplement le nombre de fichiers modifiés affiché ici.</div>';
+  }catch(e){trophyCaptureStatus.textContent='Erreur : '+e.message}
+  finally{trophyCaptureAnalyze.disabled=false}
+}
 async function trophyCostScan(){
   trophyCostScanBtn.disabled=true;
   trophyCostScanStatus.textContent='Recherche des tableaux de coûts autour de StaticArenaData.HallBonuses…';
@@ -4710,6 +4744,8 @@ let rankRun=0; async function rank(){const run=++rankRun;let b=bosses[rankBoss.v
 (async()=>{heroes=await api('/api/heroes');let n=heroes.map(x=>x.name);let ownedHeroNames=await api('/api/box-hero-names');relicProtectedHeroes.innerHTML=ownedHeroNames.map(x=>`<option value="${x}">${x}</option>`).join('');[heroSel,combatHero,aSel,bSel,optHero].forEach((e,i)=>opts(e,n,i===3?'Sildrea':'Senhachi'));opts(aoeHero,n,'Moros');renderAoeTargetInputs({});for(let e of [support1,support2,support3,support4,rankSupport1,rankSupport2,rankSupport3,rankSupport4])opts(e,['Aucun',...n],'Aucun');[support1,support2,support3,support4].forEach(e=>e.onchange=combat);[rankSupport1,rankSupport2,rankSupport3,rankSupport4].forEach(e=>e.onchange=rank);rankSupportMode.onchange=rank;rankElement.onchange=rank;addsMode.onchange=combat;bosses=await api('/api/boss-setups');titans=await api('/api/titans');[simBoss,optBoss,rankBoss,aoeBoss].forEach(e=>{Object.keys(bosses).forEach(x=>e.add(new Option(x,x)));e.value='Ulgorim 16'});optBoss.onchange=async()=>{await critAnalysis();await recAnalysis();await relicPotential()};rankBoss.onchange=rank;simBossCards.innerHTML=bossCards(bosses[simBoss.value]);simBoss.onchange=()=>{simBossCards.innerHTML=bossCards(bosses[simBoss.value]);simElement.value='Auto';combat();compare()};simElement.onchange=()=>{combat();compare()};build(heroBuild,'hero');levels(heroLevels,'heroLvl');levels(optLevels,'opt');trophyElement.onchange=renderTrophyHeroes;
 trophySelectAll.onclick=()=>[...trophyHeroes.options].forEach(o=>o.selected=true);
 trophyClear.onclick=()=>[...trophyHeroes.options].forEach(o=>o.selected=false);
+trophyCaptureStart.onclick=trophyCaptureStartRun;
+trophyCaptureAnalyze.onclick=trophyCaptureAnalyzeRun;
 trophyCostScanBtn.onclick=trophyCostScan;
 trophyBtn.onclick=trophyRun;
 heroSel.onchange=hero;combatHero.onchange=combat;combatPreset.onchange=()=>{let notes={box:'Ma box : stats et niveaux réellement importés.',early:'Early : skills 1 · ATQ +30% · Crit 20% · Dég crit 50% · PRE +80 · Combo/Skill/Recovery/Mana +5%.',mid:'Mid : skills 5 · ATQ +80% · Crit 50% · Dég crit 75% · PRE +220 · Combo/Skill/Recovery/Mana +15%.',late:'Late : skills max · ATQ +150% · Crit 100% · Dég crit 120% · PRE +400 · Combo/Skill/Recovery/Mana +30%.'};combatPresetNote.textContent=notes[combatPreset.value]||'';combat();compare()};aSel.onchange=compare;bSel.onchange=compare;recFields(recCurrentStats,'recCur');recTestFields(recTestStats,'recTest');optHero.onchange=async()=>{await loadRecStats();await critAnalysis();await recAnalysis();await relicPotential()};[...new Set(heroes.map(x=>x.rarity).filter(Boolean))].sort().forEach(x=>rarity.add(new Option(x,x)));[...new Set(heroes.map(x=>x.role).filter(Boolean))].sort().forEach(x=>role.add(new Option(x,x)));rankMode.onchange=()=>{let notes={box:'Ma box : classement avec les builds réellement importés.',early:'Early : skills 1 · ATQ +30% · Crit 20% · Dég crit 50% · PRE +80 · Combo/Skill/Recovery/Mana +5%.',mid:'Mid : skills 5 · ATQ +80% · Crit 50% · Dég crit 75% · PRE +220 · Combo/Skill/Recovery/Mana +15%.',late:'Late : skills max · ATQ +150% · Crit 100% · Dég crit 120% · PRE +400 · Combo/Skill/Recovery/Mana +30%.'};rankModeNote.textContent=notes[rankMode.value]||'';rank()};combatBtn.onclick=combat;bestSupportMode.onchange=()=>{let notes={real:'Ma box : uniquement les héros que tu possèdes, avec leur vraie fiche importée.',base:'Stats de base : stats natives du héros et tous les skills niveau 1.',max:'Max support : stats natives, skills max, PRE 1000, Combo/Skill Speed/Recovery/Mana +30%.'};bestSupportModeNote.textContent=notes[bestSupportMode.value]||''};bestSupportBtn.onclick=bestSupports;cmpBtn.onclick=compare;critBtn.onclick=critAnalysis;recBtn.onclick=recAnalysis;recBalanceBtn.onclick=recBalance;relicOptBtn.onclick=relicOptimize;setOptBtn.onclick=setOptimize;potentialBtn.onclick=relicPotential;rankBtn.onclick=rank;aoeHero.onchange=async()=>{await loadAoeDefaults();await aoeCombatRun()};aoePreset.onchange=()=>{aoeCombatRun();aoeRankRun()};aoeEnemies.onchange=async()=>{await loadAoeDefaults();await aoeCombatRun();await aoeRankRun()};aoeBoss.onchange=()=>{aoeCombatRun();aoeRankRun()};aoeBtn.onclick=aoeCombatRun;aoeRankBtn.onclick=aoeRankRun;aoeSaveTargets.onclick=saveAoeTargets;aoeProbeStatic.onclick=probeAoeStatic;aoeImportAll.onclick=importAllAoe;importBoxBtn.onclick=importBoxOneClick;relicRefresh.onclick=loadRelics;[relicSlot,relicSet,relicEquipped,relicStat].forEach(e=>e.onchange=loadRelics);await loadRelics();await hero();await loadRecStats();await loadTrophyHeroes();await combat();await compare();await critAnalysis();await recAnalysis();await relicPotential();await loadAoeDefaults();await aoeCombatRun();await aoeRankRun();await rank()})().catch(e=>document.body.insertAdjacentHTML('beforeend',`<pre>${e.stack}</pre>`));
