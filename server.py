@@ -458,6 +458,7 @@ def _load_arena_static_source():
     return vals
 
 ARENA_HALL_VALUES=_load_arena_static_source()
+ARENA_HALL_SOURCE='arena_static_data.json fallback'
 
 def _decode_playerarena_hall_file(fp):
     """Décodage read-only de PlayerArenaModel.dat.
@@ -2867,6 +2868,115 @@ def inspect_static_chunkpack():
     except Exception as e:
         return {'ok':False,'file':fp,'error':str(e),**_game_readonly_status()}
 
+def _extract_live_arena_hall_values():
+    """Extract StaticArenaData.HallBonuses directly from the game's main StaticData chunk.
+
+    MemoryPack layout validated on 0.60.1302:
+      Int32 CharacterStatBonus + Int32 array_count(15) + 15 unmanaged F64(Q32) values.
+    The 12 Hall stat entries are serialized contiguously.
+    """
+    fp=_find_static_data_file()
+    if not fp:
+        return None
+    with _game_ro_open(fp,'rb') as fh:
+        data=fh.read()
+    if len(data)<24:
+        return None
+
+    pos=0
+    tag,version=struct.unpack_from('<II',data,pos); pos+=8
+    if tag!=0x50435A48:
+        return None
+    config_version,pos=_read_dotnet_string(data,pos)
+    shared_version,pos=_read_dotnet_string(data,pos)
+    if pos+8>len(data):
+        return None
+    header_size,header_result_size=struct.unpack_from('<ii',data,pos); pos+=8
+    if header_size<0 or pos+header_size>len(data):
+        return None
+    header_blob,_=_brotli_decompress_bytes(data[pos:pos+header_size]); pos+=header_size
+    hdr=_parse_chunkpack_header_blob(header_blob)
+
+    main=None
+    for key,ch in zip(hdr['keys'],hdr['chunks']):
+        if key.get('category')==0 and key.get('id')==0:
+            main=ch; break
+    if not main:
+        return None
+    s=pos+int(main['offset']); e=s+int(main['size'])
+    if not (0<=s<=e<=len(data)):
+        return None
+    packed=data[s:e]
+    raw,_=_brotli_decompress_bytes(packed) if main.get('compressed') else (packed,None)
+    if int(main.get('uncompressed_size') or 0) and len(raw)!=int(main['uncompressed_size']):
+        return None
+
+    hall_ids=(4,5,6,7,8,9,10,12,13,14,15,16)
+    candidates=[]
+    for sid in hall_ids:
+        pat=struct.pack('<ii',sid,15)
+        start=0
+        while True:
+            idx=raw.find(pat,start)
+            if idx<0: break
+            arr_start=idx+8
+            arr_end=arr_start+15*8
+            if arr_end<=len(raw):
+                raw_vals=[struct.unpack_from('<q',raw,arr_start+i*8)[0] for i in range(15)]
+                vals=[v/4294967296.0 for v in raw_vals]
+                mono=all(vals[i]>=vals[i-1] for i in range(1,15))
+                nonneg=all(v>=0 for v in vals)
+                plausible=mono and nonneg and len({round(v,9) for v in vals})>=10
+                if sid in (4,5,6,7,8):
+                    plausible=plausible and vals[-1]<=2.0
+                else:
+                    plausible=plausible and vals[-1]<=10000.0
+                if plausible:
+                    candidates.append((idx,sid,vals))
+            start=idx+1
+
+    # The real HallBonuses dictionary is one compact block containing all 12 ids.
+    candidates.sort()
+    best=None
+    for i in range(len(candidates)):
+        base=candidates[i][0]
+        block=[x for x in candidates if base<=x[0]<=base+4096]
+        by={}
+        for off,sid,vals in block:
+            by.setdefault(sid,(off,vals))
+        if all(sid in by for sid in hall_ids):
+            span=max(by[s][0] for s in hall_ids)-min(by[s][0] for s in hall_ids)
+            score=(len(by),-span)
+            if best is None or score>best[0]:
+                best=(score,by)
+    if not best:
+        return None
+
+    by=best[1]
+    values={sid:[float(v) for v in by[sid][1]] for sid in hall_ids}
+    offsets={sid:int(by[sid][0]) for sid in hall_ids}
+    return {
+        'values':values,
+        'offsets':offsets,
+        'file':fp,
+        'config_version':config_version,
+        'shared_version':shared_version,
+        'main_size':len(raw),
+        'source':'StaticArenaData.HallBonuses live'
+    }
+
+def _refresh_live_arena_hall_values():
+    global ARENA_HALL_VALUES,ARENA_HALL_SOURCE
+    try:
+        live=_extract_live_arena_hall_values()
+        if live and live.get('values'):
+            ARENA_HALL_VALUES=live['values']
+            ARENA_HALL_SOURCE='%s (%s)'%(live.get('source'),live.get('config_version'))
+            return live
+    except Exception as e:
+        ARENA_HALL_SOURCE='arena_static_data.json fallback (%s)'%e
+    return None
+
 def scan_static_hall_f64_arrays():
     """Read-only heuristic scanner for 15-value F64 arrays inside the main StaticData chunk.
     Used only to locate StaticArenaData.HallBonuses before enabling live decoding."""
@@ -2933,6 +3043,8 @@ def scan_static_hall_f64_arrays():
                 'candidates':out,**_game_readonly_status()}
     except Exception as e:
         return {'ok':False,'file':fp,'error':str(e),**_game_readonly_status()}
+
+_LIVE_ARENA_HALL_INFO=_refresh_live_arena_hall_values()
 
 def scan_static_data_cache():
     """Locate downloaded StaticData versions in Unity persistentDataPath/static_data.
@@ -3444,6 +3556,7 @@ class H(BaseHTTPRequestHandler):
             if p.path=='/api/game-import/static-cache': self.sendj(scan_static_data_cache()); return
             if p.path=='/api/game-import/static-pack': self.sendj(inspect_static_chunkpack()); return
             if p.path=='/api/game-import/static-hall-scan': self.sendj(scan_static_hall_f64_arrays()); return
+            if p.path=='/api/game-import/static-hall-live': self.sendj({'ok':bool(_LIVE_ARENA_HALL_INFO),'source':ARENA_HALL_SOURCE,'live':_LIVE_ARENA_HALL_INFO,'values':ARENA_HALL_VALUES,**_game_readonly_status()}); return
             if p.path=='/api/game-import/decode-box': self.sendj(decode_local_box()); return
             if p.path=='/api/game-import/analyze-diff': self.sendj(analyze_last_game_diff()); return
             if p.path=='/api/heroes': self.sendj(q('SELECT name,faction,rarity,role,element FROM heroes WHERE name IS NOT NULL ORDER BY name')); return
