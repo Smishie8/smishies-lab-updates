@@ -1,11 +1,11 @@
 {
-  "version": "11.18",
+  "version": "11.19",
   "channel": "stable",
   "files": [
     {
       "path": "server.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.18",
-      "git_sha1": "992ce75bcb8a886d4743cc4698e027a2b6f85719"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.19",
+      "git_sha1": "494857599fc98bd5a85740e5e2ff17fdc453a9cc"
     },
     {
       "path": "awake_nodes.json",
@@ -54,8 +54,8 @@
     },
     {
       "path": "support_eval/support_evaluator_v2.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/support_eval/support_evaluator_v2.py?v=11.17",
-      "git_sha1": "d692eb3bae14dcd24a077ddedaee40a2e802faf0"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/support_eval/support_evaluator_v2.py?v=11.19",
+      "git_sha1": "df4165a9f3d62eb6b9e3af8942df4d54a58171ee"
     },
     {
       "path": "support_eval/support_effect_overrides.json",
@@ -63,5 +63,5 @@
       "git_sha1": "4b126eeeb546f54833ffcd048c35d77c22c83a46"
     }
   ],
-  "notes": "v11.18 : dans « Meilleur support », ajout d’un sélecteur Top 3 / Top 5 / Top 10 / Top 20. L’API renvoie désormais les 20 meilleurs supports ; l’affichage peut être changé instantanément sans relancer l’analyse."
+  "notes": "v11.19 : correction de la mitigation DEF. Le coefficient quadratique validé par les tests en jeu est 0.00000001245 (1.245e-8), et non 0.0000001245. La correction est appliquée au moteur principal et à l’évaluateur de supports."
 }
