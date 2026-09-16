@@ -1,11 +1,11 @@
 {
-  "version": "11.06",
+  "version": "11.07",
   "channel": "stable",
   "files": [
     {
       "path": "server.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.06",
-      "git_sha1": "823dc7585e22a7cca36220238ee357c22f9b76a0"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.07",
+      "git_sha1": "e4900c8879168b2e8aab7474f71b431e1ad8a924"
     },
     {
       "path": "awake_nodes.json",
@@ -48,5 +48,5 @@
       "git_sha1": "a8038f48a9f31f76c36d0126141c08e3bce37ac8"
     }
   ],
-  "notes": "v11.06 : ajout d'un inspecteur live read-only du static.data ChunkPack du jeu. Il lit le tag/version, ConfigVersion/SharedVersion, décompresse le ChunkPackHeader via Brotli si disponible, décode PackChunkKey/PackChunk/ChunkHashes et sonde le chunk principal category=0,id=0. Endpoint diagnostic : /api/game-import/static-pack. Aucun calcul de stats n'est modifié dans cette étape."
+  "notes": "v11.07 : ajout du diagnostic read-only /api/game-import/static-hall-scan. Il ouvre le chunk principal StaticData déjà validé, recherche les tableaux MemoryPack de 15 F64 correspondant aux 15 niveaux potentiels de StaticArenaData.HallBonuses et retourne valeurs brutes + décodages candidats. Aucun calcul de stats n'est modifié."
 }
