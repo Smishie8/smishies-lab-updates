@@ -1,10 +1,11 @@
 {
-  "version": "10.94",
+  "version": "10.95",
   "channel": "stable",
   "files": [
     {
       "path": "server.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=10.94"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=10.95",
+      "git_sha1": "62b2fcf928a9c8bdf597000452b07c3cb61eff18"
     },
     {
       "path": "awake_nodes.json",
@@ -23,8 +24,9 @@
     },
     {
       "path": "updater.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/updater.py?v=10.80"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/updater.py?v=10.95",
+      "git_sha1": "e59089a46a250e16182266a8618f03c0c6dcd554"
     }
   ],
-  "notes": "v10.94 : correction globale du mapping CharacterStatBonus des nœuds d’éveil. Les anciennes colonnes Instinct/Combo/Skill Speed/Recovery/Mana étaient décalées. Les bonus d’éveil ne sont plus doublés via base_awake_stats. Correction valable pour tous les héros."
+  "notes": "v10.95 : réparation fiable des mises à jour. L'updater vérifie désormais le contenu réel de server.py/updater.py (hash Git), répare automatiquement un server.py ancien même si version.json est déjà à jour, et n'autorise plus preserve à bloquer le code de l'application."
 }
