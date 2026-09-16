@@ -2320,10 +2320,16 @@ def _gg_slug(name):
 
 def _gg_fetch_hero_page(name):
     slug=_gg_slug(name)
-    urls=[
-        f'https://www.ggnoluck.com/en/invokers/heroes/{slug}',
-        f'https://www.ggnoluck.com/en/invokers/guides/heroes/{slug}/build',
-    ]
+    slugs=[slug]
+    # Naming mismatch between the in-game roster and some public databases.
+    if str(name or '').strip().lower()=='roxxi and gum':
+        slugs=['roxxi-and-gum','roxxi-gumm','roxxi-gum','roxxi-and-gumm']
+    urls=[]
+    for s in slugs:
+        urls.extend([
+            f'https://www.ggnoluck.com/en/invokers/heroes/{s}',
+            f'https://www.ggnoluck.com/en/invokers/guides/heroes/{s}/build',
+        ])
     last=None
     for url in urls:
         try:
@@ -4514,6 +4520,16 @@ class H(BaseHTTPRequestHandler):
                 name=str(data.get('name') or '').strip()
                 r=apply_box_profile(name)
                 self.sendj(r,200 if r.get('ok') else 400); return
+            if p.path=='/api/aoe-import-one':
+                nbytes=int(self.headers.get('Content-Length','0') or 0); data=json.loads(self.rfile.read(nbytes).decode('utf-8') or '{}')
+                name=str(data.get('name') or '').strip()
+                if not name:self.sendj({'error':'Héros manquant'},400); return
+                try:
+                    d=_gg_extract_aoe_for_hero(name); saved=save_aoe_targets(name,d.get('targets') or {},'ggnoluck')
+                    self.sendj({'ok':True,'hero':name,'saved_actions':saved,'targets':d.get('targets') or {},'url':d.get('url'),'unresolved':d.get('unresolved') or []})
+                except Exception as e:
+                    self.sendj({'ok':False,'hero':name,'error':str(e)},400)
+                return
             if p.path=='/api/aoe-import-all':
                 self.sendj(import_ggnoluck_aoe_all()); return
             if p.path=='/api/aoe-targets':
