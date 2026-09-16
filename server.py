@@ -3696,6 +3696,101 @@ def _extract_live_arena_hall_values():
         'source':'StaticArenaData.HallBonuses live'
     }
 
+def scan_static_hall_cost_candidates():
+    """Read-only search for Hall medal-cost arrays near StaticArenaData.HallBonuses.
+
+    We already know the exact offsets of the 12 Hall bonus arrays. Costs are expected
+    to live in the same StaticArenaData object, so scan a bounded neighborhood for
+    15-level monotone integer arrays (Int32 / Int64). Nothing is written to game files.
+    """
+    try:
+        live=_extract_live_arena_hall_values()
+        if not live or not live.get('offsets'):
+            return {'ok':False,'error':'Bloc HallBonuses introuvable.'}
+        fp=live.get('file')
+        with _game_ro_open(fp,'rb') as fh:
+            data=fh.read()
+
+        pos=0
+        tag,version=struct.unpack_from('<II',data,pos); pos+=8
+        if tag!=0x50435A48:
+            return {'ok':False,'error':'static.data invalide'}
+        config_version,pos=_read_dotnet_string(data,pos)
+        shared_version,pos=_read_dotnet_string(data,pos)
+        header_size,header_result_size=struct.unpack_from('<ii',data,pos); pos+=8
+        header_blob,_=_brotli_decompress_bytes(data[pos:pos+header_size]); pos+=header_size
+        hdr=_parse_chunkpack_header_blob(header_blob)
+        main=None
+        for key,ch in zip(hdr['keys'],hdr['chunks']):
+            if key.get('category')==0 and key.get('id')==0:
+                main=ch; break
+        if not main:return {'ok':False,'error':'Chunk principal introuvable'}
+        s=pos+int(main['offset']); e=s+int(main['size'])
+        packed=data[s:e]
+        raw,_=_brotli_decompress_bytes(packed) if main.get('compressed') else (packed,None)
+
+        hall_offsets=list(live.get('offsets',{}).values())
+        hall_lo=min(hall_offsets); hall_hi=max(hall_offsets)+128
+        scan_lo=max(0,hall_lo-65536); scan_hi=min(len(raw),hall_hi+65536)
+        out=[]
+
+        def score_vals(vals,off,kind):
+            if len(vals)!=15:return
+            if not all(isinstance(v,int) for v in vals):return
+            if not all(0 < v <= 10000000 for v in vals):return
+            # Cost curves should be non-decreasing and have several distinct levels.
+            mono=all(vals[i]>=vals[i-1] for i in range(1,15))
+            if not mono:return
+            uniq=len(set(vals))
+            if uniq<4:return
+            # Prefer plausible progression rather than nearly-flat/random data.
+            increases=sum(1 for i in range(1,15) if vals[i]>vals[i-1])
+            if increases<5:return
+            dist=0 if hall_lo<=off<=hall_hi else min(abs(off-hall_lo),abs(off-hall_hi))
+            # Stronger score for proximity, positive monotone progression, and rounded values.
+            rounded=sum(1 for v in vals if v%5==0 or v%10==0 or v%25==0 or v%50==0 or v%100==0)
+            growth=(vals[-1]/max(1,vals[0]))
+            score=100000/(100+dist)+increases*4+rounded*1.5+min(30.0,growth)
+            out.append({'offset':off,'distance_to_hall':dist,'encoding':kind,'values':vals,
+                        'first':vals[0],'last':vals[-1],'growth':round(growth,3),
+                        'score':round(score,3)})
+
+        # Common MemoryPack unmanaged arrays: Int32 count=15 + payload.
+        marker=struct.pack('<i',15)
+        off=scan_lo
+        while True:
+            idx=raw.find(marker,off,scan_hi)
+            if idx<0:break
+            p=idx+4
+            if p+15*4<=scan_hi:
+                vals=list(struct.unpack_from('<15i',raw,p))
+                score_vals(vals,idx,'int32[15]')
+            if p+15*8<=scan_hi:
+                vals64=list(struct.unpack_from('<15q',raw,p))
+                if all(-(2**31)<=v<2**31 for v in vals64):
+                    score_vals([int(v) for v in vals64],idx,'int64[15]')
+            off=idx+1
+
+        # Also inspect raw 15x Int32 windows near Hall in case the list count is serialized elsewhere.
+        for idx in range(scan_lo,scan_hi-60,4):
+            try:vals=list(struct.unpack_from('<15i',raw,idx))
+            except Exception:continue
+            score_vals(vals,idx,'int32-window')
+
+        # De-duplicate same offset/values, return strongest candidates first.
+        seen=set(); ranked=[]
+        for row in sorted(out,key=lambda x:x['score'],reverse=True):
+            key=(row['offset'],tuple(row['values']))
+            if key in seen:continue
+            seen.add(key); ranked.append(row)
+            if len(ranked)>=80:break
+        return {'ok':True,'file':fp,'config_version':config_version,
+                'hall_span':{'start':hall_lo,'end':hall_hi},
+                'scan_span':{'start':scan_lo,'end':scan_hi},
+                'candidate_count':len(ranked),'candidates':ranked,**_game_readonly_status()}
+    except Exception as e:
+        return {'ok':False,'error':str(e),**_game_readonly_status()}
+
 def _refresh_live_arena_hall_values():
     global ARENA_HALL_VALUES,ARENA_HALL_SOURCE
     try:
@@ -4234,7 +4329,8 @@ HTML = r'''<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name
 <div class=note>Le boss et la durée sont ceux sélectionnés en haut de l'onglet Optimisation. La PRÉ est évaluée via les vrais tests PRÉ/RÉS et l'uptime réel des debuffs.</div>
 <h3>Coût des niveaux</h3>
 <div class=note>Entre le coût en médailles pour acheter chaque niveau 1→15, séparé par des virgules. Tant que cette table n'est pas renseignée, l'outil classe par gain DPS brut et n'invente aucun coût.</div>
-<div class=controls><div class=control style="min-width:650px"><label>Coûts niveaux 1→15</label><input id=trophyCosts placeholder="ex. coût niv1, niv2, ... niv15"></div><button id=trophyBtn>Optimiser la Salle</button></div>
+<div class=controls><div class=control style="min-width:650px"><label>Coûts niveaux 1→15</label><input id=trophyCosts placeholder="ex. coût niv1, niv2, ... niv15"></div><button id=trophyCostScanBtn>Chercher les coûts dans static.data</button><button id=trophyBtn>Optimiser la Salle</button></div>
+<div id=trophyCostScanStatus class=note></div><div id=trophyCostCandidates class=scroll></div>
 <div id=trophyStatus class=note></div>
 <div id=trophySummary class=grid></div>
 <h3>Priorité des prochains niveaux</h3><div id=trophyTable class=scroll></div>
@@ -4266,6 +4362,25 @@ function renderTrophyHeroes(){
   trophyHeroes.innerHTML=hs.map(h=>`<option value="${h.name}" ${previous.size?(previous.has(h.name)?'selected':''):'selected'}>${h.name} — ${h.role||''}</option>`).join('');
 }
 function trophySelected(){return [...trophyHeroes.selectedOptions].map(o=>o.value)}
+async function trophyCostScan(){
+  trophyCostScanBtn.disabled=true;
+  trophyCostScanStatus.textContent='Recherche des tableaux de coûts autour de StaticArenaData.HallBonuses…';
+  trophyCostCandidates.innerHTML='';
+  try{
+    let d=await api('/api/game-import/static-hall-cost-scan');
+    if(!d.ok)throw Error(d.error||'Scan impossible');
+    trophyCostScanStatus.textContent=d.candidate_count+' candidat(s) trouvés dans static.data '+(d.config_version||'')+'.';
+    let rows=(d.candidates||[]).slice(0,30);
+    trophyCostCandidates.innerHTML='<table><tr><th>#</th><th>Offset</th><th>Distance Hall</th><th>Encodage</th><th>Valeurs 1→15</th><th></th></tr>'+
+      rows.map((x,i)=>`<tr><td>${i+1}</td><td>${x.offset}</td><td>${x.distance_to_hall}</td><td>${x.encoding}</td><td>${x.values.join(', ')}</td><td><button data-cost-pick="${i}">Utiliser</button></td></tr>`).join('')+'</table>';
+    trophyCostCandidates.querySelectorAll('[data-cost-pick]').forEach(btn=>btn.onclick=()=>{
+      let x=rows[+btn.dataset.costPick]; if(!x)return;
+      trophyCosts.value=x.values.join(',');
+      trophyCostScanStatus.textContent='Candidat '+(+btn.dataset.costPick+1)+' chargé. Vérifie les coûts avant de lancer l’optimisation.';
+    });
+  }catch(e){trophyCostScanStatus.textContent='Erreur : '+e.message}
+  finally{trophyCostScanBtn.disabled=false}
+}
 async function trophyRun(){
   let b=bosses[optBoss.value]; if(!b){trophyStatus.textContent='Boss introuvable.';return}
   let names=trophySelected(); if(!names.length){trophyStatus.textContent='Sélectionne au moins un héros.';return}
@@ -4470,6 +4585,7 @@ let rankRun=0; async function rank(){const run=++rankRun;let b=bosses[rankBoss.v
 (async()=>{heroes=await api('/api/heroes');let n=heroes.map(x=>x.name);let ownedHeroNames=await api('/api/box-hero-names');relicProtectedHeroes.innerHTML=ownedHeroNames.map(x=>`<option value="${x}">${x}</option>`).join('');[heroSel,combatHero,aSel,bSel,optHero].forEach((e,i)=>opts(e,n,i===3?'Sildrea':'Senhachi'));opts(aoeHero,n,'Moros');renderAoeTargetInputs({});for(let e of [support1,support2,support3,support4,rankSupport1,rankSupport2,rankSupport3,rankSupport4])opts(e,['Aucun',...n],'Aucun');[support1,support2,support3,support4].forEach(e=>e.onchange=combat);[rankSupport1,rankSupport2,rankSupport3,rankSupport4].forEach(e=>e.onchange=rank);rankSupportMode.onchange=rank;rankElement.onchange=rank;addsMode.onchange=combat;bosses=await api('/api/boss-setups');titans=await api('/api/titans');[simBoss,optBoss,rankBoss,aoeBoss].forEach(e=>{Object.keys(bosses).forEach(x=>e.add(new Option(x,x)));e.value='Ulgorim 16'});optBoss.onchange=async()=>{await critAnalysis();await recAnalysis();await relicPotential()};rankBoss.onchange=rank;simBossCards.innerHTML=bossCards(bosses[simBoss.value]);simBoss.onchange=()=>{simBossCards.innerHTML=bossCards(bosses[simBoss.value]);simElement.value='Auto';combat();compare()};simElement.onchange=()=>{combat();compare()};build(heroBuild,'hero');levels(heroLevels,'heroLvl');levels(optLevels,'opt');trophyElement.onchange=renderTrophyHeroes;
 trophySelectAll.onclick=()=>[...trophyHeroes.options].forEach(o=>o.selected=true);
 trophyClear.onclick=()=>[...trophyHeroes.options].forEach(o=>o.selected=false);
+trophyCostScanBtn.onclick=trophyCostScan;
 trophyBtn.onclick=trophyRun;
 heroSel.onchange=hero;combatHero.onchange=combat;combatPreset.onchange=()=>{let notes={box:'Ma box : stats et niveaux réellement importés.',early:'Early : skills 1 · ATQ +30% · Crit 20% · Dég crit 50% · PRE +80 · Combo/Skill/Recovery/Mana +5%.',mid:'Mid : skills 5 · ATQ +80% · Crit 50% · Dég crit 75% · PRE +220 · Combo/Skill/Recovery/Mana +15%.',late:'Late : skills max · ATQ +150% · Crit 100% · Dég crit 120% · PRE +400 · Combo/Skill/Recovery/Mana +30%.'};combatPresetNote.textContent=notes[combatPreset.value]||'';combat();compare()};aSel.onchange=compare;bSel.onchange=compare;recFields(recCurrentStats,'recCur');recTestFields(recTestStats,'recTest');optHero.onchange=async()=>{await loadRecStats();await critAnalysis();await recAnalysis();await relicPotential()};[...new Set(heroes.map(x=>x.rarity).filter(Boolean))].sort().forEach(x=>rarity.add(new Option(x,x)));[...new Set(heroes.map(x=>x.role).filter(Boolean))].sort().forEach(x=>role.add(new Option(x,x)));rankMode.onchange=()=>{let notes={box:'Ma box : classement avec les builds réellement importés.',early:'Early : skills 1 · ATQ +30% · Crit 20% · Dég crit 50% · PRE +80 · Combo/Skill/Recovery/Mana +5%.',mid:'Mid : skills 5 · ATQ +80% · Crit 50% · Dég crit 75% · PRE +220 · Combo/Skill/Recovery/Mana +15%.',late:'Late : skills max · ATQ +150% · Crit 100% · Dég crit 120% · PRE +400 · Combo/Skill/Recovery/Mana +30%.'};rankModeNote.textContent=notes[rankMode.value]||'';rank()};combatBtn.onclick=combat;bestSupportMode.onchange=()=>{let notes={real:'Ma box : uniquement les héros que tu possèdes, avec leur vraie fiche importée.',base:'Stats de base : stats natives du héros et tous les skills niveau 1.',max:'Max support : stats natives, skills max, PRE 1000, Combo/Skill Speed/Recovery/Mana +30%.'};bestSupportModeNote.textContent=notes[bestSupportMode.value]||''};bestSupportBtn.onclick=bestSupports;cmpBtn.onclick=compare;critBtn.onclick=critAnalysis;recBtn.onclick=recAnalysis;recBalanceBtn.onclick=recBalance;relicOptBtn.onclick=relicOptimize;setOptBtn.onclick=setOptimize;potentialBtn.onclick=relicPotential;rankBtn.onclick=rank;aoeHero.onchange=async()=>{await loadAoeDefaults();await aoeCombatRun()};aoePreset.onchange=()=>{aoeCombatRun();aoeRankRun()};aoeEnemies.onchange=async()=>{await loadAoeDefaults();await aoeCombatRun();await aoeRankRun()};aoeBoss.onchange=()=>{aoeCombatRun();aoeRankRun()};aoeBtn.onclick=aoeCombatRun;aoeRankBtn.onclick=aoeRankRun;aoeSaveTargets.onclick=saveAoeTargets;aoeProbeStatic.onclick=probeAoeStatic;aoeImportAll.onclick=importAllAoe;importBoxBtn.onclick=importBoxOneClick;relicRefresh.onclick=loadRelics;[relicSlot,relicSet,relicEquipped,relicStat].forEach(e=>e.onchange=loadRelics);await loadRelics();await hero();await loadRecStats();await loadTrophyHeroes();await combat();await compare();await critAnalysis();await recAnalysis();await relicPotential();await loadAoeDefaults();await aoeCombatRun();await aoeRankRun();await rank()})().catch(e=>document.body.insertAdjacentHTML('beforeend',`<pre>${e.stack}</pre>`));
 </script></body></html>'''
@@ -4550,6 +4666,7 @@ class H(BaseHTTPRequestHandler):
             if p.path=='/api/game-import/static-cache': self.sendj(scan_static_data_cache()); return
             if p.path=='/api/game-import/static-pack': self.sendj(inspect_static_chunkpack()); return
             if p.path=='/api/game-import/static-hall-scan': self.sendj(scan_static_hall_f64_arrays()); return
+            if p.path=='/api/game-import/static-hall-cost-scan': self.sendj(scan_static_hall_cost_candidates()); return
             if p.path=='/api/game-import/static-hall-live': self.sendj({'ok':bool(_LIVE_ARENA_HALL_INFO),'source':ARENA_HALL_SOURCE,'live':_LIVE_ARENA_HALL_INFO,'values':ARENA_HALL_VALUES,**_game_readonly_status()}); return
             if p.path=='/api/game-import/player-arena-hall-raw': self.sendj(inspect_playerarena_hall_raw()); return
             if p.path=='/api/game-import/hero-skills-raw':
