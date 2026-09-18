@@ -1,11 +1,11 @@
 {
-  "version": "11.19",
+  "version": "11.20",
   "channel": "stable",
   "files": [
     {
       "path": "server.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.19",
-      "git_sha1": "494857599fc98bd5a85740e5e2ff17fdc453a9cc"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.20",
+      "git_sha1": "4bda3b8cd6912b0393e230ed7c3fe04373c55f86"
     },
     {
       "path": "awake_nodes.json",
@@ -63,5 +63,5 @@
       "git_sha1": "4b126eeeb546f54833ffcd048c35d77c22c83a46"
     }
   ],
-  "notes": "v11.19 : correction de la mitigation DEF. Le coefficient quadratique validé par les tests en jeu est 0.00000001245 (1.245e-8), et non 0.0000001245. La correction est appliquée au moteur principal et à l’évaluateur de supports."
+  "notes": "v11.20 : ajout d’un preset « Personnalisé » dans la Simulation de combat. Les stats finales et niveaux de skills saisis sont envoyés directement au moteur de combat sans modifier « Ma box ». Un bouton permet de recharger la fiche enregistrée."
 }
