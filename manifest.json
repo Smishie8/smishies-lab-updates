@@ -1,5 +1,5 @@
 {
-  "version": "11.28",
+  "version": "11.29",
   "channel": "stable",
   "files": [
     {
@@ -74,9 +74,9 @@
     },
     {
       "path": "boss_engine.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/boss_engine.py?v=11.28",
-      "git_sha1": "b788f2237c2695e402fda704d750369b318c0e6c"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/boss_engine.py?v=11.29",
+      "git_sha1": "725dd9e078336efd1c1b1ab61ff4ea4ace16642a"
     }
   ],
-  "notes": "v11.28 : catalogue des 9 Tactics ajouté à partir des écrans en jeu, avec masques, bonus de niveau 1 et bonus conditionnels de classe. Icônes verrouillées : bouclier=Tank, épée=DPS mêlée, arc=DPS distance, croix=Support. Les bonus grisés sont enregistrés comme conditionnels à la classe correspondante, pas comme bonus inactifs. L’application automatique reste désactivée tant que la correspondance exacte ID↔nom n’est pas prouvée pour les Tactics partageant le même masque. Tour reste fortement probable pour l’ID 13 grâce à son masque unique."
+  "notes": "v11.29 : correspondance exacte Tactic ID↔nom verrouillée à partir de captures PlayerBattleModel.dat successives en jeu. 11 Standard, 12 Mur de Pierre, 13 Tour, 14 Avant-garde, 15 Phalange, 16 Fer de lance, 17 Siège, 18 Artillerie, 19 Tireur d’élite. Le catalogue des bonus peut désormais être relié sans ambiguïté à l’ID de Tactic."
 }
