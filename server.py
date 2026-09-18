@@ -8,6 +8,8 @@ try:
         tactic_slot_mask as _tactic_slot_mask,
         tactic_lane as _tactic_lane,
         TACTIC_SLOT_MASKS_1302 as _TACTIC_SLOT_MASKS_1302,
+        TACTIC_ID_NAME_1302 as _TACTIC_ID_NAME_1302,
+        TACTIC_CATALOG_INGAME as _TACTIC_CATALOG_INGAME,
     )
 except Exception:
     _get_boss_profile=None
@@ -16,6 +18,8 @@ except Exception:
     _tactic_slot_mask=None
     _tactic_lane=None
     _TACTIC_SLOT_MASKS_1302={}
+    _TACTIC_ID_NAME_1302={}
+    _TACTIC_CATALOG_INGAME={}
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from html.parser import HTMLParser
 from html import unescape
@@ -1664,6 +1668,93 @@ def survival_stats_for(name, override=None):
             'source':'box_exact'
         }
     return {'name':name,'health':None,'defense':None,'resistance':None,'source':'missing'}
+
+def _normalize_tactic_class(role):
+    """Normalize DB role names to the four class icons shown by the game."""
+    raw=unicodedata.normalize('NFKD',str(role or '')).encode('ascii','ignore').decode('ascii').strip().lower()
+    if raw in ('tank','defender'): return 'Tank'
+    if raw in ('melee','dps melee','dps-melee','melee dps'): return 'DPS mêlée'
+    if raw in ('range','ranged','dps distance','dps ranged','distance'): return 'DPS distance'
+    if raw in ('support','healer'): return 'Support'
+    return str(role or '')
+
+def _dynamic_team_stats_for(name, override=None):
+    """Full known stats for the dynamic-team engine; never fabricates HP/DEF."""
+    base=survival_stats_for(name,override)
+    bx=box_hero_for_name(name) or {}
+    fs=((bx.get('box_build') or {}).get('final_stats') or {})
+    p=profile_for(name) or {}
+    src=fs if fs else p
+    for k in ('atk','crit_rate','crit_dmg','accuracy','combo_speed','skill_speed','skill_recovery','mana_gen'):
+        if src.get(k) is not None:
+            base[k]=num(src.get(k))
+    if override:
+        for k in ('atk','crit_rate','crit_dmg','accuracy','resistance','combo_speed','skill_speed','skill_recovery','mana_gen'):
+            if override.get(k) is not None:
+                base[k]=num(override.get(k))
+    return base
+
+def _apply_tactic_to_member(member,tactic_id):
+    """Apply only tactic bonuses proven from the in-game tactic cards."""
+    out=dict(member or {})
+    tid=int(tactic_id or 0)
+    name=_TACTIC_ID_NAME_1302.get(tid)
+    cfg=_TACTIC_CATALOG_INGAME.get(name) if name else None
+    out['tactic_id']=tid
+    out['tactic_name']=name
+    out['tactic_bonuses_applied']=[]
+    out['tactic_bonuses_skipped']=[]
+    if not cfg:
+        return out
+    lane=str(out.get('lane') or '').lower()
+    role=_normalize_tactic_class(out.get('class'))
+    before={k:out.get(k) for k in ('health','defense','atk','crit_rate','accuracy','resistance','combo_speed','skill_speed','skill_recovery','mana_gen')}
+    out['tactic_stats_before']=before
+    out.setdefault('damage_taken_pct',0.0)
+    out.setdefault('heal_amount_pct',0.0)
+    out.setdefault('shield_value_pct',0.0)
+    out.setdefault('def_ignore_pct',0.0)
+    for bonus in ((cfg.get('bonuses') or {}).get(lane) or []):
+        b=dict(bonus)
+        required=b.get('conditional_class')
+        if required and role!=required:
+            out['tactic_bonuses_skipped'].append({**b,'reason':'class_mismatch','hero_class':role})
+            continue
+        stat=b.get('stat'); v=num(b.get('value'))
+        if stat=='hp_pct' and out.get('health') is not None:
+            out['health']=num(out.get('health'))*(1+v)
+        elif stat=='def_pct' and out.get('defense') is not None:
+            out['defense']=num(out.get('defense'))*(1+v)
+        elif stat=='atk_pct' and out.get('atk') is not None:
+            out['atk']=num(out.get('atk'))*(1+v)
+        elif stat=='crit_rate':
+            out['crit_rate']=num(out.get('crit_rate'))+v
+        elif stat=='accuracy':
+            out['accuracy']=num(out.get('accuracy'))+v
+        elif stat=='resistance':
+            out['resistance']=num(out.get('resistance'))+v
+        elif stat=='combo_speed_points':
+            out['combo_speed']=combo_points_to_pct(combo_pct_to_points(num(out.get('combo_speed')))+v)
+        elif stat=='skill_speed_points':
+            out['skill_speed']=skill_points_to_pct(skill_pct_to_points(num(out.get('skill_speed')))+v)
+        elif stat=='skill_recovery_points':
+            out['skill_recovery']=recovery_points_to_pct(recovery_pct_to_points(num(out.get('skill_recovery')))+v)
+        elif stat=='mana_gen_points':
+            out['mana_gen']=mana_points_to_pct(mana_pct_to_points(num(out.get('mana_gen')))+v)
+        elif stat=='damage_taken_pct':
+            out['damage_taken_pct']=num(out.get('damage_taken_pct'))+v
+        elif stat=='heal_amount_pct':
+            out['heal_amount_pct']=num(out.get('heal_amount_pct'))+v
+        elif stat=='shield_value_pct':
+            out['shield_value_pct']=num(out.get('shield_value_pct'))+v
+        elif stat=='def_ignore_pct':
+            out['def_ignore_pct']=num(out.get('def_ignore_pct'))+v
+        else:
+            out['tactic_bonuses_skipped'].append({**b,'reason':'stat_unavailable'})
+            continue
+        out['tactic_bonuses_applied'].append({**b,'hero_class':role})
+    out['tactic_stats_after']={k:out.get(k) for k in ('health','defense','atk','crit_rate','accuracy','resistance','combo_speed','skill_speed','skill_recovery','mana_gen','damage_taken_pct','heal_amount_pct','shield_value_pct','def_ignore_pct')}
+    return out
 
 def num(v,default=0.0):
     try:
@@ -5195,16 +5286,19 @@ class H(BaseHTTPRequestHandler):
                                     _pos=int(f'position{_i}' in qs and qs.get(f'position{_i}',['0'])[0] or 0)
                                     _lane=qs.get(f'lane{_i}',[_tactic_lane(_pos) if _tactic_lane else 'mid'])[0]
                                     _ov=st if _hn==name else None
-                                    _ss=survival_stats_for(_hn,_ov)
+                                    _ss=_dynamic_team_stats_for(_hn,_ov)
                                     _ss['lane']=_lane
                                     _ss['position']=_pos
                                     _ss['tactic_slot']=_i
                                     _hr=hero_row(_hn) or {}
-                                    _ss['class']=_hr.get('role') or ''
+                                    _ss['class']=_normalize_tactic_class(_hr.get('role') or '')
                                     _team.append(_ss)
                                 _weights={'front':f('aggro_front',5),'mid':f('aggro_mid',2),'back':f('aggro_back',1)}
                                 r['tactic_id']=int(f('tactic_id',11))
+                                r['tactic_name']=_TACTIC_ID_NAME_1302.get(r['tactic_id'])
                                 r['tactic_positions']=(_tactic_slot_mask(r['tactic_id']) if _tactic_slot_mask else [])
+                                _team=[_apply_tactic_to_member(x,r['tactic_id']) for x in _team]
+                                r['dynamic_team']=_team
                                 r['boss_survival']=_simulate_opening_survival(_bp,_team,f('boss_atk',0),dur,_weights)
                     base=simulate_combat(name,combat_lv,dur,f('boss',1320),f('boss_res',0),f('boss_hp',0),f('boss_atk',0),qs.get('element',['Neutre'])[0],**b)
                     base_dps=base['dps'] if base else r['dps']
