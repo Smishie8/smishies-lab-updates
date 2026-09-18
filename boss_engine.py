@@ -280,10 +280,10 @@ TACTIC_CLASS_ICON_MAP = {
     "cross": "Support",
 }
 
-# Names, masks and level-1 bonuses visible in-game.  Names are intentionally
-# NOT bound to tactic IDs yet when several IDs share the same mask.
-# "conditional_class" means the bonus is only granted when the hero class
-# matches the icon displayed by the game for that lane.
+# Names, masks and level-1 bonuses visible in-game. Exact IDs are bound below
+# from successive PlayerBattleModel captures.
+# "conditional_class" means the bonus is granted only when the hero class
+# matches the icon attached to that bonus in the in-game tactic card.
 TACTIC_CATALOG_INGAME = {
     "Standard": {
         "mask": [11,21,22,31,32],
