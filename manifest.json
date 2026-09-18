@@ -1,11 +1,11 @@
 {
-  "version": "11.21",
+  "version": "11.22",
   "channel": "stable",
   "files": [
     {
       "path": "server.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.21",
-      "git_sha1": "73fdc553c9ba6a13697e8d3d50641e3ff4556c17"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.22",
+      "git_sha1": "0f6ebc2ce3e9236d90cb360a370996df32708032"
     },
     {
       "path": "awake_nodes.json",
@@ -71,7 +71,12 @@
       "path": "_v1121_auto222_b64.part02",
       "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/_v1121_auto222_b64.part02?v=11.21",
       "git_sha1": "808425dbf0c4a84861fad0f386ca84892a666f42"
+    },
+    {
+      "path": "boss_engine.py",
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/boss_engine.py?v=11.22",
+      "git_sha1": "ae04e5d86d023fb307fcc6687c438550fd67dc7b"
     }
   ],
-  "notes": "v11.21 : table complète des timings réels Auto 1→5 pour les 222 Invokers. Smishie’s Lab remplace automatiquement l’ancien auto_timings.json de 90 héros par la table complète au démarrage. Les 90 anciennes entrées ont été vérifiées identiques à la nouvelle extraction."
+  "notes": "v11.22 : fondations du moteur boss dynamique. Ulgorim est mappé à BOSS_OGR049 avec son ouverture, ses cooldowns, ses mécaniques, ses totems et ses phases 66%/33%. L’interface Combat affiche désormais le profil boss dynamique et distingue explicitement les timings résolus des timings encore manquants, sans inventer de valeurs."
 }
