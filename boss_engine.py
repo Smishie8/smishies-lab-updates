@@ -599,8 +599,26 @@ def simulate_opening_survival(profile: BossProfile, team: List[dict], boss_atk: 
             "resistance":float(m.get("resistance") or 0),
             "source":m.get("source") or "unknown",
             "lane":str(m.get("lane") or "mid").strip().lower(),
+            "position":m.get("position"),
             "tactic_slot":m.get("tactic_slot",slot),
             "class":m.get("class") or "",
+            "tactic_id":m.get("tactic_id"),
+            "tactic_name":m.get("tactic_name"),
+            "tactic_bonuses_applied":list(m.get("tactic_bonuses_applied") or []),
+            "tactic_bonuses_skipped":list(m.get("tactic_bonuses_skipped") or []),
+            "tactic_stats_before":dict(m.get("tactic_stats_before") or {}),
+            "tactic_stats_after":dict(m.get("tactic_stats_after") or {}),
+            "atk":float(m.get("atk") or 0),
+            "accuracy":float(m.get("accuracy") or 0),
+            "crit_rate":float(m.get("crit_rate") or 0),
+            "combo_speed":float(m.get("combo_speed") or 0),
+            "skill_speed":float(m.get("skill_speed") or 0),
+            "skill_recovery":float(m.get("skill_recovery") or 0),
+            "mana_gen":float(m.get("mana_gen") or 0),
+            "damage_taken_pct":float(m.get("damage_taken_pct") or 0),
+            "heal_amount_pct":float(m.get("heal_amount_pct") or 0),
+            "shield_value_pct":float(m.get("shield_value_pct") or 0),
+            "def_ignore_pct":float(m.get("def_ignore_pct") or 0),
             "alive":True,
             "death_s":None,
             "corruption":0,
@@ -636,7 +654,9 @@ def simulate_opening_survival(profile: BossProfile, team: List[dict], boss_atk: 
             s=states[idx]
             if not s.get("alive"):
                 continue
-            dmg=raw*_incoming_damage_multiplier(s["defense"])
+            defense_mult=_incoming_damage_multiplier(s["defense"])
+            tactic_taken_mult=max(0.0,1.0+float(s.get("damage_taken_pct") or 0.0))
+            dmg=raw*defense_mult*tactic_taken_mult
             before=s["hp"]
             s["hp"]=max(0.0,before-dmg)
             s["damage_taken"]+=dmg
@@ -649,6 +669,8 @@ def simulate_opening_survival(profile: BossProfile, team: List[dict], boss_atk: 
                 "name":s["name"],
                 "hp_before":before,
                 "damage":dmg,
+                "defense_multiplier":defense_mult,
+                "tactic_damage_taken_multiplier":tactic_taken_mult,
                 "hp_after":s["hp"],
                 "corruption":s["corruption"],
                 "dead":not s["alive"],
