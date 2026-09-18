@@ -1,11 +1,11 @@
 {
-  "version": "11.27",
+  "version": "11.28",
   "channel": "stable",
   "files": [
     {
       "path": "server.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.27",
-      "git_sha1": "fcc91e0693574f8e5c28beeb10d93fe792a08bff"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.28",
+      "git_sha1": "bc02fb019415922a80792176b7d96bd2fd2f3419"
     },
     {
       "path": "awake_nodes.json",
@@ -74,9 +74,9 @@
     },
     {
       "path": "boss_engine.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/boss_engine.py?v=11.27",
-      "git_sha1": "25e5b5ac478edfbaf55c47de132daed7d96a1216"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/boss_engine.py?v=11.28",
+      "git_sha1": "b788f2237c2695e402fda704d750369b318c0e6c"
     }
   ],
-  "notes": "v11.27 : revalidation PlayerBattleModel.dat sur 1 423 snapshots. Les mappings Tactic 11→19 vers leurs masques de 5 positions sont uniques dans l’échantillon et exposés comme prouvés pour ce fichier. Le 6e champ membre est désormais exposé brut seulement : il varie pour une même formation et n’est plus interprété comme ordre/slot. Les noms Front/Mid/Back restent fortement probables, tandis que bonus de classe, coordonnées XY et aggro exacte restent non décodés. Suppression des fallbacks silencieux Tactic inconnue→11 et position inconnue→Mid. Coefficients de dégâts Ulgorim explicitement marqués proxy/provisoires."
+  "notes": "v11.28 : catalogue des 9 Tactics ajouté à partir des écrans en jeu, avec masques, bonus de niveau 1 et bonus conditionnels de classe. Icônes verrouillées : bouclier=Tank, épée=DPS mêlée, arc=DPS distance, croix=Support. Les bonus grisés sont enregistrés comme conditionnels à la classe correspondante, pas comme bonus inactifs. L’application automatique reste désactivée tant que la correspondance exacte ID↔nom n’est pas prouvée pour les Tactics partageant le même masque. Tour reste fortement probable pour l’ID 13 grâce à son masque unique."
 }
