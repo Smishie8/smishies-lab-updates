@@ -1,11 +1,11 @@
 {
-  "version": "11.26",
+  "version": "11.27",
   "channel": "stable",
   "files": [
     {
       "path": "server.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.26",
-      "git_sha1": "4121a596269e0978507d599318dee6ffaefd21f0"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.27",
+      "git_sha1": "fcc91e0693574f8e5c28beeb10d93fe792a08bff"
     },
     {
       "path": "awake_nodes.json",
@@ -74,9 +74,9 @@
     },
     {
       "path": "boss_engine.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/boss_engine.py?v=11.26",
-      "git_sha1": "b98dc2242560ded5654586640a3164085bf4aa11"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/boss_engine.py?v=11.27",
+      "git_sha1": "25e5b5ac478edfbaf55c47de132daed7d96a1216"
     }
   ],
-  "notes": "v11.26 : décodage PlayerBattleModel intégré. Les équipes à 5 héros utilisent bien une grille 3×2 avec positions 11/12 (Front), 21/22 (Mid), 31/32 (Back). Les Tactics observées 11 à 19 sont maintenant proposées avec leur masque exact de 5 cases. Un bouton charge directement la dernière formation détectée dans PlayerBattleModel.dat. Le moteur de ciblage exploite les cases/lignes réelles; les bonus de classe propres aux Tactics restent désactivés jusqu’à décodage fiable."
+  "notes": "v11.27 : revalidation PlayerBattleModel.dat sur 1 423 snapshots. Les mappings Tactic 11→19 vers leurs masques de 5 positions sont uniques dans l’échantillon et exposés comme prouvés pour ce fichier. Le 6e champ membre est désormais exposé brut seulement : il varie pour une même formation et n’est plus interprété comme ordre/slot. Les noms Front/Mid/Back restent fortement probables, tandis que bonus de classe, coordonnées XY et aggro exacte restent non décodés. Suppression des fallbacks silencieux Tactic inconnue→11 et position inconnue→Mid. Coefficients de dégâts Ulgorim explicitement marqués proxy/provisoires."
 }
