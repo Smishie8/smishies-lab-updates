@@ -1,11 +1,11 @@
 {
-  "version": "11.24",
+  "version": "11.25",
   "channel": "stable",
   "files": [
     {
       "path": "server.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.24",
-      "git_sha1": "33faedae8e15ca7bdec08eb428f515b19908cb5d"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.25",
+      "git_sha1": "92f9c0aa395a5b839bb4859b1b117651f4973da1"
     },
     {
       "path": "awake_nodes.json",
@@ -74,9 +74,9 @@
     },
     {
       "path": "boss_engine.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/boss_engine.py?v=11.24",
-      "git_sha1": "20a8cbc4d8696033a5712f2c1b81d9076e9cbd8e"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/boss_engine.py?v=11.25",
+      "git_sha1": "e3ea456755400b6e8310e8d3edaca7ea60ae29d7"
     }
   ],
-  "notes": "v11.24 : première simulation de survie équipe contre Ulgorim. Les PV/DEF réels de la box sont chargés pour le carry et les supports, les dégâts de l’ouverture S1/S2/Auto1-3 sont appliqués avec la formule DEF validée, la Corruption est suivie et les morts sont détectées. L’interface affiche PV finaux, dégâts reçus et événements entrants. S2 est exact; S1/autos utilisent encore un proxy de ciblage tant que les positions/mouvements ne sont pas simulés. Putréfaction périodique, soins/boucliers, Warchant et rotation récurrente restent à brancher."
+  "notes": "v11.25 : la simulation dynamique passe à une vraie équipe de 5 slots. Chaque slot choisit un héros et une ligne Front/Mid/Back. Les stats PV/DEF réelles sont chargées individuellement. Ulgorim cible désormais S1 selon l’éloignement de ligne (Back > Mid > Front), S2 touche toute l’équipe, et les autos mono-cible utilisent un poids Front/Mid/Back configurable tant que la formule d’aggro exacte du jeu n’est pas décodée. Les bonus de Tactics/classe ne sont pas inventés et restent désactivés jusqu’à extraction."
 }
