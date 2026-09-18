@@ -259,34 +259,61 @@ def _living_indices(states):
     return [i for i,s in enumerate(states) if s.get("alive")]
 
 
-def _proxy_targets(action_key: str, states: List[dict]) -> List[int]:
-    """Temporary deterministic target resolver.
+def _lane_rank(lane: str) -> int:
+    return {"front":0,"mid":1,"back":2}.get(str(lane or "").strip().lower(),1)
 
-    The game uses positions for S1 / single target / 13 m AoE.  Smishie's Lab
-    does not yet simulate movement coordinates, so this resolver is only a
-    reproducible placeholder:
-      - all: every living hero
-      - 2 farthest: last two living team slots
-      - single: first living team slot
-      - 13 m AoE: every living hero
-    Every result produced with this resolver is marked target_proxy=True.
+
+def _weighted_lane_target(states: List[dict], seed: int,
+                          lane_weights: Optional[Dict[str,float]]=None) -> List[int]:
+    """Deterministic weighted target proxy until the game's exact aggro formula is decoded."""
+    weights={"front":5.0,"mid":2.0,"back":1.0}
+    if lane_weights:
+        for k,v in lane_weights.items():
+            try: weights[str(k).lower()]=max(0.0,float(v))
+            except Exception: pass
+    alive=_living_indices(states)
+    if not alive:return []
+    pool=[]
+    total=0.0
+    for i in alive:
+        lane=str(states[i].get("lane") or "mid").lower()
+        w=max(0.0,weights.get(lane,1.0))
+        total+=w
+        pool.append((i,total))
+    if total<=0:return [alive[0]]
+    # Stable pseudo-random value without importing Python's randomized hash().
+    x=((seed*1103515245 + 12345) & 0x7fffffff)/2147483648.0
+    pick=x*total
+    for i,edge in pool:
+        if pick<edge:return [i]
+    return [pool[-1][0]]
+
+
+def _proxy_targets(action_key: str, states: List[dict], seed: int=1,
+                   lane_weights: Optional[Dict[str,float]]=None) -> List[int]:
+    """Lane-aware target resolver.
+
+    Exact position coordinates / aggro code are not decoded yet.  Known spatial
+    semantics are preserved:
+      - S2: all living heroes.
+      - S1 'two farthest': Back > Mid > Front, then stable slot order.
+      - single-target autos: weighted toward Front by configurable provisional weights.
+      - Auto3 13 m AoE: still all living heroes until XY coordinates are available.
     """
     alive=_living_indices(states)
-    if not alive:
-        return []
-    if action_key=="s2":
-        return alive
+    if not alive:return []
+    if action_key=="s2":return alive
     if action_key=="s1":
-        return alive[-2:]
+        return sorted(alive,key=lambda i:(_lane_rank(states[i].get("lane")),states[i].get("slot",0)),reverse=True)[:2]
     if action_key in ("auto1","auto2"):
-        return alive[:1]
-    if action_key=="auto3":
-        return alive
+        return _weighted_lane_target(states,seed,lane_weights)
+    if action_key=="auto3":return alive
     return []
 
 
 def simulate_opening_survival(profile: BossProfile, team: List[dict], boss_atk: float,
-                              duration: Optional[float]=None) -> dict:
+                              duration: Optional[float]=None,
+                              lane_weights: Optional[Dict[str,float]]=None) -> dict:
     """Apply Ulgorim's validated opening damage to real HP/DEF team states.
 
     V1 deliberately stops after the validated opening.  It does not yet model
@@ -313,6 +340,9 @@ def simulate_opening_survival(profile: BossProfile, team: List[dict], boss_atk: 
             "defense":float(defense or 0),
             "resistance":float(m.get("resistance") or 0),
             "source":m.get("source") or "unknown",
+            "lane":str(m.get("lane") or "mid").strip().lower(),
+            "tactic_slot":m.get("tactic_slot",slot),
+            "class":m.get("class") or "",
             "alive":True,
             "death_s":None,
             "corruption":0,
@@ -340,7 +370,7 @@ def simulate_opening_survival(profile: BossProfile, team: List[dict], boss_atk: 
                 "type":"mechanic","targets":[],"note":"Aucun dégât direct appliqué dans cette version.",
             })
             continue
-        target_ids=_proxy_targets(key,states)
+        target_ids=_proxy_targets(key,states,seed=int(ev["n"] or 1),lane_weights=lane_weights)
         rows=[]
         raw_pct=float(model.get("normal_atk_pct") or 0)+float(model.get("putrefaction_atk_pct") or 0)
         raw=atk*raw_pct/100.0
@@ -393,7 +423,8 @@ def simulate_opening_survival(profile: BossProfile, team: List[dict], boss_atk: 
         "events":events,
         "missing_members":missing,
         "targeting_validated":False,
-        "targeting_note":"S2 touche toute l'équipe et est exact. S1/autos utilisent encore un proxy de ciblage faute de positions simulées.",
+        "lane_weights":lane_weights or {"front":5.0,"mid":2.0,"back":1.0},
+        "targeting_note":"S2 est exact. S1 respecte Back > Mid > Front pour approximer les 2 plus éloignés. Les autos mono-cible utilisent encore des poids provisoires Front/Mid/Back tant que l'aggro exacte n'est pas décodée.",
         "not_yet_modeled":[
             "positions / distances réelles",
             "ticks périodiques de Putréfaction",
