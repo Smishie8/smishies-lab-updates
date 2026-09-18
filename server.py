@@ -4299,6 +4299,84 @@ def inspect_box_hero_skilllevels(name):
     except Exception as e:
         return {'ok':False,'hero':name,'file':fp,'error':str(e),**_game_readonly_status()}
 
+
+def decode_playerbattle_formations(limit=60):
+    """Decode observed team/tactic formations from PlayerBattleModel.dat (read-only).
+
+    PlayerBattleModel 0.60.1302 stores a compact five-member team object:
+      member0 = tactic/formation id
+      member1 = list of 5 battle members
+      member4 = a position code used by battle state (kept as focus_position)
+    Each battle member starts with a position code (11/12/21/22/31/32) and
+    contains the hero inventory id in the second field.
+    """
+    fp=_find_aggregate_snapshot('PlayerBattleModel.dat')
+    if not fp:
+        return {'ok':False,'error':'PlayerBattleModel.dat introuvable',**_game_readonly_status()}
+    try:
+        with _game_ro_open(fp,'rb') as fh:data=fh.read()
+        inv_names={}
+        try:
+            ensure_box_tables()
+            inv_names={int(x.get('inventory_id')):x.get('hero_name') for x in q('SELECT inventory_id,hero_name FROM box_heroes WHERE inventory_id IS NOT NULL')}
+        except Exception:
+            inv_names={}
+        rows=[]
+        sig=bytes([6,4,8,16,8,16,4])
+        for s in range(len(data)):
+            if data[s]!=5: continue
+            try:
+                mc,lens,vals,end=_mp_vt(data,s)
+            except Exception:
+                continue
+            if mc!=5 or lens[0]!=4 or lens[2]!=0 or lens[3]!=0 or lens[4]!=4: continue
+            if lens[1] < 4 or (lens[1]-4)%63: continue
+            n=(lens[1]-4)//63
+            if n!=5: continue
+            ls,le=vals[1]
+            if _mp_i32(data,(ls,ls+4))!=5: continue
+            p=ls+4; members=[]; good=True
+            for idx in range(5):
+                if data[p:p+7]!=sig:
+                    good=False; break
+                pos=struct.unpack_from('<i',data,p+7)[0]
+                inv=struct.unpack_from('<i',data,p+15)[0]
+                if pos not in (11,12,21,22,31,32):
+                    good=False; break
+                members.append({'slot_index':idx+1,'position':pos,'lane':('front' if pos<20 else 'mid' if pos<30 else 'back'),
+                                'inventory_id':inv,'hero_name':inv_names.get(inv)})
+                p+=63
+            if not good: continue
+            tactic=_mp_i32(data,vals[0]); focus=_mp_i32(data,vals[4])
+            rows.append({'offset':s,'tactic_id':tactic,'focus_position':focus,'members':members,
+                         'positions':[x['position'] for x in members],
+                         'hero_names':[x.get('hero_name') for x in members]})
+        # Exact repeated snapshots are common. Keep the last occurrence of each
+        # consecutive state while preserving chronology.
+        dedup=[]
+        prev=None
+        for row in rows:
+            key=(row['tactic_id'],tuple((m['position'],m['inventory_id']) for m in row['members']),row['focus_position'])
+            if key==prev:
+                if dedup: dedup[-1]=row
+            else:
+                dedup.append(row); prev=key
+        tactic_counts={}
+        tactic_masks={}
+        for row in rows:
+            tid=int(row.get('tactic_id') or 0)
+            if 11<=tid<=19:
+                tactic_counts[tid]=tactic_counts.get(tid,0)+1
+                tactic_masks.setdefault(tid,row['positions'])
+        return {'ok':True,'file':fp,'raw_formation_count':len(rows),'unique_state_count':len(dedup),
+                'tactic_counts':tactic_counts,'tactic_masks':tactic_masks,
+                'latest':(dedup[-1] if dedup else None),'recent':dedup[-max(1,min(int(limit or 60),200)):],
+                'position_lanes':{11:'front',12:'front',21:'mid',22:'mid',31:'back',32:'back'},
+                'read_only':True,
+                'note':'Décodage empirique PlayerBattleModel 0.60.1302. Les bonus de classe des Tactics ne sont pas encore décodés.'}
+    except Exception as e:
+        return {'ok':False,'file':fp,'error':str(e),**_game_readonly_status()}
+
 def _decode_playerheroes_file(fp):
     with _game_ro_open(fp,'rb') as f:data=f.read()
     # Snapshot wrapper observed in the game's aggregate_snapshots: 25-byte envelope.
@@ -4567,7 +4645,7 @@ HTML = r'''<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name
 <h3>Stats du boss</h3><div class=controls><div class=control><label>Boss</label><select id=simBoss></select></div><div class=control><label>Élément du boss</label><select id=simElement><option value=Auto>Auto (preset)</option><option value=Neutre>Neutre</option><option value=Fire>Feu</option><option value=Water>Eau</option><option value=Earth>Terre</option><option value=Wind>Vent</option><option value=Light>Lumière</option><option value=Dark>Ténèbres</option><option value=Astral>Astral</option></select></div><div class=control><label>Durée</label><input id=simDur type=number value=120></div></div><div id=simBossCards class=grid></div>
 <h3>Moteur boss dynamique</h3><div id=bossDynamicStatus class=note>Chargement du profil dynamique…</div><div id=bossDynamicSummary class=grid></div><div id=bossDynamicActions class=scroll></div>
 <h3>Build du héros</h3><div class=controls><div class=control><label>Héros principal</label><select id=combatHero></select></div><div class=control><label>Preset</label><select id=combatPreset><option value=box>Ma box</option><option value=custom>Personnalisé</option><option value=early>Early game</option><option value=mid>Mid game</option><option value=late>Late game</option></select></div></div><div class=note id=combatPresetNote>Ma box : stats et niveaux réellement importés.</div><div id=combatCustom class=hidden><h4>Stats personnalisées</h4><div class=note>Ces valeurs sont utilisées directement par la simulation de combat sans modifier ta fiche « Ma box ».</div><div id=combatCustomStats class=levels></div><h4>Niveaux des skills personnalisés</h4><div id=combatCustomLevels class=levels></div><div class=controls><button id=combatCustomReload>Recharger depuis ma fiche</button></div></div><h4>Stats du héros principal utilisées</h4><div id=simHeroStats class=grid></div><h4>Niveaux des skills utilisés</h4><div id=simHeroLevels class=grid></div>
-<h3>Équipe dynamique — 5 héros</h3><div class=note>PlayerBattleModel confirme une grille 3×2 : 11/12 = Front, 21/22 = Mid, 31/32 = Back. Les Tactics 11→19 utilisent chacune 5 de ces 6 cases. Les bonus de classe ne sont pas encore appliqués tant qu'ils ne sont pas décodés.</div><div class=controls><div class=control><label>Tactic observée</label><select id=tacticSelect></select></div><div class=control><label>Poids Front</label><input id=aggroFront type=number step=.1 value=5></div><div class=control><label>Poids Mid</label><input id=aggroMid type=number step=.1 value=2></div><div class=control><label>Poids Back</label><input id=aggroBack type=number step=.1 value=1></div></div><div id=dynamicTeam class=levels></div>
+<h3>Équipe dynamique — 5 héros</h3><div class=note>PlayerBattleModel confirme une grille 3×2 : 11/12 = Front, 21/22 = Mid, 31/32 = Back. Les Tactics 11→19 utilisent chacune 5 de ces 6 cases. Les bonus de classe ne sont pas encore appliqués tant qu'ils ne sont pas décodés.</div><div class=controls><div class=control><label>Tactic observée</label><select id=tacticSelect></select></div><button id=loadLastFormationBtn>Charger la dernière formation du jeu</button><div class=control><label>Poids Front</label><input id=aggroFront type=number step=.1 value=5></div><div class=control><label>Poids Mid</label><input id=aggroMid type=number step=.1 value=2></div><div class=control><label>Poids Back</label><input id=aggroBack type=number step=.1 value=1></div></div><div id=dynamicTeam class=levels></div>
 <h3>Buffers</h3><div class=controls><div class=control><label>Buffer 1</label><select id=support1></select></div><div class=control><label>Buffer 2</label><select id=support2></select></div><div class=control><label>Buffer 3</label><select id=support3></select></div><div class=control><label>Buffer 4</label><select id=support4></select></div><div class=control><label>Adds / minions</label><select id=addsMode><option value=none>Aucun</option><option value=rare>Rares</option><option value=frequent>Fréquents</option></select></div><button id=combatBtn>Lancer la simulation</button></div>
 <div class=note>Chaque buffer utilise sa propre fiche enregistrée, sa rotation et ses conditions réelles. Les buffs d'une même famille ne se cumulent pas : le plus fort est actif.</div><div id=supportBuilds class=support-grid></div>
 <h3>Résumé combat</h3><div id=combatSummary class=grid></div><h3>Apport des buffers</h3><div id=supportContribution class=scroll></div><h3>Buffs équipe / débuffs boss</h3><div id=teamBuffTable class=scroll></div><div id=combatNote class=note></div><h3>Survie équipe — ouverture boss</h3><div id=teamSurvivalStatus class=note>Chargement…</div><div id=teamSurvivalCards class=grid></div><div id=teamSurvivalTable class=scroll></div><div id=teamSurvivalEvents class=scroll></div><h3>Timeline globale (prototype)</h3><div class=note>Le carry et le boss partagent la même horloge. La survie V1 applique déjà les dégâts d'ouverture d'Ulgorim avec les PV/DEF réels disponibles. Le ciblage positionnel reste encore un proxy.</div><div id=globalCombatTable class=scroll></div><h3>Timeline du carry</h3><div id=combatTable class=scroll></div></div>
@@ -4758,6 +4836,7 @@ let combatCustomLoadedHero='';
 let tacticMasks={11:[11,21,22,31,32],12:[11,12,21,31,32],13:[11,12,21,22,31],14:[11,21,22,31,32],15:[11,12,21,31,32],16:[11,21,22,31,32],17:[11,21,22,31,32],18:[11,12,21,31,32],19:[11,21,22,31,32]};
 function posLane(p){p=+p;return p<20?'front':p<30?'mid':'back'}
 function renderDynamicTeam(){let defaults=[combatHero.value,support1.value,support2.value,support3.value,support4.value].map(x=>x==='Aucun'?'':x);let tid=+(tacticSelect.value||11),slots=tacticMasks[tid]||tacticMasks[11];dynamicTeam.innerHTML=slots.map((pos,i)=>`<div class=control><label>Case ${pos} · ${posLane(pos)==='front'?'Front':posLane(pos)==='mid'?'Mid':'Back'}</label><select id=teamHero${i+1} data-pos="${pos}"><option value="">— choisir —</option>${heroes.map(h=>`<option value="${h.name}" ${h.name===defaults[i]?'selected':''}>${h.name}</option>`).join('')}</select></div>`).join('');for(let i=1;i<=5;i++){let e=document.getElementById('teamHero'+i);if(e)e.onchange=combat;}}
+async function loadLastBattleFormation(){let d=await api('/api/game-import/battle-formations');if(!d.ok||!d.latest)return;let z=d.latest;tacticSelect.value=String(z.tactic_id||11);renderDynamicTeam();let members=z.members||[];for(let i=0;i<Math.min(5,members.length);i++){let e=document.getElementById('teamHero'+(i+1));if(e&&members[i].hero_name)e.value=members[i].hero_name;}await combat()}
 function dynamicTeamQ(){let q=[],tid=+(tacticSelect.value||11);q.push('tactic_id='+tid);for(let i=1;i<=5;i++){let h=document.getElementById('teamHero'+i);if(h){let pos=+h.dataset.pos;q.push('team'+i+'='+encodeURIComponent(h.value));q.push('position'+i+'='+pos);q.push('lane'+i+'='+encodeURIComponent(posLane(pos)));}}q.push('aggro_front='+encodeURIComponent(aggroFront.value));q.push('aggro_mid='+encodeURIComponent(aggroMid.value));q.push('aggro_back='+encodeURIComponent(aggroBack.value));return q.join('&')}
 async function loadCombatCustom(force=false){
  if(!force&&combatCustomLoadedHero===combatHero.value)return;
@@ -4920,7 +4999,7 @@ async function saveAoeTargets(){let targets={};for(let [lab,id] of aoeActionIds)
 async function aoeRankRun(){aoeRankBtn.disabled=true;aoeRankBtn.textContent='Calcul…';aoeRankStatus.textContent='Classement AoE en cours…';try{let b=bosses[aoeBoss.value];let d=await api(`/api/aoe-rank?preset=${encodeURIComponent(aoePreset.value)}&duration=${aoeDur.value}&enemies=${aoeEnemies.value}&defense=${b.defense}&resistance=${b.resistance}&element=${encodeURIComponent(b.element)}`);aoeRankStatus.textContent=`${d.length} héros simulés — ${aoeEnemies.value} ennemis — boss ${aoeBoss.value}.`;aoeRankTable.innerHTML='<table><tr><th>#</th><th>Héros</th><th>Élément</th><th>Rareté</th><th>Rôle</th><th>DPS AoE</th><th>DPS mono</th><th>Dégâts AoE</th><th>Actions AoE connues</th></tr>'+d.map((x,i)=>`<tr><td>${i+1}</td><td>${x.name}</td><td>${x.element||'Neutre'}</td><td>${x.rarity||''}</td><td>${x.role||''}</td><td><b>${F1(x.dps)}</b></td><td>${F1(x.single_target_dps)}</td><td>${F(x.total_damage)}</td><td>${(x.mapped_aoe_actions||[]).join(', ')||'—'}</td></tr>`).join('')+'</table>'}finally{aoeRankBtn.disabled=false;aoeRankBtn.textContent='Calculer le classement AoE'}}
 async function aoeCombatRun(){aoeBtn.disabled=true;aoeBtn.textContent='Simulation…';try{let b=bosses[aoeBoss.value];let d=await api(`/api/aoe-combat?name=${encodeURIComponent(aoeHero.value)}&preset=${encodeURIComponent(aoePreset.value)}&duration=${aoeDur.value}&enemies=${aoeEnemies.value}&defense=${b.defense}&resistance=${b.resistance}&element=${encodeURIComponent(b.element)}${aoeTargetQuery()}`);aoeSummary.innerHTML=cards({'Héros':d.hero,'Preset':d.preset_label,'Ennemis':d.enemies,'DPS AoE total':F1(d.dps),'DPS mono de référence':F1(d.single_target_dps),'Dégâts AoE':F(d.total_damage)});aoeStatus.textContent=d.note+(d.mapped_aoe_actions?.length?' AoE renseignées : '+d.mapped_aoe_actions.join(', ')+'.':' Aucune action AoE >1 cible renseignée.');aoeTable.innerHTML='<table><tr><th>Action</th><th>Cibles</th><th>Casts</th><th>Dégâts mono</th><th>Dégâts AoE</th></tr>'+d.rows.map(x=>`<tr><td>${x.action}</td><td>${x.targets}</td><td>${x.casts}</td><td>${F(x.single_target_damage)}</td><td><b>${F(x.aoe_damage)}</b></td></tr>`).join('')+'</table>'}finally{aoeBtn.disabled=false;aoeBtn.textContent='Simuler'}}
 let rankRun=0; async function rank(){const run=++rankRun;let b=bosses[rankBoss.value],mode=rankMode.value,supportMode=rankSupportMode.value;let rankElem=(rankElement.value==='Auto'?b.element:rankElement.value);let sups=[rankSupport1.value,rankSupport2.value,rankSupport3.value,rankSupport4.value];rankBtn.disabled=true;rankBtn.textContent='Calcul en cours…';rankStatus.textContent='Simulation en cours…';let supq=`&support1=${encodeURIComponent(sups[0])}&support2=${encodeURIComponent(sups[1])}&support3=${encodeURIComponent(sups[2])}&support4=${encodeURIComponent(sups[3])}`;try{let d=await api(`/api/rank?mode=${mode}&support_mode=${encodeURIComponent(supportMode)}&rarity=${encodeURIComponent(rarity.value)}&role=${encodeURIComponent(role.value)}&duration=${rankDur.value}&boss=${b.defense}&boss_res=${b.resistance}&boss_hp=${b.hp}&boss_atk=${b.attack}&element=${encodeURIComponent(rankElem)}${supq}`);if(run!==rankRun)return;let active=[...new Set(sups.filter(x=>x&&x!=='Aucun'))];let modeLabel=mode==='box'?'Ma box':mode==='early'?'Early game':mode==='mid'?'Mid game':'Late game';let supportModeLabel=supportMode==='box'?'Ma box':supportMode==='early'?'Early game':supportMode==='mid'?'Mid game':'Late game';rankStatus.textContent=`${d.length} héros simulés — preset héros : ${modeLabel} — preset supports : ${supportModeLabel} — élément boss : ${rankElem}${active.length?' — supports : '+active.join(' + '):' — sans support'}.`;rankTable.innerHTML='<table><tr><th>#</th><th>Héros</th><th>Élément</th><th>Rareté</th><th>Rôle</th><th>DPS simulé</th><th>Dégâts</th><th>ATK</th><th>Crit</th><th>Crit DMG</th><th>PRE</th><th>Combo</th><th>Skill Speed</th><th>Recovery</th></tr>'+d.map((x,i)=>`<tr><td>${i+1}</td><td>${x.name}</td><td>${x.element||'Neutre'}</td><td>${x.rarity||''}</td><td>${x.role||''}</td><td>${F1(x.dps)}</td><td>${F(x.total_damage)}</td><td>${F(x.final_stats.atk)}</td><td>${P(x.final_stats.crit_rate)}</td><td>${P(x.final_stats.crit_dmg)}</td><td>${F(x.final_stats.accuracy)}</td><td>${P(x.final_stats.combo_speed)}</td><td>${P(x.final_stats.skill_speed)}</td><td>${P(x.final_stats.skill_recovery)}</td></tr>`).join('')+'</table>'}catch(e){if(run===rankRun)rankStatus.textContent='Erreur classement : '+e.message;throw e}finally{if(run===rankRun){rankBtn.disabled=false;rankBtn.textContent='Calculer'}}}
-(async()=>{heroes=await api('/api/heroes');let n=heroes.map(x=>x.name);let ownedHeroNames=await api('/api/box-hero-names');relicProtectedHeroes.innerHTML=ownedHeroNames.map(x=>`<option value="${x}">${x}</option>`).join('');[heroSel,combatHero,aSel,bSel,optHero].forEach((e,i)=>opts(e,n,i===3?'Sildrea':'Senhachi'));opts(aoeHero,n,'Moros');renderAoeTargetInputs({});for(let e of [support1,support2,support3,support4,rankSupport1,rankSupport2,rankSupport3,rankSupport4])opts(e,['Aucun',...n],'Aucun');[support1,support2,support3,support4].forEach(e=>e.onchange=()=>{renderDynamicTeam();combat()});[rankSupport1,rankSupport2,rankSupport3,rankSupport4].forEach(e=>e.onchange=rank);rankSupportMode.onchange=rank;rankElement.onchange=rank;addsMode.onchange=combat;[aggroFront,aggroMid,aggroBack].forEach(e=>e.onchange=combat);for(let t=11;t<=19;t++)tacticSelect.add(new Option('Tactic '+t,t));tacticSelect.value='11';tacticSelect.onchange=()=>{renderDynamicTeam();combat()};bosses=await api('/api/boss-setups');titans=await api('/api/titans');[simBoss,optBoss,rankBoss,aoeBoss].forEach(e=>{Object.keys(bosses).forEach(x=>e.add(new Option(x,x)));e.value='Ulgorim 16'});optBoss.onchange=async()=>{await critAnalysis();await recAnalysis();await relicPotential()};rankBoss.onchange=rank;simBossCards.innerHTML=bossCards(bosses[simBoss.value]);renderDynamicTeam();await loadBossDynamic();simBoss.onchange=async()=>{simBossCards.innerHTML=bossCards(bosses[simBoss.value]);simElement.value='Auto';await loadBossDynamic();combat();compare()};simElement.onchange=()=>{combat();compare()};build(heroBuild,'hero');levels(heroLevels,'heroLvl');levels(optLevels,'opt');trophyElement.onchange=renderTrophyHeroes;
+(async()=>{heroes=await api('/api/heroes');let n=heroes.map(x=>x.name);let ownedHeroNames=await api('/api/box-hero-names');relicProtectedHeroes.innerHTML=ownedHeroNames.map(x=>`<option value="${x}">${x}</option>`).join('');[heroSel,combatHero,aSel,bSel,optHero].forEach((e,i)=>opts(e,n,i===3?'Sildrea':'Senhachi'));opts(aoeHero,n,'Moros');renderAoeTargetInputs({});for(let e of [support1,support2,support3,support4,rankSupport1,rankSupport2,rankSupport3,rankSupport4])opts(e,['Aucun',...n],'Aucun');[support1,support2,support3,support4].forEach(e=>e.onchange=()=>{renderDynamicTeam();combat()});[rankSupport1,rankSupport2,rankSupport3,rankSupport4].forEach(e=>e.onchange=rank);rankSupportMode.onchange=rank;rankElement.onchange=rank;addsMode.onchange=combat;[aggroFront,aggroMid,aggroBack].forEach(e=>e.onchange=combat);for(let t=11;t<=19;t++)tacticSelect.add(new Option('Tactic '+t,t));tacticSelect.value='11';tacticSelect.onchange=()=>{renderDynamicTeam();combat()};loadLastFormationBtn.onclick=loadLastBattleFormation;bosses=await api('/api/boss-setups');titans=await api('/api/titans');[simBoss,optBoss,rankBoss,aoeBoss].forEach(e=>{Object.keys(bosses).forEach(x=>e.add(new Option(x,x)));e.value='Ulgorim 16'});optBoss.onchange=async()=>{await critAnalysis();await recAnalysis();await relicPotential()};rankBoss.onchange=rank;simBossCards.innerHTML=bossCards(bosses[simBoss.value]);renderDynamicTeam();await loadBossDynamic();simBoss.onchange=async()=>{simBossCards.innerHTML=bossCards(bosses[simBoss.value]);simElement.value='Auto';await loadBossDynamic();combat();compare()};simElement.onchange=()=>{combat();compare()};build(heroBuild,'hero');levels(heroLevels,'heroLvl');levels(optLevels,'opt');trophyElement.onchange=renderTrophyHeroes;
 trophySelectAll.onclick=()=>[...trophyHeroes.options].forEach(o=>o.selected=true);
 trophyClear.onclick=()=>[...trophyHeroes.options].forEach(o=>o.selected=false);
 trophyBtn.onclick=trophyRun;
@@ -5000,6 +5079,7 @@ class H(BaseHTTPRequestHandler):
             if p.path=='/api/game-import/scan': self.sendj(scan_game_import()); return
             if p.path=='/api/game-import/diff': self.sendj(compare_game_diff_snapshot()); return
             if p.path=='/api/game-import/player-aggregate': self.sendj(scan_player_aggregate_artifacts()); return
+            if p.path=='/api/game-import/battle-formations': self.sendj(decode_playerbattle_formations()); return
             if p.path=='/api/game-import/static-cache': self.sendj(scan_static_data_cache()); return
             if p.path=='/api/game-import/static-pack': self.sendj(inspect_static_chunkpack()); return
             if p.path=='/api/game-import/static-hall-scan': self.sendj(scan_static_hall_f64_arrays()); return
