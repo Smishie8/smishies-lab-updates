@@ -1,4 +1,4 @@
-import json, math, os, re, sqlite3, threading, webbrowser, hashlib, struct, csv, unicodedata, urllib.request, urllib.error
+import json, math, os, re, sqlite3, threading, webbrowser, hashlib, struct, csv, unicodedata, urllib.request, urllib.error, base64, gzip
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from html.parser import HTMLParser
 from html import unescape
@@ -147,11 +147,38 @@ def _load_extracted_progression():
 _load_extracted_progression()
 
 def _load_auto_timings():
-    try:
-        raw=json.load(open(AUTO_TIMINGS_FILE,'r',encoding='utf-8-sig'))
-        return {str(x.get('Hero') or '').strip().lower():x for x in raw if str(x.get('Hero') or '').strip()}
-    except Exception:
-        return {}
+    """Load extracted Auto1→Auto5 timings.
+
+    v11.21 ships the complete 222-Invoker table as two gzip/base64 payload
+    parts. If an older 90-entry auto_timings.json is installed, rebuild it
+    automatically from those parts before loading.
+    """
+    def _read_rows():
+        try:
+            raw=json.load(open(AUTO_TIMINGS_FILE,'r',encoding='utf-8-sig'))
+            return raw if isinstance(raw,list) else []
+        except Exception:
+            return []
+
+    raw=_read_rows()
+    if len(raw)<222:
+        try:
+            parts=[]
+            for fn in ('_v1121_auto222_b64.part01','_v1121_auto222_b64.part02'):
+                fp=os.path.join(BASE,fn)
+                if not os.path.isfile(fp):
+                    parts=[]; break
+                parts.append(open(fp,'r',encoding='ascii').read().strip())
+            if parts:
+                payload=gzip.decompress(base64.b64decode(''.join(parts)))
+                decoded=json.loads(payload.decode('utf-8-sig'))
+                if isinstance(decoded,list) and len(decoded)>=222:
+                    with open(AUTO_TIMINGS_FILE,'w',encoding='utf-8') as fh:
+                        json.dump(decoded,fh,ensure_ascii=False,indent=2)
+                    raw=decoded
+        except Exception:
+            pass
+    return {str(x.get('Hero') or '').strip().lower():x for x in raw if str(x.get('Hero') or '').strip()}
 
 AUTO_TIMINGS=_load_auto_timings()
 
