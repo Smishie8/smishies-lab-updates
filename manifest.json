@@ -1,11 +1,11 @@
 {
-  "version": "11.22",
+  "version": "11.23",
   "channel": "stable",
   "files": [
     {
       "path": "server.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.22",
-      "git_sha1": "0f6ebc2ce3e9236d90cb360a370996df32708032"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.23",
+      "git_sha1": "c1f6088aa9493e99b8d1fcc1eacf06766a4db021"
     },
     {
       "path": "awake_nodes.json",
@@ -74,9 +74,9 @@
     },
     {
       "path": "boss_engine.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/boss_engine.py?v=11.22",
-      "git_sha1": "ae04e5d86d023fb307fcc6687c438550fd67dc7b"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/boss_engine.py?v=11.23",
+      "git_sha1": "b1c1d6d172df00326ccd92778c7ae02f24a5e32d"
     }
   ],
-  "notes": "v11.22 : fondations du moteur boss dynamique. Ulgorim est mappé à BOSS_OGR049 avec son ouverture, ses cooldowns, ses mécaniques, ses totems et ses phases 66%/33%. L’interface Combat affiche désormais le profil boss dynamique et distingue explicitement les timings résolus des timings encore manquants, sans inventer de valeurs."
+  "notes": "v11.23 : timings exacts de BOSS_OGR049 extraits du StaticData 0.60.1302. Ulgorim possède 3 autos réelles (1,167 s / 1,200 s / 2,100 s), ses timings S1/S2/S3 et Warchant sont intégrés, ainsi que les cadences des Healing/Damage Totems. L’ouverture exacte est affichée et fusionnée avec le carry sur une timeline globale prototype. Les dégâts/débuffs boss ne sont pas encore appliqués aux PV de l’équipe."
 }
