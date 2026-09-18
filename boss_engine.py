@@ -290,7 +290,7 @@ TACTIC_CATALOG_INGAME = {
         "bonuses": {
             "front": [
                 {"stat":"def_pct","value":0.05},
-                {"stat":"hp_pct","value":0.25},
+                {"stat":"hp_pct","value":0.25,"conditional_class":"Tank"},
             ],
             "mid": [
                 {"stat":"atk_pct","value":0.05},
@@ -306,7 +306,7 @@ TACTIC_CATALOG_INGAME = {
         "bonuses": {
             "front": [
                 {"stat":"def_pct","value":0.05},
-                {"stat":"hp_pct","value":0.25},
+                {"stat":"hp_pct","value":0.25,"conditional_class":"Tank"},
             ],
             "mid": [{"stat":"combo_speed_points","value":15}],
             "back": [{"stat":"skill_recovery_points","value":15}],
@@ -317,7 +317,7 @@ TACTIC_CATALOG_INGAME = {
         "bonuses": {
             "front": [
                 {"stat":"damage_taken_pct","value":-0.015},
-                {"stat":"hp_pct","value":0.25},
+                {"stat":"hp_pct","value":0.25,"conditional_class":"Tank"},
             ],
             "mid": [{"stat":"atk_pct","value":0.05}],
             "back": [{"stat":"mana_gen_points","value":15}],
@@ -329,7 +329,7 @@ TACTIC_CATALOG_INGAME = {
         "bonuses": {
             "front": [
                 {"stat":"damage_taken_pct","value":-0.015},
-                {"stat":"hp_pct","value":0.25},
+                {"stat":"hp_pct","value":0.25,"conditional_class":"Tank"},
             ],
             "mid": [
                 {"stat":"skill_recovery_points","value":15},
@@ -337,7 +337,7 @@ TACTIC_CATALOG_INGAME = {
             ],
             "back": [
                 {"stat":"combo_speed_points","value":15},
-                {"stat":"atk_pct","value":0.05},
+                {"stat":"atk_pct","value":0.05,"conditional_class":"DPS mêlée"},
             ],
         },
     },
@@ -346,15 +346,15 @@ TACTIC_CATALOG_INGAME = {
         "bonuses": {
             "front": [
                 {"stat":"damage_taken_pct","value":-0.015},
-                {"stat":"hp_pct","value":0.25},
+                {"stat":"hp_pct","value":0.25,"conditional_class":"Tank"},
             ],
             "mid": [
                 {"stat":"accuracy","value":15},
-                {"stat":"atk_pct","value":0.05},
+                {"stat":"atk_pct","value":0.05,"conditional_class":"DPS mêlée"},
             ],
             "back": [
                 {"stat":"accuracy","value":15},
-                {"stat":"skill_speed_points","value":15},
+                {"stat":"skill_speed_points","value":15,"conditional_class":"Support"},
             ],
         },
     },
@@ -363,11 +363,11 @@ TACTIC_CATALOG_INGAME = {
         "bonuses": {
             "front": [
                 {"stat":"resistance","value":30},
-                {"stat":"def_pct","value":0.05},
+                {"stat":"def_pct","value":0.05,"conditional_class":"Tank"},
             ],
             "mid": [
                 {"stat":"combo_speed_points","value":15},
-                {"stat":"crit_rate","value":0.03},
+                {"stat":"crit_rate","value":0.03,"conditional_class":"DPS mêlée"},
             ],
             "back": [{"stat":"skill_speed_points","value":15}],
         },
@@ -377,7 +377,7 @@ TACTIC_CATALOG_INGAME = {
         "bonuses": {
             "front": [
                 {"stat":"hp_pct","value":0.25},
-                {"stat":"mana_gen_points","value":15},
+                {"stat":"mana_gen_points","value":15,"conditional_class":"Tank"},
             ],
             "mid": [{"stat":"atk_pct","value":0.05}],
             "back": [
@@ -391,11 +391,11 @@ TACTIC_CATALOG_INGAME = {
         "bonuses": {
             "front": [
                 {"stat":"hp_pct","value":0.25},
-                {"stat":"resistance","value":30},
+                {"stat":"resistance","value":30,"conditional_class":"Tank"},
             ],
             "mid": [
                 {"stat":"skill_recovery_points","value":15},
-                {"stat":"atk_pct","value":0.05},
+                {"stat":"atk_pct","value":0.05,"conditional_class":"DPS mêlée"},
             ],
             "back": [{"stat":"mana_gen_points","value":15}],
         },
@@ -405,7 +405,7 @@ TACTIC_CATALOG_INGAME = {
         "bonuses": {
             "front": [
                 {"stat":"def_pct","value":0.05},
-                {"stat":"hp_pct","value":0.25},
+                {"stat":"hp_pct","value":0.25,"conditional_class":"Tank"},
             ],
             "mid": [
                 {"stat":"skill_speed_points","value":15},
