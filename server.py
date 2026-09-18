@@ -5074,7 +5074,7 @@ class H(BaseHTTPRequestHandler):
                                 _team=[]
                                 _carry_surv=survival_stats_for(name,st)
                                 _team.append(_carry_surv)
-                                for _sn in active_supports:
+                                for _sn in [x for x in supports if x and x!='Aucun']:
                                     _team.append(survival_stats_for(_sn))
                                 r['boss_survival']=_simulate_opening_survival(_bp,_team,f('boss_atk',0),dur)
                     base=simulate_combat(name,combat_lv,dur,f('boss',1320),f('boss_res',0),f('boss_hp',0),f('boss_atk',0),qs.get('element',['Neutre'])[0],**b)
