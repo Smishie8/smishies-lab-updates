@@ -212,6 +212,47 @@ ULGORIM = BossProfile(
 )
 
 
+# PlayerBattleModel 0.60.1302 formation/tactic observations.
+# Each five-hero tactic uses five of the six grid coordinates.  Role placement
+# frequencies strongly identify rows 1/2/3 as Front/Mid/Back respectively.
+TACTIC_SLOT_MASKS_1302 = {
+    11: [11,21,22,31,32],
+    12: [11,12,21,31,32],
+    13: [11,12,21,22,31],
+    14: [11,21,22,31,32],
+    15: [11,12,21,31,32],
+    16: [11,21,22,31,32],
+    17: [11,21,22,31,32],
+    18: [11,12,21,31,32],
+    19: [11,21,22,31,32],
+}
+
+TACTIC_POSITION_LANES_1302 = {
+    11:"front",12:"front",
+    21:"mid",22:"mid",
+    31:"back",32:"back",
+}
+
+TACTIC_POSITION_ROLE_EVIDENCE_1302 = {
+    11: {"Tank":974,"Support":199,"DPS mêlée":139},
+    12: {"DPS mêlée":50,"Tank":8,"Support":1},
+    21: {"DPS mêlée":1149,"DPS distance":204,"Support":41},
+    22: {"DPS mêlée":872,"DPS distance":289,"Support":155},
+    31: {"DPS distance":827,"Support":484,"DPS mêlée":18},
+    32: {"Support":813,"DPS distance":460,"DPS mêlée":49},
+}
+
+
+def tactic_slot_mask(tactic_id: int) -> List[int]:
+    try:return list(TACTIC_SLOT_MASKS_1302.get(int(tactic_id),TACTIC_SLOT_MASKS_1302[11]))
+    except Exception:return list(TACTIC_SLOT_MASKS_1302[11])
+
+
+def tactic_lane(position: int) -> str:
+    try:return TACTIC_POSITION_LANES_1302.get(int(position),"mid")
+    except Exception:return "mid"
+
+
 # Damage coefficients collected from the in-game Ulgorim 16 skill descriptions
 # during the earlier calibration pass.  They are intentionally kept separate
 # from the StaticData timing extraction above.
