@@ -262,10 +262,167 @@ TACTIC_OBSERVATION_COUNTS_1302 = {
 TACTIC_EVIDENCE_1302 = {
     "mask_mapping": "proven_in_PlayerBattleModel_sample",
     "lane_names": "strongly_probable_from_role_distribution",
-    "class_bonuses": "not_decoded",
+    "class_bonuses": "proven_from_ingame_ui",
     "xy_coordinates": "not_found",
     "aggro_formula": "not_decoded",
     "snapshot_count": 1423,
+}
+
+
+# In-game UI evidence supplied on 2026-09-18.
+# Class icons are explicit in the tactic cards:
+# shield=Tank, sword=Melee, bow=Ranged, cross=Support.
+TACTIC_CLASS_ICON_MAP = {
+    "shield": "Tank",
+    "sword": "DPS mêlée",
+    "bow": "DPS distance",
+    "cross": "Support",
+}
+
+# Names, masks and level-1 bonuses visible in-game.  Names are intentionally
+# NOT bound to tactic IDs yet when several IDs share the same mask.
+# "conditional_class" means the bonus is only granted when the hero class
+# matches the icon displayed by the game for that lane.
+TACTIC_CATALOG_INGAME = {
+    "Standard": {
+        "mask": [11,21,22,31,32],
+        "bonuses": {
+            "front": [
+                {"stat":"def_pct","value":0.05},
+                {"stat":"hp_pct","value":0.25},
+            ],
+            "mid": [
+                {"stat":"atk_pct","value":0.05},
+            ],
+            "back": [
+                {"stat":"heal_amount_pct","value":0.03},
+                {"stat":"shield_value_pct","value":0.03},
+            ],
+        },
+    },
+    "Mur de Pierre": {
+        "mask": [11,12,21,31,32],
+        "bonuses": {
+            "front": [
+                {"stat":"def_pct","value":0.05},
+                {"stat":"hp_pct","value":0.25},
+            ],
+            "mid": [{"stat":"combo_speed_points","value":15}],
+            "back": [{"stat":"skill_recovery_points","value":15}],
+        },
+    },
+    "Tour": {
+        "mask": [11,12,21,22,31],
+        "bonuses": {
+            "front": [
+                {"stat":"damage_taken_pct","value":-0.015},
+                {"stat":"hp_pct","value":0.25},
+            ],
+            "mid": [{"stat":"atk_pct","value":0.05}],
+            "back": [{"stat":"mana_gen_points","value":15}],
+        },
+        "id_match": {"tactic_id":13,"confidence":"strongly_probable_unique_mask"},
+    },
+    "Phalange": {
+        "mask": [11,12,21,31,32],
+        "bonuses": {
+            "front": [
+                {"stat":"damage_taken_pct","value":-0.015},
+                {"stat":"hp_pct","value":0.25},
+            ],
+            "mid": [
+                {"stat":"skill_recovery_points","value":15},
+                {"stat":"mana_gen_points","value":15,"conditional_class":"Support"},
+            ],
+            "back": [
+                {"stat":"combo_speed_points","value":15},
+                {"stat":"atk_pct","value":0.05},
+            ],
+        },
+    },
+    "Tireur d’élite": {
+        "mask": [11,21,22,31,32],
+        "bonuses": {
+            "front": [
+                {"stat":"damage_taken_pct","value":-0.015},
+                {"stat":"hp_pct","value":0.25},
+            ],
+            "mid": [
+                {"stat":"accuracy","value":15},
+                {"stat":"atk_pct","value":0.05},
+            ],
+            "back": [
+                {"stat":"accuracy","value":15},
+                {"stat":"skill_speed_points","value":15},
+            ],
+        },
+    },
+    "Avant-garde": {
+        "mask": [11,21,22,31,32],
+        "bonuses": {
+            "front": [
+                {"stat":"resistance","value":30},
+                {"stat":"def_pct","value":0.05},
+            ],
+            "mid": [
+                {"stat":"combo_speed_points","value":15},
+                {"stat":"crit_rate","value":0.03},
+            ],
+            "back": [{"stat":"skill_speed_points","value":15}],
+        },
+    },
+    "Fer de lance": {
+        "mask": [11,21,22,31,32],
+        "bonuses": {
+            "front": [
+                {"stat":"hp_pct","value":0.25},
+                {"stat":"mana_gen_points","value":15},
+            ],
+            "mid": [{"stat":"atk_pct","value":0.05}],
+            "back": [
+                {"stat":"skill_recovery_points","value":15},
+                {"stat":"atk_pct","value":0.05,"conditional_class":"DPS distance"},
+            ],
+        },
+    },
+    "Siège": {
+        "mask": [11,21,22,31,32],
+        "bonuses": {
+            "front": [
+                {"stat":"hp_pct","value":0.25},
+                {"stat":"resistance","value":30},
+            ],
+            "mid": [
+                {"stat":"skill_recovery_points","value":15},
+                {"stat":"atk_pct","value":0.05},
+            ],
+            "back": [{"stat":"mana_gen_points","value":15}],
+        },
+    },
+    "Artillerie": {
+        "mask": [11,12,21,31,32],
+        "bonuses": {
+            "front": [
+                {"stat":"def_pct","value":0.05},
+                {"stat":"hp_pct","value":0.25},
+            ],
+            "mid": [
+                {"stat":"skill_speed_points","value":15},
+                {"stat":"heal_amount_pct","value":0.03,"conditional_class":"Support"},
+                {"stat":"shield_value_pct","value":0.03,"conditional_class":"Support"},
+            ],
+            "back": [
+                {"stat":"atk_pct","value":0.05},
+                {"stat":"def_ignore_pct","value":0.015,"conditional_class":"DPS distance"},
+            ],
+        },
+    },
+}
+
+TACTIC_NAME_GROUPS_BY_MASK = {
+    (11,21,22,31,32): ["Standard","Tireur d’élite","Avant-garde","Fer de lance","Siège"],
+    (11,12,21,31,32): ["Mur de Pierre","Phalange","Artillerie"],
+    (11,12,21,22,31): ["Tour"],
 }
 
 
