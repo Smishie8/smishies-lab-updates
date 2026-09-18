@@ -1,11 +1,11 @@
 {
-  "version": "11.23",
+  "version": "11.24",
   "channel": "stable",
   "files": [
     {
       "path": "server.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.23",
-      "git_sha1": "c1f6088aa9493e99b8d1fcc1eacf06766a4db021"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.24",
+      "git_sha1": "33faedae8e15ca7bdec08eb428f515b19908cb5d"
     },
     {
       "path": "awake_nodes.json",
@@ -74,9 +74,9 @@
     },
     {
       "path": "boss_engine.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/boss_engine.py?v=11.23",
-      "git_sha1": "b1c1d6d172df00326ccd92778c7ae02f24a5e32d"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/boss_engine.py?v=11.24",
+      "git_sha1": "20a8cbc4d8696033a5712f2c1b81d9076e9cbd8e"
     }
   ],
-  "notes": "v11.23 : timings exacts de BOSS_OGR049 extraits du StaticData 0.60.1302. Ulgorim possède 3 autos réelles (1,167 s / 1,200 s / 2,100 s), ses timings S1/S2/S3 et Warchant sont intégrés, ainsi que les cadences des Healing/Damage Totems. L’ouverture exacte est affichée et fusionnée avec le carry sur une timeline globale prototype. Les dégâts/débuffs boss ne sont pas encore appliqués aux PV de l’équipe."
+  "notes": "v11.24 : première simulation de survie équipe contre Ulgorim. Les PV/DEF réels de la box sont chargés pour le carry et les supports, les dégâts de l’ouverture S1/S2/Auto1-3 sont appliqués avec la formule DEF validée, la Corruption est suivie et les morts sont détectées. L’interface affiche PV finaux, dégâts reçus et événements entrants. S2 est exact; S1/autos utilisent encore un proxy de ciblage tant que les positions/mouvements ne sont pas simulés. Putréfaction périodique, soins/boucliers, Warchant et rotation récurrente restent à brancher."
 }
