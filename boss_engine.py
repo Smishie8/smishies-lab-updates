@@ -242,20 +242,56 @@ TACTIC_POSITION_ROLE_EVIDENCE_1302 = {
     32: {"Support":813,"DPS distance":460,"DPS mêlée":49},
 }
 
+# Revalidated against the uploaded PlayerBattleModel.dat on 2026-09-18.
+# Across 1,423 decoded five-member snapshots every tactic ID below has exactly
+# one observed position mask.  This proves the ID -> mask mapping for this
+# dataset.  The Front/Mid/Back labels remain a strongly-supported interpretation
+# from role placement frequencies, not a decoded enum name from the game.
+TACTIC_OBSERVATION_COUNTS_1302 = {
+    11: 1041,
+    12: 7,
+    13: 15,
+    14: 32,
+    15: 7,
+    16: 66,
+    17: 173,
+    18: 33,
+    19: 49,
+}
+
+TACTIC_EVIDENCE_1302 = {
+    "mask_mapping": "proven_in_PlayerBattleModel_sample",
+    "lane_names": "strongly_probable_from_role_distribution",
+    "class_bonuses": "not_decoded",
+    "xy_coordinates": "not_found",
+    "aggro_formula": "not_decoded",
+    "snapshot_count": 1423,
+}
+
 
 def tactic_slot_mask(tactic_id: int) -> List[int]:
-    try:return list(TACTIC_SLOT_MASKS_1302.get(int(tactic_id),TACTIC_SLOT_MASKS_1302[11]))
-    except Exception:return list(TACTIC_SLOT_MASKS_1302[11])
+    """Return only an observed mask; never silently substitute another tactic."""
+    try:
+        row=TACTIC_SLOT_MASKS_1302.get(int(tactic_id))
+        return list(row) if row else []
+    except Exception:
+        return []
 
 
 def tactic_lane(position: int) -> str:
-    try:return TACTIC_POSITION_LANES_1302.get(int(position),"mid")
-    except Exception:return "mid"
+    """Observed row interpretation. Unknown positions stay explicitly unknown."""
+    try:return TACTIC_POSITION_LANES_1302.get(int(position),"unknown")
+    except Exception:return "unknown"
 
 
 # Damage coefficients collected from the in-game Ulgorim 16 skill descriptions
 # during the earlier calibration pass.  They are intentionally kept separate
 # from the StaticData timing extraction above.
+# IMPORTANT: coefficients below are still provisional.  Timings are extracted
+# from StaticData, but these damage coefficients must not be promoted to
+# game-exact until their source/formula is independently revalidated.
+ULGORIM_DAMAGE_MODEL_CONFIDENCE = "proxy/provisional"
+
 ULGORIM_DAMAGE_MODEL = {
     "s1": {
         "phase": 1,
