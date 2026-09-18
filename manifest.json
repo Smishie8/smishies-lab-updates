@@ -1,11 +1,11 @@
 {
-  "version": "11.29",
+  "version": "11.30",
   "channel": "stable",
   "files": [
     {
       "path": "server.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.28",
-      "git_sha1": "bc02fb019415922a80792176b7d96bd2fd2f3419"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/server.py?v=11.30",
+      "git_sha1": "a08cc169614fcaac362d1c1c9dc0408d624a3f70"
     },
     {
       "path": "awake_nodes.json",
@@ -74,9 +74,9 @@
     },
     {
       "path": "boss_engine.py",
-      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/boss_engine.py?v=11.29",
-      "git_sha1": "725dd9e078336efd1c1b1ab61ff4ea4ace16642a"
+      "url": "https://raw.githubusercontent.com/Smishie8/smishies-lab-updates/main/boss_engine.py?v=11.30",
+      "git_sha1": "7f71285d8459ff37c94d46f142a83b07009f9341"
     }
   ],
-  "notes": "v11.29 : correspondance exacte Tactic ID↔nom verrouillée à partir de captures PlayerBattleModel.dat successives en jeu. 11 Standard, 12 Mur de Pierre, 13 Tour, 14 Avant-garde, 15 Phalange, 16 Fer de lance, 17 Siège, 18 Artillerie, 19 Tireur d’élite. Le catalogue des bonus peut désormais être relié sans ambiguïté à l’ID de Tactic."
+  "notes": "v11.30 : bonus de Tactic appliqués au nouveau mode équipe dynamique avant la simulation boss. Les 9 IDs utilisent leur nom exact. Les bonus conditionnels suivent les icônes du jeu : bouclier=Tank, épée=DPS mêlée, arc=DPS distance, croix=Support. Les bonus actifs blancs et les bonus grisés sont tous correctement conditionnés selon la classe quand une icône est présente. Les bonus en points (VIT combo, VIT compétence, RÉCUP, GÉN mana) utilisent les formules de conversion déjà validées dans Smishie’s Lab. PV/DEF/ATQ %, Crit, PRE/RÉS sont appliqués aux stats dynamiques; Dégâts subis -1,5 % est consommé dans le moteur boss après la mitigation DEF. L’interface affiche le nom de la Tactic, les bonus appliqués et les bonus de classe non activés. Les anciens modes carry/support restent inchangés."
 }
