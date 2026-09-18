@@ -4308,7 +4308,9 @@ def decode_playerbattle_formations(limit=60):
       member1 = list of 5 battle members
       member4 = a position code used by battle state (kept as focus_position)
     Each battle member starts with a position code (11/12/21/22/31/32) and
-    contains the hero inventory id in the second field.
+    contains the hero inventory id in the second field. The sixth member field
+    is exposed raw only: it changes for otherwise identical formations and is
+    therefore NOT treated as a static team-slot/order value.
     """
     fp=_find_aggregate_snapshot('PlayerBattleModel.dat')
     if not fp:
@@ -4341,10 +4343,13 @@ def decode_playerbattle_formations(limit=60):
                     good=False; break
                 pos=struct.unpack_from('<i',data,p+7)[0]
                 inv=struct.unpack_from('<i',data,p+15)[0]
+                member6_raw=struct.unpack_from('<i',data,p+59)[0]
                 if pos not in (11,12,21,22,31,32):
                     good=False; break
-                members.append({'slot_index':idx+1,'position':pos,'lane':('front' if pos<20 else 'mid' if pos<30 else 'back'),
-                                'inventory_id':inv,'hero_name':inv_names.get(inv)})
+                members.append({'slot_index':idx+1,'serialization_index':idx+1,
+                                'position':pos,'lane':('front' if pos<20 else 'mid' if pos<30 else 'back'),
+                                'inventory_id':inv,'hero_name':inv_names.get(inv),
+                                'member6_raw_i32':member6_raw})
                 p+=63
             if not good: continue
             tactic=_mp_i32(data,vals[0]); focus=_mp_i32(data,vals[4])
@@ -4363,17 +4368,38 @@ def decode_playerbattle_formations(limit=60):
                 dedup.append(row); prev=key
         tactic_counts={}
         tactic_masks={}
+        tactic_mask_variants={}
+        member6_permutation_count=0
+        member6_zero_state_count=0
         for row in rows:
             tid=int(row.get('tactic_id') or 0)
             if 11<=tid<=19:
                 tactic_counts[tid]=tactic_counts.get(tid,0)+1
                 tactic_masks.setdefault(tid,row['positions'])
+                tactic_mask_variants.setdefault(tid,set()).add(tuple(row['positions']))
+            m6=[int(m.get('member6_raw_i32') or 0) for m in row.get('members',[])]
+            if sorted(m6)==[1,2,3,4,5]:
+                member6_permutation_count+=1
+            if any(x==0 for x in m6):
+                member6_zero_state_count+=1
+        tactic_mask_variant_counts={k:len(v) for k,v in tactic_mask_variants.items()}
         return {'ok':True,'file':fp,'raw_formation_count':len(rows),'unique_state_count':len(dedup),
                 'tactic_counts':tactic_counts,'tactic_masks':tactic_masks,
+                'tactic_mask_variant_counts':tactic_mask_variant_counts,
                 'latest':(dedup[-1] if dedup else None),'recent':dedup[-max(1,min(int(limit or 60),200)):],
                 'position_lanes':{11:'front',12:'front',21:'mid',22:'mid',31:'back',32:'back'},
+                'evidence':{
+                    'mask_mapping':'proven_in_this_PlayerBattleModel_sample',
+                    'mask_is_unique_per_tactic':all(v==1 for v in tactic_mask_variant_counts.values()),
+                    'lane_names':'strongly_probable_from_role_distribution',
+                    'class_bonuses':'not_decoded',
+                    'xy_coordinates':'not_found',
+                    'member6_semantics':'unknown_dynamic_field',
+                    'member6_permutation_snapshots':member6_permutation_count,
+                    'member6_zero_state_snapshots':member6_zero_state_count,
+                },
                 'read_only':True,
-                'note':'Décodage empirique PlayerBattleModel 0.60.1302. Les bonus de classe des Tactics ne sont pas encore décodés.'}
+                'note':'PlayerBattleModel 0.60.1302 : mapping Tactic→masque prouvé dans cet échantillon; noms Front/Mid/Back fortement probables. Bonus de classe, XY et sens du champ membre 6 non décodés.'}
     except Exception as e:
         return {'ok':False,'file':fp,'error':str(e),**_game_readonly_status()}
 
