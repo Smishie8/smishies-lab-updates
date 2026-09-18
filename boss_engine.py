@@ -212,6 +212,200 @@ ULGORIM = BossProfile(
 )
 
 
+# Damage coefficients collected from the in-game Ulgorim 16 skill descriptions
+# during the earlier calibration pass.  They are intentionally kept separate
+# from the StaticData timing extraction above.
+ULGORIM_DAMAGE_MODEL = {
+    "s1": {
+        "phase": 1,
+        "normal_atk_pct": 25.0,
+        "putrefaction_atk_pct": 0.0,
+        "targeting": "2_farthest",
+        "corruption_add": 1,
+        "stun_s": 8.0,
+        "remove_buffs_first_application": 2,
+    },
+    "s2": {
+        "normal_atk_pct": 70.0,
+        "putrefaction_atk_pct": 30.0,
+        "targeting": "all",
+        "corruption_add": 1,
+    },
+    "auto1": {
+        "normal_atk_pct": 3.0,
+        "putrefaction_atk_pct": 2.0,
+        "targeting": "single",
+    },
+    "auto2": {
+        "normal_atk_pct": 3.0,
+        "putrefaction_atk_pct": 2.0,
+        "targeting": "single",
+        "ultimate_mana_reduction_pct": 1.5,
+    },
+    "auto3": {
+        "normal_atk_pct": 3.0,
+        "putrefaction_atk_pct": 2.0,
+        "targeting": "aoe_13m",
+    },
+}
+
+
+def _incoming_damage_multiplier(defense: float) -> float:
+    d=max(0.0,float(defense or 0.0))
+    return 1.0/(1.0 + 0.0001696*d + 0.00000001245*d*d)
+
+
+def _living_indices(states):
+    return [i for i,s in enumerate(states) if s.get("alive")]
+
+
+def _proxy_targets(action_key: str, states: List[dict]) -> List[int]:
+    """Temporary deterministic target resolver.
+
+    The game uses positions for S1 / single target / 13 m AoE.  Smishie's Lab
+    does not yet simulate movement coordinates, so this resolver is only a
+    reproducible placeholder:
+      - all: every living hero
+      - 2 farthest: last two living team slots
+      - single: first living team slot
+      - 13 m AoE: every living hero
+    Every result produced with this resolver is marked target_proxy=True.
+    """
+    alive=_living_indices(states)
+    if not alive:
+        return []
+    if action_key=="s2":
+        return alive
+    if action_key=="s1":
+        return alive[-2:]
+    if action_key in ("auto1","auto2"):
+        return alive[:1]
+    if action_key=="auto3":
+        return alive
+    return []
+
+
+def simulate_opening_survival(profile: BossProfile, team: List[dict], boss_atk: float,
+                              duration: Optional[float]=None) -> dict:
+    """Apply Ulgorim's validated opening damage to real HP/DEF team states.
+
+    V1 deliberately stops after the validated opening.  It does not yet model
+    movement, Putrefaction periodic ticks, healing/shields, Warchant threshold
+    transitions, or recurring post-opening boss AI.
+    """
+    if profile.key!="ulgorim":
+        return {"enabled":False,"reason":"Aucun modèle de survie boss enregistré."}
+
+    states=[]
+    missing=[]
+    for slot,m in enumerate(team or [],1):
+        hp=m.get("health")
+        defense=m.get("defense")
+        if hp is None or defense is None or float(hp or 0)<=0:
+            missing.append(m.get("name") or f"slot {slot}")
+            continue
+        max_hp=float(hp)
+        states.append({
+            "slot":slot,
+            "name":m.get("name") or f"slot {slot}",
+            "max_hp":max_hp,
+            "hp":max_hp,
+            "defense":float(defense or 0),
+            "resistance":float(m.get("resistance") or 0),
+            "source":m.get("source") or "unknown",
+            "alive":True,
+            "death_s":None,
+            "corruption":0,
+            "damage_taken":0.0,
+        })
+
+    if not states:
+        return {
+            "enabled":False,
+            "reason":"Aucun membre de l'équipe ne possède des PV/DEF exploitables.",
+            "missing_members":missing,
+        }
+
+    timeline=build_opening_timeline(profile)
+    events=[]
+    atk=float(boss_atk or 0)
+    for ev in timeline:
+        if duration is not None and float(ev["start_s"])>float(duration):
+            break
+        key=ev["action"]
+        model=ULGORIM_DAMAGE_MODEL.get(key)
+        if not model:
+            events.append({
+                "time":ev["start_s"],"action":key,"label":ev["label"],
+                "type":"mechanic","targets":[],"note":"Aucun dégât direct appliqué dans cette version.",
+            })
+            continue
+        target_ids=_proxy_targets(key,states)
+        rows=[]
+        raw_pct=float(model.get("normal_atk_pct") or 0)+float(model.get("putrefaction_atk_pct") or 0)
+        raw=atk*raw_pct/100.0
+        for idx in target_ids:
+            s=states[idx]
+            if not s.get("alive"):
+                continue
+            dmg=raw*_incoming_damage_multiplier(s["defense"])
+            before=s["hp"]
+            s["hp"]=max(0.0,before-dmg)
+            s["damage_taken"]+=dmg
+            if model.get("corruption_add"):
+                s["corruption"]+=int(model["corruption_add"])
+            if s["hp"]<=0 and s["alive"]:
+                s["alive"]=False
+                s["death_s"]=float(ev["start_s"])
+            rows.append({
+                "name":s["name"],
+                "hp_before":before,
+                "damage":dmg,
+                "hp_after":s["hp"],
+                "corruption":s["corruption"],
+                "dead":not s["alive"],
+            })
+        events.append({
+            "time":float(ev["start_s"]),
+            "action":key,
+            "label":ev["label"],
+            "type":"damage",
+            "raw_pct_atk":raw_pct,
+            "raw_damage":raw,
+            "targets":rows,
+            "targeting":model.get("targeting"),
+            "target_proxy":model.get("targeting") not in ("all",),
+            "stun_s":float(model.get("stun_s") or 0),
+            "ultimate_mana_reduction_pct":float(model.get("ultimate_mana_reduction_pct") or 0),
+        })
+
+    return {
+        "enabled":True,
+        "scope":"opening_only",
+        "boss_atk":atk,
+        "team":[
+            {
+                **s,
+                "hp_pct":(s["hp"]/s["max_hp"] if s["max_hp"] else 0.0),
+            }
+            for s in states
+        ],
+        "events":events,
+        "missing_members":missing,
+        "targeting_validated":False,
+        "targeting_note":"S2 touche toute l'équipe et est exact. S1/autos utilisent encore un proxy de ciblage faute de positions simulées.",
+        "not_yet_modeled":[
+            "positions / distances réelles",
+            "ticks périodiques de Putréfaction",
+            "soins et boucliers",
+            "mort / résurrection côté héros",
+            "phase Warchant déclenchée par les PV du boss",
+            "rotation récurrente après l'ouverture",
+            "effets élémentaires sur les dégâts entrants",
+        ],
+    }
+
+
 BOSS_PROFILES = {
     "ulgorim": ULGORIM,
     "ulgorim 16": ULGORIM,
