@@ -261,6 +261,7 @@ TACTIC_OBSERVATION_COUNTS_1302 = {
 
 TACTIC_EVIDENCE_1302 = {
     "mask_mapping": "proven_in_PlayerBattleModel_sample",
+    "id_name_mapping": "proven_from_successive_PlayerBattleModel_captures",
     "lane_names": "strongly_probable_from_role_distribution",
     "class_bonuses": "proven_from_ingame_ui",
     "xy_coordinates": "not_found",
@@ -424,6 +425,29 @@ TACTIC_NAME_GROUPS_BY_MASK = {
     (11,12,21,31,32): ["Mur de Pierre","Phalange","Artillerie"],
     (11,12,21,22,31): ["Tour"],
 }
+
+
+# Exact tactic ID -> in-game name mapping, validated from successive
+# PlayerBattleModel.dat captures after selecting each tactic in-game.
+TACTIC_ID_NAME_1302 = {
+    11: "Standard",
+    12: "Mur de Pierre",
+    13: "Tour",
+    14: "Avant-garde",
+    15: "Phalange",
+    16: "Fer de lance",
+    17: "Siège",
+    18: "Artillerie",
+    19: "Tireur d’élite",
+}
+
+TACTIC_NAME_ID_1302 = {name: tid for tid, name in TACTIC_ID_NAME_1302.items()}
+
+for _tid, _name in TACTIC_ID_NAME_1302.items():
+    _row = TACTIC_CATALOG_INGAME.get(_name)
+    if _row is not None:
+        _row["tactic_id"] = _tid
+        _row["id_match"] = {"tactic_id": _tid, "confidence": "proven_from_PlayerBattleModel_capture"}
 
 
 def tactic_slot_mask(tactic_id: int) -> List[int]:
